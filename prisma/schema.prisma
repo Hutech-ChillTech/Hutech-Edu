@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model KhoaHoc {
+  KhoaHocId   Int       @id @default(autoincrement())
+  TenKhoaHoc  String
+  MoTa        String?
+  Gia         Float
+  VideoUrl    String?
+  HinhAnh     String?
+  baiHocs     BaiHoc[]  // Một khóa học có nhiều bài học
+  CT_NguoiDung_KhoaHocs CT_NguoiDung_KhoaHoc[]  // Thêm dòng này
+}
+
+model BaiHoc {
+  BaiHocId    Int       @id @default(autoincrement())
+  TieuDe      String
+  NoiDung     String?
+  VideoUrl    String?
+  HinhAnh     String?
+  KhoaHocId   Int
+  KhoaHoc     KhoaHoc   @relation(fields: [KhoaHocId], references: [KhoaHocId])
+  CT_NguoiDung_BaiHocs CT_NguoiDung_BaiHoc[]
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  fullname     String
+  sex          String
+  phonenumber  String
+  password     String
+
+  roles        UserRole[]
+  CT_NguoiDung_KhoaHocs  CT_NguoiDung_KhoaHoc[]
+  CT_NguoiDung_BaiHocs  CT_NguoiDung_BaiHoc[]
+  lichSuChoiGames   LichSuChoiGame[]
+}
+
+
+model Role {
+  id      Int        @id @default(autoincrement())
+  name    String     @unique
+  claims  RoleClaim[]
+  users   UserRole[]
+}
+
+model UserRole {
+  id     Int   @id @default(autoincrement())
+  userId Int
+  roleId Int
+
+  user   User  @relation(fields: [userId], references: [id])
+  role   Role  @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId]) // Tránh trùng vai trò
+}
+
+model RoleClaim {
+  id      Int    @id @default(autoincrement())
+  roleId  Int
+  claim   String
+
+  role    Role   @relation(fields: [roleId], references: [id])
+
+  @@unique([roleId, claim]) // <-- THÊM dòng này để upsert được
+}
+
+
+model CT_NguoiDung_KhoaHoc {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  khoaHocId  Int
+  ngayCapNhat  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+  khoaHoc    KhoaHoc  @relation(fields: [khoaHocId], references: [KhoaHocId])
+
+  @@unique([userId, khoaHocId])
+}
+
+model CT_NguoiDung_BaiHoc {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  baiHocId  Int
+  ngayCapNhat  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+  baiHoc    BaiHoc  @relation(fields: [baiHocId], references: [BaiHocId])
+
+  @@unique([userId, baiHocId])
+}
+
+model CauHoiGame {
+  id        Int      @id @default(autoincrement())
+  noiDung   String   // Đây là đề bài gõ
+  dapAn     String   // Đây là đáp án đúng
+  capDo     String?   // Ví dụ: 'easy', 'medium', 'hard'
+  chuDe     String?  // Ví dụ: 'toán học', 'ngữ pháp'
+  createdAt DateTime @default(now())
+
+  lichSuChoiGames   LichSuChoiGame[]
+}
+
+model LichSuChoiGame {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  cauHoiId    Int
+  dapAnNguoiDung String
+  dung        Boolean
+  thoiGianTraLoi Int   
+  thoiGian     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id])
+  cauHoiGame  CauHoiGame  @relation(fields: [cauHoiId], references: [id])
+}
