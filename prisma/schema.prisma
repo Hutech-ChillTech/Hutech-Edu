@@ -1,9 +1,5 @@
-// This is your Prisma schema file
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -19,28 +15,28 @@ enum Gender {
 
 enum Level {
   Basic
-  Intermidate
-  Advantage
+  Intermediate
+  Advanced
 }
 
+
 model User {
-  userId       String    @id @default(uuid())
+  userId       String   @id @default(uuid())
   userName     String
   password     String
-  email        String    @unique
+  email        String   @unique
   gender       Gender
   avatarURL    String?
   region       String?
   dateOfBirth  DateTime?
   level        Level?
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  account            Account?             
-  accountId          String?
+  account            Account?
   roles              UserRole[]
-  roleClaims         RoleClaim[]           
-  coursesCreated     Course[]              
+  roleClaims         RoleClaim[]   @relation("UserRoleClaims")
+  coursesCreated     Course[]
   comments           Comment[]
   payments           Payment[]
   certificates       Certificate[]
@@ -48,11 +44,14 @@ model User {
   userCoursePreviews UserCoursePreview[]
   submissions        Submission[]
   lessonsProgress    UserLessonProgress[]
+  enrollments        Enrollment[]
+
+  @@index([email])
 }
 
 model Account {
   id                String   @id @default(uuid())
-  userId            String
+  userId            String   @unique
   provider          String
   providerAccountId String
   accessToken       String?
@@ -65,11 +64,12 @@ model Account {
 }
 
 model Role {
-  roleId   String    @id @default(uuid())
-  name     String
-
-  userRoles UserRole[]
+  roleId     String      @id @default(uuid())
+  name       String
+  userRoles  UserRole[]
   roleClaims RoleClaim[]
+
+  @@unique([name])
 }
 
 model UserRole {
@@ -86,12 +86,13 @@ model UserRole {
 model RoleClaim {
   roleClaimId String @id @default(uuid())
   roleId      String?
-  roleName    String?
+  userId      String?
   permission  String
   claimType   String?
   claimValue  String?
 
   role Role? @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+  user User? @relation("UserRoleClaims", fields: [userId], references: [userId], onDelete: Cascade)
 }
 
 model Course {
@@ -102,55 +103,57 @@ model Course {
   discount          Float?
   avatarURL         String?
   level             Level?
-  createdBy         String?   
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  createdBy         String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 
-  user        User?      @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
-  chapters    Chapter[]
-  comments    Comment[]
-  enrollments Enrollment[]   
-  certificates Certificate[]
+  user               User?               @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
+  chapters           Chapter[]
+  comments           Comment[]
+  enrollments        Enrollment[]
+  certificates       Certificate[]
   userCoursePreviews UserCoursePreview[]
+
+  @@index([courseName])
 }
 
 model Chapter {
-  chapterId   String   @id @default(uuid())
-  chapterName String
-  totalLesson Int
-  courseId    String
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  chapterId    String   @id @default(uuid())
+  chapterName  String
+  totalLesson  Int
+  courseId     String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
-  lessons Lesson[]
+  course         Course        @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  lessons        Lesson[]
   chapterQuizzes ChapterQuiz[]
 }
 
 model Lesson {
-  lessonId      String   @id @default(uuid())
-  lessonName    String
-  videoUrl      String?
-  content       String?
-  isPreview     Boolean  @default(false)
-  chapterId     String
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  lessonId       String   @id @default(uuid())
+  lessonName     String
+  videoUrl       String?
+  content        String?
+  isPreview      Boolean  @default(false)
+  chapterId      String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
-  chapter Chapter @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
-  submissions Submission[]
-  testCodes   TestCode[]
+  chapter         Chapter  @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
+  submissions     Submission[]
+  testCodes       TestCode[]
   lessonsProgress UserLessonProgress[]
 }
 
 model TestCode {
-  testCodeId      String   @id @default(uuid())
-  description     String?
-  input           String?
-  expectedOutput  String?
-  lessonId        String
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  testCodeId     String   @id @default(uuid())
+  description    String?
+  input          String?
+  expectedOutput String?
+  lessonId       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   lesson Lesson @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
 }
@@ -182,17 +185,19 @@ model Notification {
 }
 
 model Payment {
-  paymentId            String        @id @default(uuid())
-  description          String?
-  currency             String?
-  amount               Float
-  method               String?
-  paidAt               DateTime?
-  userCoursePreviewId  String?
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  paymentId           String   @id @default(uuid())
+  description         String?
+  currency            String?
+  amount              Float
+  method              String?
+  paidAt              DateTime?
+  userId              String?
+  userCoursePreviewId String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
 
-  user User? @relation(fields: [userCoursePreviewId], references: [userCoursePreviewId], onDelete: SetNull)
+  user              User?              @relation(fields: [userId], references: [userId], onDelete: SetNull)
+  userCoursePreview UserCoursePreview? @relation(fields: [userCoursePreviewId], references: [userCoursePreviewId], onDelete: SetNull)
 }
 
 model UserCoursePreview {
@@ -202,38 +207,40 @@ model UserCoursePreview {
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
-  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  user     User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course   Course  @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
   payments Payment[]
 }
 
 model Certificate {
-  certificateId   String   @id @default(uuid())
-  submissionId    String?   
+  certificateId    String   @id @default(uuid())
+  submissionId     String?
   certificateTitle String?
-  userId          String
-  courseId        String
-  certificateURL  String?
-  issuedAt        DateTime @default(now())
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  userId           String
+  courseId         String
+  certificateURL   String?
+  issuedAt         DateTime @default(now())
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course     Course      @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
   submission Submission? @relation(fields: [submissionId], references: [submissionId], onDelete: SetNull)
 }
 
 model Submission {
-  submissionId    String   @id @default(uuid())
-  score           Float?
-  isPassed        Boolean  @default(false)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  userId          String
-  chapterQuizId   String?
+  submissionId  String   @id @default(uuid())
+  score         Float?
+  isPassed      Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  userId        String
+  chapterQuizId String?
+  lessonId      String?
 
-  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  chapterQuiz ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  chapterQuiz  ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
+  lesson       Lesson?      @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
   certificates Certificate[]
 }
 
@@ -245,7 +252,7 @@ model ChapterQuiz {
   updated_at    DateTime @updatedAt
   chapterId     String?
 
-  chapter Chapter? @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
+  chapter       Chapter?       @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
   quizQuestions QuizQuestion[]
   submissions   Submission[]
 }
@@ -259,15 +266,15 @@ model QuizQuestion {
   chapterQuizId  String?
 
   chapterQuiz ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
-  quizOptions  QuizOption[]
+  quizOptions QuizOption[]
 }
 
 model QuizOption {
-  quizOptionId String   @id @default(uuid())
-  optionText   String
-  isCorrect    Boolean  @default(false)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  quizOptionId   String   @id @default(uuid())
+  optionText     String
+  isCorrect      Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
   quizQuestionId String
 
   quizQuestion QuizQuestion @relation(fields: [quizQuestionId], references: [quizQuestionId], onDelete: Cascade)
@@ -294,7 +301,7 @@ model Enrollment {
   userId       String
   courseId     String
 
-  user User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
 
   @@unique([userId, courseId])
