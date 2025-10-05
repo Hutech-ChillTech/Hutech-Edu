@@ -19,9 +19,8 @@ enum Level {
   Advanced
 }
 
-
 model User {
-  userId       String   @id @default(uuid())
+  userId String @id @default(uuid()) @db.Uuid
   userName     String
   password     String
   email        String   @unique
@@ -50,8 +49,8 @@ model User {
 }
 
 model Account {
-  id                String   @id @default(uuid())
-  userId            String   @unique
+  id                String @id @default(uuid()) @db.Uuid
+  userId            String @unique @db.Uuid
   provider          String
   providerAccountId String
   accessToken       String?
@@ -64,7 +63,7 @@ model Account {
 }
 
 model Role {
-  roleId     String      @id @default(uuid())
+  roleId     String @id @default(uuid()) @db.Uuid
   name       String
   userRoles  UserRole[]
   roleClaims RoleClaim[]
@@ -73,9 +72,9 @@ model Role {
 }
 
 model UserRole {
-  id     String @id @default(uuid())
-  userId String
-  roleId String
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  roleId String @db.Uuid
 
   user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
   role Role @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
@@ -84,9 +83,9 @@ model UserRole {
 }
 
 model RoleClaim {
-  roleClaimId String @id @default(uuid())
-  roleId      String?
-  userId      String?
+  roleClaimId String @id @default(uuid()) @db.Uuid
+  roleId      String? @db.Uuid
+  userId      String? @unique @db.Uuid
   permission  String
   claimType   String?
   claimValue  String?
@@ -96,14 +95,14 @@ model RoleClaim {
 }
 
 model Course {
-  courseId          String   @id @default(uuid())
+  courseId          String @id @default(uuid()) @db.Uuid
   courseName        String
   courseDescription String?
   coursePrice       Float
   discount          Float?
   avatarURL         String?
   level             Level?
-  createdBy         String?
+  createdBy         String? @db.Uuid
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
@@ -118,10 +117,10 @@ model Course {
 }
 
 model Chapter {
-  chapterId    String   @id @default(uuid())
+  chapterId    String @id @default(uuid()) @db.Uuid
   chapterName  String
   totalLesson  Int
-  courseId     String
+  courseId     String @db.Uuid
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
@@ -131,12 +130,12 @@ model Chapter {
 }
 
 model Lesson {
-  lessonId       String   @id @default(uuid())
+  lessonId       String @id @default(uuid()) @db.Uuid
   lessonName     String
   videoUrl       String?
   content        String?
   isPreview      Boolean  @default(false)
-  chapterId      String
+  chapterId      String @db.Uuid
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
@@ -147,11 +146,11 @@ model Lesson {
 }
 
 model TestCode {
-  testCodeId     String   @id @default(uuid())
+  testCodeId     String @id @default(uuid()) @db.Uuid
   description    String?
   input          String?
   expectedOutput String?
-  lessonId       String
+  lessonId       String @db.Uuid
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
@@ -159,9 +158,9 @@ model TestCode {
 }
 
 model Comment {
-  commentId  String   @id @default(uuid())
-  courseId   String
-  userId     String
+  commentId  String @id @default(uuid()) @db.Uuid
+  courseId   String @db.Uuid
+  userId     String @db.Uuid
   content    String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -171,8 +170,8 @@ model Comment {
 }
 
 model Notification {
-  notificationId String   @id @default(uuid())
-  userId         String
+  notificationId String @id @default(uuid()) @db.Uuid
+  userId         String @db.Uuid
   type           String?
   title          String?
   message        String?
@@ -185,14 +184,14 @@ model Notification {
 }
 
 model Payment {
-  paymentId           String   @id @default(uuid())
+  paymentId           String @id @default(uuid()) @db.Uuid
   description         String?
   currency            String?
   amount              Float
   method              String?
   paidAt              DateTime?
-  userId              String?
-  userCoursePreviewId String?
+  userId              String? @db.Uuid
+  userCoursePreviewId String? @db.Uuid
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
@@ -201,9 +200,9 @@ model Payment {
 }
 
 model UserCoursePreview {
-  userCoursePreviewId String   @id @default(uuid())
-  userId              String
-  courseId            String
+  userCoursePreviewId String @id @default(uuid()) @db.Uuid
+  userId              String @db.Uuid
+  courseId            String @db.Uuid
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
@@ -213,11 +212,11 @@ model UserCoursePreview {
 }
 
 model Certificate {
-  certificateId    String   @id @default(uuid())
-  submissionId     String?
+  certificateId    String @id @default(uuid()) @db.Uuid
+  submissionId     String? @db.Uuid
   certificateTitle String?
-  userId           String
-  courseId         String
+  userId           String @db.Uuid
+  courseId         String @db.Uuid
   certificateURL   String?
   issuedAt         DateTime @default(now())
   created_at       DateTime @default(now())
@@ -229,14 +228,14 @@ model Certificate {
 }
 
 model Submission {
-  submissionId  String   @id @default(uuid())
+  submissionId  String @id @default(uuid()) @db.Uuid
   score         Float?
   isPassed      Boolean  @default(false)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
-  userId        String
-  chapterQuizId String?
-  lessonId      String?
+  userId        String @db.Uuid
+  chapterQuizId String? @db.Uuid
+  lessonId      String? @db.Uuid
 
   user         User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
   chapterQuiz  ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
@@ -245,12 +244,12 @@ model Submission {
 }
 
 model ChapterQuiz {
-  chapterQuizId String   @id @default(uuid())
+  chapterQuizId String @id @default(uuid()) @db.Uuid
   title         String
   description   String?
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
-  chapterId     String?
+  chapterId     String? @db.Uuid
 
   chapter       Chapter?       @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
   quizQuestions QuizQuestion[]
@@ -258,32 +257,32 @@ model ChapterQuiz {
 }
 
 model QuizQuestion {
-  quizQuestionId String   @id @default(uuid())
+  quizQuestionId String @id @default(uuid()) @db.Uuid
   questionText   String
   questionType   String
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
-  chapterQuizId  String?
+  chapterQuizId  String? @db.Uuid
 
   chapterQuiz ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
   quizOptions QuizOption[]
 }
 
 model QuizOption {
-  quizOptionId   String   @id @default(uuid())
+  quizOptionId   String @id @default(uuid()) @db.Uuid
   optionText     String
   isCorrect      Boolean  @default(false)
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
-  quizQuestionId String
+  quizQuestionId String @db.Uuid
 
   quizQuestion QuizQuestion @relation(fields: [quizQuestionId], references: [quizQuestionId], onDelete: Cascade)
 }
 
 model UserLessonProgress {
-  id           String   @id @default(uuid())
-  userId       String
-  lessonId     String
+  id           String @id @default(uuid()) @db.Uuid
+  userId       String @db.Uuid
+  lessonId     String @db.Uuid
   isCompleted  Boolean  @default(false)
   lastAccessAt DateTime?
   created_at   DateTime @default(now())
@@ -296,10 +295,10 @@ model UserLessonProgress {
 }
 
 model Enrollment {
-  enrollmentId String   @id @default(uuid())
+  enrollmentId String @id @default(uuid()) @db.Uuid
   createdAt    DateTime @default(now())
-  userId       String
-  courseId     String
+  userId       String @db.Uuid
+  courseId     String @db.Uuid
 
   user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
