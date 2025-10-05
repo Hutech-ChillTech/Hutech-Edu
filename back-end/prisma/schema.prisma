@@ -1,0 +1,164 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Level {
+  Basic
+  Intermidate
+  Advantage
+}
+
+model User {
+  userId       String        @id @default(uuid())
+  userName     String
+  password     String
+  email        String        @unique
+  gender       Gender
+  avatarURL    String?
+  region       String?
+  dateOfBirth  DateTime
+  level        Level
+  create_at    DateTime      @default(now())
+  update_at    DateTime      @updatedAt
+
+  courses        Course[]         @relation("UserCourses")
+  comments       Comment[]
+  payments       Payment[]
+  certificates   Certificate[]
+  notifications  Notification[]
+  enrollments    Enrollment[]
+  submissions    Submission[]
+  userRoles      UserRoleProgram[]
+}
+
+model Course {
+  courseId          String        @id @default(uuid())
+  courseName        String
+  courseDescription String
+  coursePrice       Float
+  discount          Float
+  avatarURL         String
+  level             Level
+
+  createdBy    String?    // userId
+  user         User?      @relation("UserCourses", fields: [createdBy], references: [userId])
+  chapters     Chapter[]
+  comments     Comment[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
+}
+
+model Chapter {
+  chapterId   String   @id @default(uuid())
+  chapterName String
+  totalLesson Int
+
+  courseId String
+  course   Course  @relation(fields: [courseId], references: [courseId])
+  lessons  Lesson[]
+}
+
+model Lesson {
+  lessonId   String   @id @default(uuid())
+  lessonName String
+  content    String
+  videoUrl   String?
+
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [chapterId])
+  submissions Submission[]
+}
+
+model Comment {
+  commentId  String   @id @default(uuid())
+  content    String
+  createdAt  DateTime @default(now())
+
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [userId])
+  course   Course @relation(fields: [courseId], references: [courseId])
+}
+
+model Enrollment {
+  enrollmentId String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [userId])
+  course   Course @relation(fields: [courseId], references: [courseId])
+}
+
+model Payment {
+  paymentId String   @id @default(uuid())
+  amount    Float
+  status    String
+  method    String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [userId])
+}
+
+model Certificate {
+  certificateId String   @id @default(uuid())
+  issuedAt      DateTime @default(now())
+
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [userId])
+  course   Course @relation(fields: [courseId], references: [courseId])
+}
+
+model Notification {
+  notificationId String   @id @default(uuid())
+  title          String
+  content        String
+  createdAt      DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [userId])
+}
+
+model Submission {
+  submissionId String   @id @default(uuid())
+  content      String
+  submittedAt  DateTime @default(now())
+
+  userId   String
+  lessonId String
+  user     User   @relation(fields: [userId], references: [userId])
+  lesson   Lesson @relation(fields: [lessonId], references: [lessonId])
+}
+
+model Role {
+  roleId   String @id @default(uuid())
+  roleName String
+
+  userRoles UserRoleProgram[]
+}
+
+model UserRoleProgram {
+  id     String @id @default(uuid())
+
+  userId String
+  roleId String
+  user   User @relation(fields: [userId], references: [userId])
+  role   Role @relation(fields: [roleId], references: [roleId])
+}
