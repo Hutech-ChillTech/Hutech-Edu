@@ -1,0 +1,20 @@
+.custom-footer {
+  background: linear-gradient(90deg, #7f7fd5, #86a8e7, #91eae4);
+  color: white;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.custom-footer .btn-outline-light {
+  border: 1px solid white;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.custom-footer .btn-outline-light:hover {
+  background-color: white;
+  color: #1e1e2f;
+}
+
+.footer-bottom {
+  background-color: rgba(0, 0, 0, 0.25);
+}

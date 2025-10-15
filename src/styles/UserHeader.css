@@ -1,0 +1,39 @@
+.custom-navbar {
+  background: linear-gradient(90deg, #7f7fd5, #86a8e7, #91eae4);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-brand .logo-img {
+  height: 40px;
+  width: auto;
+  border-radius: 6px;
+}
+
+.nav-link {
+  position: relative;
+  color: #fff !important;
+  margin: 0 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 0;
+  height: 2px;
+  background-color: white;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #000 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
