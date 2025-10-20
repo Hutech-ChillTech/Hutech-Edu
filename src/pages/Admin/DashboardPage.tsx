@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import AdminLayout from "../../layouts/AdminLayout";
 import StatCard from "../../components/Admin/StatCard";
 import Chart from "chart.js/auto";
 import "../../styles/AdminStyle.css";
@@ -40,7 +39,7 @@ const DashboardPage: React.FC = () => {
   }, []); // chỉ chạy 1 lần khi mount
 
   return (
-    <AdminLayout>
+    <div>
       <div className="row">
         <StatCard title="DOANH THU HÔM NAY" value="0" color="primary" />
         <StatCard title="HỌC VIÊN MỚI" value="0" color="success" />
@@ -60,7 +59,7 @@ const DashboardPage: React.FC = () => {
       <footer className="text-center py-3 mt-4 border-top">
         © 2025 SkillCoder. All rights reserved.
       </footer>
-    </AdminLayout>
+    </div>
   );
 };
 

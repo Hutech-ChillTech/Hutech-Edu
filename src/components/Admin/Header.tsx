@@ -18,8 +18,7 @@ const Header: React.FC<{ onToggleSidebar: () => void }> = ({ onToggleSidebar }) 
               <FaUser />
             </button>
             <ul className="dropdown-menu dropdown-menu-end">
-              <li><a className="dropdown-item" href="#">Đăng nhập</a></li>
-              <li><a className="dropdown-item" href="#">Đăng ký</a></li>
+              <li><a className="dropdown-item" href="#">Đăng Xuất</a></li>
             </ul>
           </div>
         </div>
