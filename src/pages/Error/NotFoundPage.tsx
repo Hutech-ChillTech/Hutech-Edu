@@ -17,7 +17,7 @@ const NotFoundPage: React.FC = () => {
 
             <button
                 className="btn btn-primary px-4"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/user")}
             >
                 Quay lại trang chủ
             </button>
