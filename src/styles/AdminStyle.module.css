@@ -43,15 +43,6 @@ a {
 
 /* ====== Sidebar ====== */
 #sidebar-wrapper {
-  /* width: 230px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 1rem;
-  padding: 15px 10px;
-  min-height: calc(100vh - 40px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(8px);
-  overflow: hidden;
-  transition: all 0.4s ease; */
     width: 230px;
   min-height: 100vh;
   background: rgba(255, 255, 255, 0.95);
@@ -123,7 +114,6 @@ a {
   flex: 1;
   background: #ffffff; /* nền trắng để nổi trên phần gradient */
   border-radius: 1rem;
-  margin: 0 20px 0 0; /* cách các cạnh ngoài */
   padding: 25px;
   min-height: calc(100vh - 40px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);

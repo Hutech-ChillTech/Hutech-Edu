@@ -1,11 +1,8 @@
-import React from "react";
-import { useState } from "react";
-import type { FormEvent } from "react";
+import React, { useState, type FormEvent } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import "../styles/LoginPage.css";
+import styles from "../styles/LoginPage.module.css";
 import { FcGoogle } from "react-icons/fc";
-
 
 // 🧠 Interface mô tả dữ liệu trả về từ API
 interface User {
@@ -46,7 +43,7 @@ const LoginPage: React.FC = () => {
 
       alert("Đăng nhập thành công!");
 
-       navigate(role === "Admin" ? "/admin/dashboard" : "/");
+      navigate(role === "Admin" ? "/admin/dashboard" : "/");
     } catch (error: any) {
       console.error("❌ Lỗi đăng nhập:", error);
 
@@ -62,20 +59,21 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+
   // ⚙️ Xử lý đăng nhập Google (chưa có API thật)
   const handleGoogleLogin = () => {
     alert("Tính năng đăng nhập Google sẽ được cập nhật sau 🚀");
-    // 👉 Sau này bạn có thể redirect đến endpoint Google OAuth ở đây
   };
+
   return (
-    <div className="login-gradient-background">
-      <div className="login-container">
-        <form className="login-form" onSubmit={handleLogin}>
-          <h2 className="login-title">Đăng nhập</h2>
+    <div className={styles["login-gradient-background"]}>
+      <div className={styles["login-container"]}>
+        <form className={styles["login-form"]} onSubmit={handleLogin}>
+          <h2 className={styles["login-title"]}>Đăng nhập</h2>
 
           <input
             type="email"
-            className="login-input"
+            className={styles["login-input"]}
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -84,7 +82,7 @@ const LoginPage: React.FC = () => {
 
           <input
             type="password"
-            className="login-input"
+            className={styles["login-input"]}
             placeholder="Mật khẩu"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -93,29 +91,27 @@ const LoginPage: React.FC = () => {
 
           <button 
             type="submit" 
-            className="login-button">
+            className={styles["login-button"]}>
             {loading ? "Đang xử lý..." : "Đăng nhập"}
           </button>
+
           {/* 🔹 Nút đăng nhập Google */}
           <button
             type="button"
-            className="google-button"
+            className={styles["google-button"]}
             onClick={handleGoogleLogin}
           >
-            <FcGoogle className="google-icon" />
+            <FcGoogle className={styles["google-icon"]} />
             Đăng nhập với Google
           </button>
-          <div className="login-footer">
+
+          <div className={styles["login-footer"]}>
             <span>Bạn chưa có tài khoản? </span>
             <Link to="/register">Đăng ký ngay</Link>
           </div>
-          </form>
-          
-          </div>
-
-          
-         
+        </form>
       </div>
+    </div>
   );
 };
 

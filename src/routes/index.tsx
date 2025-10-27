@@ -15,6 +15,8 @@ import ChapterList from "../pages/Admin/ChapterList";
 import UserMain from "../pages/User/Main";
 import PracticePage from "../pages/Practice/PracticePage";
 import NotFountPage from "../pages/Error/NotFoundPage";
+import FeaturedCourses from "../pages/User/FeaturedCourses";
+import AllCourses from "../pages/User/AllCourses";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -23,6 +25,7 @@ const AppRoutes: React.FC = () => {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<DashboardPage />} />
@@ -35,6 +38,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/user" element={<UserLayout />}>
           <Route index element={<UserMain />} />
           <Route path="practice" element={<PracticePage />} />
+          <Route path="featured-courses" element={<FeaturedCourses></FeaturedCourses>}></Route>
+          <Route path="all-courses" element={<AllCourses></AllCourses>}></Route>
         </Route>
 
 

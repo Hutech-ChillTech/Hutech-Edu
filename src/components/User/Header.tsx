@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "../../styles/UserHeader.css";
+import styles from "../../styles/UserHeader.module.css";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
@@ -8,14 +8,14 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = () => {
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark custom-navbar px-4">
+    <nav className={`navbar navbar-expand-lg navbar-dark ${styles["custom-navbar"]} px-4`}>
       <div className="container-fluid">
         {/* Logo */}
         <Link className="navbar-brand d-flex align-items-center" to="/">
           <img
             src="/images/SkillCoder_Logo.png"
             alt="SkillCoder"
-            className="logo-img me-2"
+            className={`${styles["logo-img"]} me-2`}
           />
           <span className="fw-bold">SkillCoder</span>
         </Link>
@@ -37,16 +37,24 @@ const Header: React.FC<HeaderProps> = () => {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
-              <Link className="nav-link" to="/">Trang chủ</Link>
+              <Link className={`nav-link ${styles["nav-link"]}`} to="/user">
+                Trang chủ
+              </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/courses">Khóa học</Link>
+              <Link className={`nav-link ${styles["nav-link"]}`} to="/user/all-courses">
+                Khóa học
+              </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/about">Giới thiệu</Link>
+              <Link className={`nav-link ${styles["nav-link"]}`} to="/user/about">
+                Giới thiệu
+              </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/contact">Liên hệ</Link>
+              <Link className={`nav-link ${styles["nav-link"]}`} to="/user/contact">
+                Liên hệ
+              </Link>
             </li>
           </ul>
         </div>

@@ -1,15 +1,26 @@
 import React from "react";
-// import "bootstrap/dist/css/bootstrap.min.css";
 import { FaUser } from "react-icons/fa";
-import "../../styles/AdminStyle.css";
+import styles from "../../styles/AdminStyle.module.css";
 
-const Header: React.FC<{ onToggleSidebar: () => void }> = ({ onToggleSidebar }) => {
+interface HeaderProps {
+  onToggleSidebar: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light border-bottom px-4">
+    <nav className={`navbar navbar-expand-lg navbar-light bg-light border-bottom px-4 ${styles["admin-header"] || ""}`}>
       <div className="container-fluid">
-        <button className="btn btn-primary" onClick={onToggleSidebar}>☰</button>
+        <button className="btn btn-primary" onClick={onToggleSidebar}>
+          ☰
+        </button>
+
         <div className="ms-auto d-flex align-items-center">
-          <input type="text" className="form-control me-3" placeholder="Tìm kiếm..." />
+          <input
+            type="text"
+            className="form-control me-3"
+            placeholder="Tìm kiếm..."
+          />
+
           <div className="dropdown">
             <button
               className="btn btn-outline-primary dropdown-toggle"
@@ -18,7 +29,11 @@ const Header: React.FC<{ onToggleSidebar: () => void }> = ({ onToggleSidebar }) 
               <FaUser />
             </button>
             <ul className="dropdown-menu dropdown-menu-end">
-              <li><a className="dropdown-item" href="#">Đăng Xuất</a></li>
+              <li>
+                <a className="dropdown-item" href="#">
+                  Đăng Xuất
+                </a>
+              </li>
             </ul>
           </div>
         </div>

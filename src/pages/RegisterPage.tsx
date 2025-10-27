@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import "../styles/RegisterPage.css";
+import styles from "../styles/RegisterPage.module.css";
 
 interface RegisterForm {
   userName: string;
@@ -43,15 +43,15 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="register-gradient-background">
-      <div className="register-container">
-        <h2 className="register-title">Đăng ký tài khoản</h2>
+    <div className={styles["register-gradient-background"]}>
+      <div className={styles["register-container"]}>
+        <h2 className={styles["register-title"]}>Đăng ký tài khoản</h2>
 
         <form onSubmit={handleRegister}>
           {/* 👤 Tên người dùng */}
           <input
             type="text"
-            className="register-input"
+            className={styles["register-input"]}
             name="userName"
             value={form.userName}
             onChange={handleChange}
@@ -62,7 +62,7 @@ const RegisterPage: React.FC = () => {
           {/* ✉️ Email */}
           <input
             type="email"
-            className="register-input"
+            className={styles["register-input"]}
             name="email"
             value={form.email}
             onChange={handleChange}
@@ -73,7 +73,7 @@ const RegisterPage: React.FC = () => {
           {/* 🔒 Mật khẩu */}
           <input
             type="password"
-            className="register-input"
+            className={styles["register-input"]}
             name="password"
             value={form.password}
             onChange={handleChange}
@@ -83,7 +83,7 @@ const RegisterPage: React.FC = () => {
 
           {/* 🎓 Level */}
           <select
-            className="register-select"
+            className={styles["register-select"]}
             name="level"
             value={form.level}
             onChange={handleChange}
@@ -95,7 +95,7 @@ const RegisterPage: React.FC = () => {
 
           {/* 🚻 Giới tính */}
           <select
-            className="register-select"
+            className={styles["register-select"]}
             name="gender"
             value={form.gender}
             onChange={handleChange}
@@ -104,13 +104,13 @@ const RegisterPage: React.FC = () => {
             <option value="FEMALE">Nữ</option>
           </select>
 
-          <button type="submit" className="register-button">
+          <button type="submit" className={styles["register-button"]}>
             Đăng ký
           </button>
 
-          <div className="register-footer">
+          <div className={styles["register-footer"]}>
             Đã có tài khoản?{" "}
-            <Link to="/login" className="text-link">
+            <Link to="/login" className={styles["text-link"]}>
               Đăng nhập tại đây
             </Link>
           </div>

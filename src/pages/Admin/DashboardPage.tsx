@@ -1,16 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import StatCard from "../../components/Admin/StatCard";
 import Chart from "chart.js/auto";
-import "../../styles/AdminStyle.css";
+import styles from "../../styles/AdminStyle.module.css";
 
 const DashboardPage: React.FC = () => {
-  const chartRef = useRef<Chart | null>(null); // ✅ giữ instance Chart
+  const chartRef = useRef<Chart | null>(null);
 
   useEffect(() => {
     const ctx = document.getElementById("salesChart") as HTMLCanvasElement;
     if (!ctx) return;
 
-    // ✅ Nếu đã có chart, hủy trước khi tạo mới
     if (chartRef.current) {
       chartRef.current.destroy();
     }
@@ -30,33 +29,34 @@ const DashboardPage: React.FC = () => {
       },
     });
 
-    // ✅ Cleanup khi component unmount
     return () => {
       if (chartRef.current) {
         chartRef.current.destroy();
       }
     };
-  }, []); // chỉ chạy 1 lần khi mount
+  }, []);
 
   return (
     <div>
-      <div className="row">
+      <div className={`${styles["row"]}`}>
         <StatCard title="DOANH THU HÔM NAY" value="0" color="primary" />
         <StatCard title="HỌC VIÊN MỚI" value="0" color="success" />
         <StatCard title="KHÓA HỌC MỚI" value="0" color="danger" />
         <StatCard title="TỔNG DOANH THU" value="0" color="warning" />
       </div>
 
-      <div className="card my-4">
-        <div className="card-header bg-white">
-          <h6 className="mb-0">Thống kê doanh thu năm 2025</h6>
+      <div className={`${styles["card"]} ${styles["my-4"]}`}>
+        <div className={`${styles["card-header"]} ${styles["bg-white"]}`}>
+          <h6 className={styles["mb-0"]}>Thống kê doanh thu năm 2025</h6>
         </div>
-        <div className="card-body">
+        <div className={styles["card-body"]}>
           <canvas id="salesChart" height="100"></canvas>
         </div>
       </div>
 
-      <footer className="text-center py-3 mt-4 border-top">
+      <footer
+        className={`${styles["text-center"]} ${styles["py-3"]} ${styles["mt-4"]} ${styles["border-top"]}`}
+      >
         © 2025 SkillCoder. All rights reserved.
       </footer>
     </div>
