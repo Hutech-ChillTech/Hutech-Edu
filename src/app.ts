@@ -3,20 +3,36 @@ import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
 
-import route from "./routes/site.route";
+// Tất cả endpoint sẽ được khai báo ở đây
+import routes from "./routes/site.route";
 
 import { connectPostgresDB } from "./configs/database.config";
+
+// Tất cả error sẽ được truyền về middleware
+import { errorHandler } from "./middlewares/errorHandler.middleware";
+
 dotenv.config();
+
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 app.use(morgan("dev"));
 
-route(app);
+routes(app);
 
+app.use(errorHandler);
+
+// Kiểm tra kết nối đến database
 connectPostgresDB();
 
 export default app;

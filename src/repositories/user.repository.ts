@@ -7,8 +7,8 @@ class UserRepository extends BaseRepository<"user",
   Prisma.UserCreateInput,
   Prisma.UserUpdateInput> {
 
-  constructor(prisma: PrismaClient) {
-    super(prisma, "user");
+  constructor(prisma: PrismaClient, primaryKey: string) {
+    super(prisma, "user", primaryKey);
   }
 
   async getUserByName(userName: string) {

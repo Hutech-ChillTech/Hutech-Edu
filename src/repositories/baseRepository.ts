@@ -1,4 +1,4 @@
-import {PrismaClient} from "@prisma/client"
+import { PrismaClient } from "@prisma/client";
 
 type CrudDelegate = {
   findMany: (...args: any[]) => any;
@@ -10,16 +10,16 @@ type CrudDelegate = {
 
 type PrismaModelName = keyof Omit<
   PrismaClient,
-  | '$connect'
-  | '$disconnect'
-  | '$on'
-  | '$transaction'
-  | '$use'
-  | '$extends'
-  | '$executeRaw'
-  | '$executeRawUnsafe'
-  | '$queryRaw'
-  | '$queryRawUnsafe'
+  | "$connect"
+  | "$disconnect"
+  | "$on"
+  | "$transaction"
+  | "$use"
+  | "$extends"
+  | "$executeRaw"
+  | "$executeRawUnsafe"
+  | "$queryRaw"
+  | "$queryRawUnsafe"
 >;
 
 export class BaseRepository<
@@ -30,26 +30,28 @@ export class BaseRepository<
 > {
   protected prisma: PrismaClient;
   protected model: TModel;
+  protected primaryKey: string;
 
-  constructor(prisma: PrismaClient, model: TModel) {
+  constructor(prisma: PrismaClient, model: TModel, primaryKey: string) {
     this.prisma = prisma;
     this.model = model;
+    this.primaryKey = primaryKey;
   }
 
-  private get delegate(): TDelegate {
+  protected get delegate(): TDelegate {
     return this.prisma[this.model] as unknown as TDelegate;
   }
 
   async getAll(params?: { skip?: number; take?: number }) {
-    return this.delegate.findMany({
-      skip: params?.skip,
-      take: params?.take ?? 10,
-    });
+    const query: any = {};
+    if (params?.skip) query.skip = params.skip;
+    if (params?.take && params.take > 0) query.take = params.take;
+    return this.delegate.findMany(query);
   }
 
   async getById(id: string) {
     return this.delegate.findUnique({
-      where: { id },
+      where: { [this.primaryKey]: id }, 
     });
   }
 

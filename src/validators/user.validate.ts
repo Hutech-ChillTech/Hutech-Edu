@@ -42,7 +42,6 @@ export function validateCreateUser(
     errors.push("Level không hợp lệ (Basic/Intermediate/Advanced)");
   if (dateOfBirth && !isValidDate(dateOfBirth))
     errors.push("Ngày sinh không hợp lệ");
-  // region là optional, không cần check
   if (errors.length > 0) {
     return res.status(400).json({ error: errors.join(", ") });
   }

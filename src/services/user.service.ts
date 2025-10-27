@@ -18,7 +18,7 @@ class UserService {
     }
 
     async login(email: string, password: string) {
-        const user = await this.getUserByEmail(email);
+        const user = await this.userRepository.getUserByEmail(email);
         if (!user) {
             throw new Error("Email hoặc mật khẩu không đúng");
         }

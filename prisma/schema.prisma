@@ -97,7 +97,7 @@ model RoleClaim {
 model Course {
   courseId          String @id @default(uuid()) @db.Uuid
   courseName        String
-  courseDescription String?
+  courseDescripcdtion String?
   coursePrice       Float
   discount          Float?
   avatarURL         String?

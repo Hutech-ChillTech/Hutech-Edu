@@ -1,34 +1,20 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import { validate as isUUID } from "uuid";
 import UserService from "../services/user.service";
 import jwt from "jsonwebtoken";
+import { sendNotFound, sendSuccess } from "../utils/responseHelper";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
-
-function handleError(
-    res: Response,
-    error: unknown,
-    action: string,
-    status = 400,
-    defaultMsg = "Đã xảy ra lỗi"
-) {
-    if (error instanceof Error) {
-        console.error(`Lỗi khi ${action}:`, error.message);
-        return res.status(status).json({ error: error.message });
-    } else {
-        console.error(`Lỗi không xác định khi ${action}`);
-        return res.status(status).json({ error: defaultMsg });
-    }
-}
 
 class UserController {
 
     private readonly userService: UserService;
 
-    constructor(userService: UserService){
+    constructor(userService: UserService) {
         this.userService = userService;
     }
 
-    async login(req: Request, res: Response) {
+    async login(req: Request, res: Response, next: NextFunction) {
         try {
             const { email, password } = req.body;
             const userData = await this.userService.login(email, password);
@@ -37,139 +23,119 @@ class UserController {
                 JWT_SECRET,
                 { expiresIn: "7d" }
             );
-            res.json({ message: "Đăng nhập thành công", token, user: userData });
-        } catch (err) {
-            const msg = (err as Error).message || "Lỗi máy chủ";
+            sendSuccess(res, token, 'Đăng nhập thành công');
+        } catch (error) {
+            const msg = (error as Error).message || "Lỗi máy chủ";
             const status = msg.includes("mật khẩu") ? 401 : 500;
             res.status(status).json({ error: msg });
+            return next(error);
         }
     }
-    async getUserById(req: Request, res: Response) {
+    async getUserById(req: Request, res: Response, next: NextFunction) {
         try {
             const { userId } = req.params;
+
+            if (!isUUID(userId)) {
+                return res.status(400).json({ message: "Invalid user ID 1" });
+            }
+
             const user = await this.userService.getUserById(userId);
-            if (!user)
-                return res.status(404).json({ message: "Không tìm thấy người dùng" });
-            res.json({ message: "Lấy người dùng thành công", data: user });
-        } catch (err) {
-            return handleError(
-                res,
-                err,
-                "Lấy người dùng theo ID",
-                500,
-                "Lỗi máy chủ"
-            );
+            if (!user) {
+                sendNotFound(res, 'Không tìm thấy thông tin người dùng.');
+                return;
+            }
+
+            sendSuccess(res, user, 'Lấy người dùng theo ID thành công.');
+        } catch (error) {
+            return next(error);
         }
     }
 
-    async getUserByName(req: Request, res: Response) {
+    async getUserByName(req: Request, res: Response, next: NextFunction) {
         try {
             const { userName } = req.body;
             const users = await this.userService.getUserByName(userName as string);
-            res.json({ message: "Lấy người dùng theo tên thành công", data: users });
-        } catch (err) {
-            return handleError(
-                res,
-                err,
-                "Lấy người dùng theo tên",
-                500,
-                "Lỗi máy chủ"
-            );
+            sendSuccess(res, users, 'Lấy người dùng theo tên thành công.');
+        } catch (error) {
+            return next(error);
         }
     }
 
-    async getUserByEmail(req: Request, res: Response) {
+    async getUserByEmail(req: Request, res: Response, next: NextFunction) {
         try {
             const { email } = req.body;
             const user = await this.userService.getUserByEmail(email as string);
-            if (!user)
-                return res.status(404).json({ message: "Không tìm thấy người dùng" });
-            res.json({ message: "Lấy người dùng theo email thành công", data: user });
-        } catch (err) {
-            return handleError(
-                res,
-                err,
-                "Lấy người dùng theo email",
-                500,
-                "Lỗi máy chủ"
-            );
+            if (!user) {
+                sendNotFound(res, 'Không tìm thấy người dùng theo Email này. ');
+                return;
+            }
+            sendSuccess(res, user, 'Lấy người dùng theo Email thành công.');
+        } catch (error) {
+            return next(error);
         }
     }
 
-    async getAllUser(req: Request, res: Response) {
+    async getAllUser(req: Request, res: Response, next: NextFunction) {
         try {
             const skip = parseInt(req.query.skip as string) || 0;
             const take = parseInt(req.query.take as string) || 0;
             const users = await this.userService.getAllUser(skip, take);
-            res.json({ message: "Lấy danh sách người dùng thành công", data: users });
-        } catch (err) {
-            return handleError(res, err, "Lấy tất cả người dùng", 500, "Lỗi máy chủ");
+            sendSuccess(res, users, 'Lấy tất cả thông tin người dùng thành công.');
+        } catch (error) {
+            return next(error);
         }
     }
 
-    async createUser(req: Request, res: Response) {
+    async createUser(req: Request, res: Response, next: NextFunction) {
         try {
-            const user = await this.userService.createUser(req.body);
-            res
-                .status(201)
-                .json({ message: "Tạo người dùng thành công", data: user });
-        } catch (err) {
-            return handleError(
-                res,
-                err,
-                "Tạo người dùng",
-                400,
-                "Tạo người dùng thất bại"
-            );
+            const data = req.body;
+            const user = await this.userService.createUser(data);
+            sendSuccess(res, user, 'Thêm mới người dùng thành công.');
+        } catch (error) {
+            return next(error);
         }
     }
 
-    async updateUser(req: Request, res: Response) {
+    async updateUser(req: Request, res: Response, next: NextFunction) {
         try {
             const { userId } = req.params;
-            const user = await this.userService.updateUser(req.body, userId);
-            res.json({ message: "Cập nhật người dùng thành công", data: user });
-        } catch (err) {
-            return handleError(
-                res,
-                err,
-                "Cập nhật người dùng",
-                400,
-                "Cập nhật người dùng thất bại"
-            );
+
+            if (!isUUID(userId)) {
+                return res.status(400).json({ message: "Invalid user ID 2" });
+            }
+
+            const data = req.body;
+            const user = await this.userService.updateUser(data, userId);
+            sendSuccess(res, user, 'Cập nhật thông tin người dùng thành công.')
+        } catch (error) {
+            return next(error);
         }
     }
 
-    async deleteUser(req: Request, res: Response) {
+    async deleteUser(req: Request, res: Response, next: NextFunction) {
         try {
             const { userId } = req.params;
+            if (!isUUID(userId)) {
+                return res.status(400).json({ message: "Invalid user ID 3" });
+            }
             const result = await this.userService.deleteUser(userId);
-            res.json({ message: "Xóa người dùng thành công", data: result });
-        } catch (err) {
-            return handleError(
-                res,
-                err,
-                "xóa người dùng",
-                400,
-                "Xóa người dùng thất bại"
-            );
+            sendSuccess(res, result, 'Xóa thông tin người dùng thành công.');
+        } catch (error) {
+            return next(error);
         }
     }
 
-    async changePasswordUser(req: Request, res: Response) {
+    async changePasswordUser(req: Request, res: Response, next: NextFunction) {
         try {
             const { userId } = req.params;
+            if (!isUUID(userId)) {
+                return res.status(400).json({ message: "Invalid user ID 4" });
+            }
             const { newPassword } = req.body;
             const user = await this.userService.changePasswordUser(userId, newPassword);
-            res.json({ message: "Đổi mật khẩu thành công", data: user });
-        } catch (err) {
-            return handleError(
-                res,
-                err,
-                "Đổi mật khẩu người dùng",
-                400,
-                "Đổi mật khẩu thất bại"
-            );
+            sendSuccess(res, user, 'Thay đổi mật khẩu thành công.');
+        } catch (error) {
+            return next(error);
         }
     }
 }
