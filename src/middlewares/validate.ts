@@ -1,23 +1,31 @@
 import { Request, Response, NextFunction } from "express";
+import { Schema } from "joi";
 
-export function requireFields(fields: string[]) {
+export function validate(
+  schema: Schema,
+  source: "body" | "query" | "params" = "body"
+) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const errors: string[] = [];
-    for (const field of fields) {
-      if (!req.body[field]) errors.push(`Thiếu trường ${field}`);
-    }
-    if (errors.length > 0) {
-      return res.status(400).json({ error: errors.join(", ") });
-    }
-    next();
-  };
-}
+    const dataToValidate = req[source];
 
-export function requireIdParam(paramName: string) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.params[paramName]) {
-      return res.status(400).json({ error: `Thiếu ${paramName}` });
+    const { error, value } = schema.validate(dataToValidate, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
+
+    if (error) {
+      const errors = error.details.map((detail) => detail.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: errors,
+      });
     }
+
+    if (source === "body") {
+      req.body = value;
+    }
+
     next();
   };
 }

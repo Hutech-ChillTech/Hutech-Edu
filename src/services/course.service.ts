@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, Level } from "@prisma/client";
 import CourseRepository from "../repositories/course.repository";
 
 class CourseService {
@@ -15,17 +15,70 @@ class CourseService {
     return await this.courseRepo.getCourseByName(courseName);
   }
 
+  async searchCourseByName(searchTerm: string, limit?: number) {
+    return await this.courseRepo.searchCourseByName(searchTerm, limit);
+  }
+
   async getCourseByNamePrefix(prefix: string) {
     return await this.courseRepo.getCourseByNamePrefix(prefix);
   }
 
-  async getAllCourse() {
-    return await this.courseRepo.getAll();
+  async getAllCourse(skip?: number, take?: number) {
+    return await this.courseRepo.getAll({ skip, take });
   }
 
-  async getAllSort(sortField: string, sortOrder: string) {
+  async getAllSort(
+    sortField: string = "created_at",
+    sortOrder: string = "desc",
+    skip?: number,
+    take?: number
+  ) {
     const safeOrder = sortOrder === "desc" ? "desc" : "asc";
-    return this.courseRepo.getAllSorted(sortField, safeOrder);
+    return this.courseRepo.getAllSorted(sortField, safeOrder, { skip, take });
+  }
+
+  async getCourseWithDetails(courseId: string) {
+    return await this.courseRepo.getCourseWithDetails(courseId);
+  }
+
+  async getCoursesByLevel(level: Level, skip?: number, take?: number) {
+    return await this.courseRepo.getCoursesByLevel(level, { skip, take });
+  }
+
+  async getCoursesByCreator(userId: string, skip?: number, take?: number) {
+    return await this.courseRepo.getCoursesByCreator(userId, { skip, take });
+  }
+
+  async getPopularCourses(limit?: number) {
+    return await this.courseRepo.getPopularCourses(limit);
+  }
+
+  async getCourseStats(courseId: string) {
+    return await this.courseRepo.getCourseStats(courseId);
+  }
+
+  async filterCourses(filters: {
+    level?: Level;
+    minPrice?: number;
+    maxPrice?: number;
+    searchTerm?: string;
+    skip?: number;
+    take?: number;
+  }) {
+    return await this.courseRepo.filterCourses(filters);
+  }
+
+  async countCourses(filters?: {
+    level?: Level;
+    minPrice?: number;
+    maxPrice?: number;
+    searchTerm?: string;
+  }) {
+    return await this.courseRepo.countCourses(filters);
+  }
+
+  async getCourseWithChaptersAndLessons(courseId: string) {
+    return await this.courseRepo.getCourseWithChaptersAndLessons(courseId);
   }
 
   async createCourse(course: Prisma.CourseCreateInput) {

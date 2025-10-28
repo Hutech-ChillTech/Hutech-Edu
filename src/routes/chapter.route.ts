@@ -1,25 +1,53 @@
-import { Request, Response, NextFunction, Router } from "express";
+import { Router } from "express";
 import Prisma from "../configs/prismaClient";
 import ChapterRepository from "../repositories/chapter.repository";
 import ChapterService from "../services/chapter.service";
 import ChapterController from "../controllers/chapter.controller";
+import { validate } from "../middlewares/validate";
+import { authenticate, optionalAuth } from "../middlewares/auth.middleware";
+import { requireRole, requirePermission } from "../middlewares/role.middleware";
+import { UserRoles, Permissions } from "../constants/roles";
+import {
+  createChapterSchema,
+  updateChapterSchema,
+} from "../validators/chapter.validate";
 
 const chapterRepository = new ChapterRepository(Prisma, "chapterId");
 const chapterService = new ChapterService(chapterRepository);
-const chapterController = new ChapterController(chapterService)
-
-import { requireFields, requireIdParam } from "../middlewares/validate";
+const chapterController = new ChapterController(chapterService);
 
 const router = Router();
 
-router.get('/', (req, res, next) => chapterController.getAllChapter(req, res, next));
+router.get("/", optionalAuth, (req, res, next) =>
+  chapterController.getAllChapter(req, res, next)
+);
 
-router.get('/:chapterId', requireIdParam("id"), (req, res, next) => chapterController.getChapterById(req, res, next));
+router.get("/:chapterId", optionalAuth, (req, res, next) =>
+  chapterController.getChapterById(req, res, next)
+);
 
-router.post('/chapters', requireFields(["chapterName, totalLesson"]), (req, res, next) => chapterController.createChapter(req, res, next));
+router.post(
+  "/",
+  authenticate,
+  requirePermission([Permissions.CHAPTER_CREATE]),
+  validate(createChapterSchema),
+  (req, res, next) => chapterController.createChapter(req, res, next)
+);
 
-router.put('/:chapterId', requireIdParam("id"), (req, res, next) => chapterController.updateChapter(req, res, next));
+router.put(
+  "/:chapterId",
+  authenticate,
+  requirePermission([Permissions.CHAPTER_UPDATE]),
+  validate(updateChapterSchema),
+  (req, res, next) => chapterController.updateChapter(req, res, next)
+);
 
-router.delete('/:chapterId', requireIdParam("id"), (req, res, next) => chapterController.deleteChapter(req, res, next));
+router.delete(
+  "/:chapterId",
+  authenticate,
+  requireRole([UserRoles.ADMIN]),
+  requirePermission([Permissions.CHAPTER_DELETE]),
+  (req, res, next) => chapterController.deleteChapter(req, res, next)
+);
 
 export default router;

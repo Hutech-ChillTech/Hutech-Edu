@@ -51,7 +51,7 @@ export class BaseRepository<
 
   async getById(id: string) {
     return this.delegate.findUnique({
-      where: { [this.primaryKey]: id }, 
+      where: { [this.primaryKey]: id },
     });
   }
 
@@ -61,14 +61,14 @@ export class BaseRepository<
 
   async update(id: string, data: TUpdate) {
     return this.delegate.update({
-      where: { id },
+      where: { [this.primaryKey]: id },
       data,
     });
   }
 
   async delete(id: string) {
     return this.delegate.delete({
-      where: { id },
+      where: { [this.primaryKey]: id },
     });
   }
 }

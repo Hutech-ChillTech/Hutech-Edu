@@ -1,11 +1,25 @@
-import { Request, Response, NextFunction, Router } from "express";
+import { Router } from "express";
 import Prisma from "../configs/prismaClient";
 import UserRepository from "../repositories/user.repository";
 import UserService from "../services/user.service";
 import UserController from "../controllers/user.controller";
-
-import { validateCreateUser, validateLogin } from "../validators/user.validate";
-import { requireIdParam } from "../middlewares/validate";
+import { validate } from "../middlewares/validate";
+import { authenticate } from "../middlewares/auth.middleware";
+import {
+  requireRole,
+  requireOwnerOrAdmin,
+} from "../middlewares/role.middleware";
+import { UserRoles } from "../constants/roles";
+import {
+  loginSchema,
+  createUserSchema,
+  updateUserSchema,
+  changePasswordSchema,
+  searchUserSchema,
+  getUserByNameSchema,
+  getUserByEmailSchema,
+  paginationSchema,
+} from "../validators/user.validate";
 
 const userRepository = new UserRepository(Prisma, "userId");
 const userService = new UserService(userRepository);
@@ -13,17 +27,92 @@ const userController = new UserController(userService);
 
 const router = Router();
 
-// Các route cố định / search / login / create
-router.get("/search/name", (req, res, next) => userController.getUserByName(req, res, next));
-router.get("/search/email", (req, res, next) => userController.getUserByEmail(req, res, next));
-router.post("/login", validateLogin, (req, res, next) => userController.login(req, res, next));
-router.post("/", validateCreateUser, (req, res, next) => userController.createUser(req, res, next));
-router.get("/", (req, res, next) => userController.getAllUser(req, res, next));
+router.post("/login", validate(loginSchema), (req, res, next) =>
+  userController.login(req, res, next)
+);
 
-// Các route dynamic
-router.get("/:userId", requireIdParam("userId"), (req, res, next) => userController.getUserById(req, res, next));
-router.put("/:userId", requireIdParam("userId"), (req, res, next) => userController.updateUser(req, res, next));
-router.delete("/:userId", requireIdParam("userId"), (req, res, next) => userController.deleteUser(req, res, next));
-router.patch("/:userId/change-password", requireIdParam("userId"), (req, res, next) => userController.changePasswordUser(req, res, next));
+router.post("/register", validate(createUserSchema), (req, res, next) =>
+  userController.createUser(req, res, next)
+);
+
+router.get(
+  "/search",
+  authenticate,
+  requireRole([UserRoles.ADMIN]),
+  validate(searchUserSchema, "query"),
+  (req, res, next) => userController.searchUserByName(req, res, next)
+);
+
+router.get(
+  "/search/name",
+  authenticate,
+  requireRole([UserRoles.ADMIN]),
+  validate(getUserByNameSchema, "query"),
+  (req, res, next) => userController.getUserByName(req, res, next)
+);
+
+router.get(
+  "/search/email",
+  authenticate,
+  requireRole([UserRoles.ADMIN]),
+  validate(getUserByEmailSchema, "query"),
+  (req, res, next) => userController.getUserByEmail(req, res, next)
+);
+
+router.get(
+  "/",
+  authenticate,
+  requireRole([UserRoles.ADMIN]),
+  validate(paginationSchema, "query"),
+  (req, res, next) => userController.getAllUser(req, res, next)
+);
+
+router.get("/:userId", authenticate, (req, res, next) =>
+  userController.getUserById(req, res, next)
+);
+
+router.get(
+  "/:userId/details",
+  authenticate,
+  requireOwnerOrAdmin((req) => req.params.userId),
+  (req, res, next) => userController.getUserWithRelations(req, res, next)
+);
+
+router.get(
+  "/:userId/courses",
+  authenticate,
+  requireOwnerOrAdmin((req) => req.params.userId),
+  (req, res, next) => userController.getUserEnrolledCourses(req, res, next)
+);
+
+router.get(
+  "/:userId/enrollment/:courseId",
+  authenticate,
+  requireOwnerOrAdmin((req) => req.params.userId),
+  (req, res, next) => userController.checkEnrollment(req, res, next)
+);
+
+router.put(
+  "/:userId",
+  authenticate,
+  requireOwnerOrAdmin((req) => req.params.userId),
+  validate(updateUserSchema),
+  (req, res, next) => userController.updateUser(req, res, next)
+);
+
+router.delete(
+  "/:userId",
+  authenticate,
+  requireRole([UserRoles.ADMIN]),
+  (req, res, next) => userController.deleteUser(req, res, next)
+);
+
+router.patch(
+  "/:userId/change-password",
+  authenticate,
+  requireOwnerOrAdmin((req) => req.params.userId),
+  validate(changePasswordSchema),
+  (req, res, next) => userController.changePasswordUser(req, res, next)
+);
 
 export default router;

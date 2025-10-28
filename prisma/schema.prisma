@@ -46,6 +46,9 @@ model User {
   enrollments        Enrollment[]
 
   @@index([email])
+  @@index([userName])
+  @@index([level])
+  @@index([created_at])
 }
 
 model Account {
@@ -97,7 +100,7 @@ model RoleClaim {
 model Course {
   courseId          String @id @default(uuid()) @db.Uuid
   courseName        String
-  courseDescripcdtion String?
+  courseDescription String?
   coursePrice       Float
   discount          Float?
   avatarURL         String?
@@ -258,7 +261,7 @@ model ChapterQuiz {
 
 model QuizQuestion {
   quizQuestionId String @id @default(uuid()) @db.Uuid
-  questionText   String
+  questionText   String 
   questionType   String
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
@@ -304,4 +307,7 @@ model Enrollment {
   course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([createdAt])
 }

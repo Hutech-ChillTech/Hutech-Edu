@@ -7,137 +7,212 @@ import { sendNotFound, sendSuccess } from "../utils/responseHelper";
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
 class UserController {
+  private readonly userService: UserService;
 
-    private readonly userService: UserService;
+  constructor(userService: UserService) {
+    this.userService = userService;
+  }
 
-    constructor(userService: UserService) {
-        this.userService = userService;
+  async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, password } = req.body;
+      const userData = await this.userService.login(email, password);
+      const token = jwt.sign(
+        { userId: userData.userId, email: userData.email },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+      sendSuccess(res, token, "Đăng nhập thành công");
+    } catch (error) {
+      const msg = (error as Error).message || "Lỗi máy chủ";
+      const status = msg.includes("mật khẩu") ? 401 : 500;
+      res.status(status).json({ error: msg });
+      return next(error);
     }
+  }
+  async getUserById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params;
 
-    async login(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { email, password } = req.body;
-            const userData = await this.userService.login(email, password);
-            const token = jwt.sign(
-                { userId: userData.userId, email: userData.email },
-                JWT_SECRET,
-                { expiresIn: "7d" }
-            );
-            sendSuccess(res, token, 'Đăng nhập thành công');
-        } catch (error) {
-            const msg = (error as Error).message || "Lỗi máy chủ";
-            const status = msg.includes("mật khẩu") ? 401 : 500;
-            res.status(status).json({ error: msg });
-            return next(error);
-        }
+      if (!isUUID(userId)) {
+        return res.status(400).json({ message: "Invalid user ID 1" });
+      }
+
+      const user = await this.userService.getUserById(userId);
+      if (!user) {
+        sendNotFound(res, "Không tìm thấy thông tin người dùng.");
+        return;
+      }
+
+      sendSuccess(res, user, "Lấy người dùng theo ID thành công.");
+    } catch (error) {
+      return next(error);
     }
-    async getUserById(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { userId } = req.params;
+  }
 
-            if (!isUUID(userId)) {
-                return res.status(400).json({ message: "Invalid user ID 1" });
-            }
-
-            const user = await this.userService.getUserById(userId);
-            if (!user) {
-                sendNotFound(res, 'Không tìm thấy thông tin người dùng.');
-                return;
-            }
-
-            sendSuccess(res, user, 'Lấy người dùng theo ID thành công.');
-        } catch (error) {
-            return next(error);
-        }
+  async getUserByName(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userName } = req.query;
+      if (!userName) {
+        return res.status(400).json({ message: "Thiếu tham số userName" });
+      }
+      const users = await this.userService.getUserByName(userName as string);
+      sendSuccess(res, users, "Lấy người dùng theo tên thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
 
-    async getUserByName(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { userName } = req.body;
-            const users = await this.userService.getUserByName(userName as string);
-            sendSuccess(res, users, 'Lấy người dùng theo tên thành công.');
-        } catch (error) {
-            return next(error);
-        }
+  async searchUserByName(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { search } = req.query;
+      if (!search) {
+        return res.status(400).json({ message: "Thiếu tham số search" });
+      }
+      const users = await this.userService.searchUserByName(search as string);
+      sendSuccess(res, users, "Tìm kiếm người dùng thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
 
-    async getUserByEmail(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { email } = req.body;
-            const user = await this.userService.getUserByEmail(email as string);
-            if (!user) {
-                sendNotFound(res, 'Không tìm thấy người dùng theo Email này. ');
-                return;
-            }
-            sendSuccess(res, user, 'Lấy người dùng theo Email thành công.');
-        } catch (error) {
-            return next(error);
-        }
+  async getUserByEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.query;
+      if (!email) {
+        return res.status(400).json({ message: "Thiếu tham số email" });
+      }
+      const user = await this.userService.getUserByEmail(email as string);
+      if (!user) {
+        sendNotFound(res, "Không tìm thấy người dùng theo Email này.");
+        return;
+      }
+      sendSuccess(res, user, "Lấy người dùng theo Email thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
 
-    async getAllUser(req: Request, res: Response, next: NextFunction) {
-        try {
-            const skip = parseInt(req.query.skip as string) || 0;
-            const take = parseInt(req.query.take as string) || 0;
-            const users = await this.userService.getAllUser(skip, take);
-            sendSuccess(res, users, 'Lấy tất cả thông tin người dùng thành công.');
-        } catch (error) {
-            return next(error);
-        }
+  async getAllUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const skip = parseInt(req.query.skip as string) || 0;
+      const take = parseInt(req.query.take as string) || 0;
+      const users = await this.userService.getAllUser(skip, take);
+      sendSuccess(res, users, "Lấy tất cả thông tin người dùng thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
 
-    async createUser(req: Request, res: Response, next: NextFunction) {
-        try {
-            const data = req.body;
-            const user = await this.userService.createUser(data);
-            sendSuccess(res, user, 'Thêm mới người dùng thành công.');
-        } catch (error) {
-            return next(error);
-        }
+  async createUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = req.body;
+      const user = await this.userService.createUser(data);
+      sendSuccess(res, user, "Thêm mới người dùng thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
 
-    async updateUser(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { userId } = req.params;
+  async updateUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params;
 
-            if (!isUUID(userId)) {
-                return res.status(400).json({ message: "Invalid user ID 2" });
-            }
+      if (!isUUID(userId)) {
+        return res.status(400).json({ message: "Invalid user ID 2" });
+      }
 
-            const data = req.body;
-            const user = await this.userService.updateUser(data, userId);
-            sendSuccess(res, user, 'Cập nhật thông tin người dùng thành công.')
-        } catch (error) {
-            return next(error);
-        }
+      const data = req.body;
+      const user = await this.userService.updateUser(data, userId);
+      sendSuccess(res, user, "Cập nhật thông tin người dùng thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
 
-    async deleteUser(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { userId } = req.params;
-            if (!isUUID(userId)) {
-                return res.status(400).json({ message: "Invalid user ID 3" });
-            }
-            const result = await this.userService.deleteUser(userId);
-            sendSuccess(res, result, 'Xóa thông tin người dùng thành công.');
-        } catch (error) {
-            return next(error);
-        }
+  async deleteUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params;
+      if (!isUUID(userId)) {
+        return res.status(400).json({ message: "Invalid user ID 3" });
+      }
+      const result = await this.userService.deleteUser(userId);
+      sendSuccess(res, result, "Xóa thông tin người dùng thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
 
-    async changePasswordUser(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { userId } = req.params;
-            if (!isUUID(userId)) {
-                return res.status(400).json({ message: "Invalid user ID 4" });
-            }
-            const { newPassword } = req.body;
-            const user = await this.userService.changePasswordUser(userId, newPassword);
-            sendSuccess(res, user, 'Thay đổi mật khẩu thành công.');
-        } catch (error) {
-            return next(error);
-        }
+  async changePasswordUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params;
+      if (!isUUID(userId)) {
+        return res.status(400).json({ message: "Invalid user ID 4" });
+      }
+      const { newPassword } = req.body;
+      const user = await this.userService.changePasswordUser(
+        userId,
+        newPassword
+      );
+      sendSuccess(res, user, "Thay đổi mật khẩu thành công.");
+    } catch (error) {
+      return next(error);
     }
+  }
+
+  async getUserWithRelations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params;
+      if (!isUUID(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      const user = await this.userService.getUserWithRelations(userId);
+      if (!user) {
+        sendNotFound(res, "Không tìm thấy thông tin người dùng.");
+        return;
+      }
+      sendSuccess(res, user, "Lấy thông tin chi tiết người dùng thành công.");
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async getUserEnrolledCourses(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { userId } = req.params;
+      if (!isUUID(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      const courses = await this.userService.getUserEnrolledCourses(userId);
+      sendSuccess(
+        res,
+        courses,
+        "Lấy danh sách khóa học đã đăng ký thành công."
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async checkEnrollment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId, courseId } = req.params;
+      if (!isUUID(userId) || !isUUID(courseId)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      const isEnrolled = await this.userService.isUserEnrolledInCourse(
+        userId,
+        courseId
+      );
+      sendSuccess(res, { isEnrolled }, "Kiểm tra enrollment thành công.");
+    } catch (error) {
+      return next(error);
+    }
+  }
 }
 
 export default UserController;
