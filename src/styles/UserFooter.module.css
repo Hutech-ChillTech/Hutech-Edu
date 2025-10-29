@@ -18,3 +18,19 @@
 .footer-bottom {
   background-color: rgba(0, 0, 0, 0.25);
 }
+
+.btn-outline-primary,
+.btn-outline-success,
+.btn-outline-light {
+  border: 2px solid white !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-light:hover {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+}

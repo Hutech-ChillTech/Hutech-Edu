@@ -1,16 +1,22 @@
-import React, { useEffect, useState } from "react";
-import type { ColumnsType } from "antd/es/table";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
-  Button,
-  Card,
-  Form,
-  Input,
-  message,
-  Popconfirm,
-  Space,
   Table,
+  Button,
+  Input,
+  Form,
   Typography,
+  Space,
+  message,
+  Card,
+  Popconfirm,
 } from "antd";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  UpOutlined,
+  BookOutlined,
+} from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
@@ -40,30 +46,10 @@ const fakeChapters: Chapter[] = [
 ];
 
 const fakeLessons = [
-  {
-    lessonId: 1,
-    lessonName: "Giới thiệu ReactJS",
-    videoUrl: "https://youtu.be/Ke90Tje7VS0",
-    chapterId: 1,
-  },
-  {
-    lessonId: 2,
-    lessonName: "Cấu trúc Component",
-    videoUrl: "https://youtu.be/w7ejDZ8SWv8",
-    chapterId: 1,
-  },
-  {
-    lessonId: 3,
-    lessonName: "JSX cơ bản",
-    videoUrl: "https://youtu.be/DPnqb74Smug",
-    chapterId: 2,
-  },
-  {
-    lessonId: 4,
-    lessonName: "TypeScript với React",
-    videoUrl: "https://youtu.be/Z5iWr6Srsj8",
-    chapterId: 3,
-  },
+  { lessonId: 1, lessonName: "Giới thiệu ReactJS", videoUrl: "", chapterId: 1 },
+  { lessonId: 2, lessonName: "Cấu trúc Component", videoUrl: "", chapterId: 1 },
+  { lessonId: 3, lessonName: "JSX cơ bản", videoUrl: "", chapterId: 2 },
+  { lessonId: 4, lessonName: "TypeScript với React", videoUrl: "", chapterId: 3 },
 ];
 
 const ChapterList: React.FC = () => {
@@ -75,7 +61,9 @@ const ChapterList: React.FC = () => {
   const [courseName, setCourseName] = useState<string>("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState<boolean>(false);
 
+  // Lấy danh sách chương theo khóa học
   useEffect(() => {
     if (courseId) {
       const course = fakeCourses.find((c) => c.KhoaHocId === Number(courseId));
@@ -85,133 +73,160 @@ const ChapterList: React.FC = () => {
     }
   }, [courseId]);
 
-  const onFinish = async () => {
-  try {
-    setLoading(true);
-    if (editingId) {
-      message.success("✅ Cập nhật chương thành công (fake)");
-    } else {
-      message.success("✅ Thêm chương mới thành công (fake)");
+  // Submit form thêm/sửa chương
+  const handleFinish = async (values: any) => {
+    try {
+      setLoading(true);
+      if (editingId) {
+        message.success("✅ Cập nhật chương thành công (fake)");
+      } else {
+        message.success("✅ Thêm chương mới thành công (fake)");
+      }
+      form.resetFields();
+      setEditingId(null);
+      setShowForm(false);
+    } catch {
+      message.error("❌ Lỗi khi lưu chương");
+    } finally {
+      setLoading(false);
     }
-    form.resetFields();
-    setEditingId(null);
-  } catch {
-    message.error("❌ Lỗi khi lưu chương");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-  const handleEdit = (record: Chapter) => {
-    form.setFieldsValue({
-      chapterName: record.chapterName,
-    });
-    setEditingId(record.chapterId);
   };
 
-  const handleDelete = (id: number) => {
+  // Sửa chương
+  const handleEdit = useCallback(
+    (record: Chapter) => {
+      form.setFieldsValue({
+        chapterName: record.chapterName,
+      });
+      setEditingId(record.chapterId);
+      setShowForm(true);
+    },
+    [form]
+  );
+
+  // Xóa chương
+  const handleDelete = useCallback((id: number) => {
     message.success("🗑️ Đã xóa chương (fake)");
     setChapters((prev) => prev.filter((c) => c.chapterId !== id));
-  };
+  }, []);
 
+  // Xem danh sách bài học
   const handleViewLessons = (chapterId: number) => {
     const lessons = fakeLessons.filter((l) => l.chapterId === chapterId);
     navigate(`/admin/lessons/${chapterId}`, { state: { lessons } });
   };
 
+  // Quay lại trang khóa học
   const handleBackToCourses = () => {
     navigate("/admin/course");
   };
 
-  const columns: ColumnsType<Chapter> = [
-    {
-      title: "STT",
-      render: (_text, _record, index) => index + 1,
-      width: 60,
-    },
-    {
-      title: "Tên chương",
-      dataIndex: "chapterName",
-      width: 300,
-    },
-    {
-      title: "Tổng số bài học",
-      dataIndex: "totalLesson",
-      align: "center",
-      width: 150,
-      render: (_text, record) =>
-        fakeLessons.filter((l) => l.chapterId === record.chapterId).length,
-    },
-    {
-      title: "Thao tác",
-      width: 260,
-      render: (_text, record) => (
-        <Space>
-          <Button onClick={() => handleViewLessons(record.chapterId)}>📘 Xem bài học</Button>
-          <Button type="primary" onClick={() => handleEdit(record)}>✏️ Sửa</Button>
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa chương này?"
-            onConfirm={() => handleDelete(record.chapterId)}
-            okText="Xóa"
-            cancelText="Hủy"
-          >
-            <Button danger>🗑️ Xóa</Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  // Cột bảng
+  const columns = useMemo(
+    () => [
+      { title: "#", render: (_: unknown, __: unknown, index: number) => index + 1, width: 60 },
+      { title: "Tên chương", dataIndex: "chapterName" },
+      {
+        title: "Tổng số bài học",
+        dataIndex: "totalLesson",
+        align: "center" as const,
+        render: (_: any, record: Chapter) =>
+          fakeLessons.filter((l) => l.chapterId === record.chapterId).length,
+      },
+      {
+        title: "Thao tác",
+        render: (_: unknown, record: Chapter) => (
+          <Space>
+            <Button icon={<BookOutlined />} onClick={() => handleViewLessons(record.chapterId)}>
+              Xem bài học
+            </Button>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => handleEdit(record)}
+            />
+            <Popconfirm
+              title="Bạn có chắc chắn muốn xóa chương này?"
+              onConfirm={() => handleDelete(record.chapterId)}
+              okText="Xóa"
+              cancelText="Hủy"
+            >
+              <Button danger icon={<DeleteOutlined />} size="small" />
+            </Popconfirm>
+          </Space>
+        ),
+      },
+    ],
+    [handleEdit, handleDelete]
+  );
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
       <Space style={{ marginBottom: 16 }}>
-        <Button onClick={handleBackToCourses}>⬅️ Quay lại khóa học</Button>
+        <Button onClick={handleBackToCourses}>⬅️ Quay lại</Button>
         <Title level={3}>📚 Khóa học: {courseName}</Title>
       </Space>
 
-      <Card
-        title={editingId ? "✏️ Cập nhật chương" : "➕ Thêm chương mới"}
-        style={{ marginBottom: 24 }}
-        hoverable
-      >
-        <Form layout="vertical" form={form} onFinish={onFinish}>
-          <Form.Item
-            label="Tên chương"
-            name="chapterName"
-            rules={[{ required: true, message: "Vui lòng nhập tên chương" }]}
-          >
-            <Input placeholder="Nhập tên chương" />
-          </Form.Item>
+      {/* Nút toggle ẩn/hiện form */}
+      <div style={{ textAlign: "right", marginBottom: 12 }}>
+        <Button
+          type="primary"
+          icon={showForm ? <UpOutlined /> : <PlusOutlined />}
+          onClick={() => setShowForm((prev) => !prev)}
+        >
+          {showForm ? "Ẩn form" : "Thêm chương mới"}
+        </Button>
+      </div>
 
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" loading={loading}>
-                {editingId ? "Cập nhật" : "Thêm mới"}
-              </Button>
-              {editingId && (
-                <Button
-                  onClick={() => {
-                    form.resetFields();
-                    setEditingId(null);
-                  }}
-                >
-                  Hủy
+      {/* Form thêm/sửa chương */}
+      {showForm && (
+        <Card
+          title={editingId ? "✏️ Cập nhật chương" : "➕ Thêm chương mới"}
+          bordered={false}
+          style={{
+            borderRadius: "1rem",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+            marginBottom: 20,
+          }}
+        >
+          <Form layout="vertical" form={form} onFinish={handleFinish}>
+            <Form.Item
+              label="Tên chương"
+              name="chapterName"
+              rules={[{ required: true, message: "Vui lòng nhập tên chương" }]}
+            >
+              <Input placeholder="Nhập tên chương..." />
+            </Form.Item>
+
+            <div style={{ textAlign: "right", marginTop: 20 }}>
+              <Space>
+                <Button type="primary" htmlType="submit" loading={loading}>
+                  {editingId ? "Cập nhật" : "Thêm mới"}
                 </Button>
-              )}
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
+                {editingId && (
+                  <Button
+                    onClick={() => {
+                      form.resetFields();
+                      setEditingId(null);
+                    }}
+                  >
+                    Hủy
+                  </Button>
+                )}
+              </Space>
+            </div>
+          </Form>
+        </Card>
+      )}
 
-      <Table
-        columns={columns}
-        dataSource={chapters}
-        rowKey="chapterId"
-        pagination={{ pageSize: 5 }}
-        bordered
-      />
+      {/* Bảng danh sách chương */}
+      <Card
+        style={{ borderRadius: "1rem", boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}
+        bordered={false}
+      >
+        <Table columns={columns} dataSource={chapters} rowKey="chapterId" bordered />
+      </Card>
     </div>
   );
 };

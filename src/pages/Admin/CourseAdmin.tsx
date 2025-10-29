@@ -1,19 +1,25 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
+  Table,
   Button,
-  Form,
   Input,
   InputNumber,
-  Space,
-  Table,
+  Form,
   Typography,
+  Space,
   message,
-  Popconfirm,
   Card,
+  Popconfirm,
 } from "antd";
-import { useNavigate } from "react-router-dom"; // ✅ thêm dòng này để điều hướng
-// import AdminLayout from "../../layouts/AdminLayout";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  UpOutlined,
+  BookOutlined,
+  ReadOutlined,
+} from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
 
@@ -25,170 +31,216 @@ interface Course {
 }
 
 const CourseAdmin: React.FC = () => {
-  const [form] = Form.useForm();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [form] = Form.useForm();
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); // ✅ dùng để chuyển trang
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  const fetchCourses = async () => {
-    try {
-      setCourses([
-        { KhoaHocId: 1, TenKhoaHoc: "React cơ bản", MoTa: "Học React", Gia: 1000000 },
-        { KhoaHocId: 2, TenKhoaHoc: "TypeScript nâng cao", MoTa: "TS nâng cao", Gia: 1200000 },
-      ]);
-    } catch (err) {
-      message.error("❌ Lỗi khi lấy danh sách khóa học");
-      console.error(err);
-    }
-  };
+  // Lấy danh sách khóa học (fake data)
+  const fetchCourses = useCallback(() => {
+    setCourses([
+      { KhoaHocId: 1, TenKhoaHoc: "React cơ bản", MoTa: "Học React từ A-Z", Gia: 1000000 },
+      { KhoaHocId: 2, TenKhoaHoc: "TypeScript nâng cao", MoTa: "Thành thạo TS", Gia: 1200000 },
+    ]);
+  }, []);
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [fetchCourses]);
 
-  const onFinish = async () => {
+  // Thêm / cập nhật khóa học
+  const handleFinish = async (values: any) => {
     try {
-      setLoading(true);
       if (editingId) {
         message.success("✅ Cập nhật khóa học thành công! (Fake)");
       } else {
-        message.success("✅ Thêm khóa học thành công! (Fake)");
+        message.success("✅ Thêm khóa học mới thành công! (Fake)");
       }
-      setEditingId(null);
       form.resetFields();
+      setEditingId(null);
+      setShowForm(false);
       fetchCourses();
     } catch (err) {
-      message.error("❌ Có lỗi xảy ra khi lưu khóa học!");
       console.error(err);
-    } finally {
-      setLoading(false);
+      message.error("❌ Lỗi khi lưu khóa học!");
     }
   };
 
-  const handleEdit = (record: Course) => {
-    form.setFieldsValue({
-      TenKhoaHoc: record.TenKhoaHoc,
-      MoTa: record.MoTa,
-      Gia: record.Gia,
-    });
-    setEditingId(record.KhoaHocId);
-  };
+  // Sửa khóa học
+  const handleEdit = useCallback(
+    (record: Course) => {
+      setShowForm(true);
+      form.setFieldsValue({
+        TenKhoaHoc: record.TenKhoaHoc,
+        MoTa: record.MoTa,
+        Gia: record.Gia,
+      });
+      setEditingId(record.KhoaHocId);
+    },
+    [form]
+  );
 
-  const handleDelete = async () => {
+  // Xóa khóa học
+  const handleDelete = useCallback(async (KhoaHocId: number) => {
     try {
       message.success("🗑️ Xóa khóa học thành công! (Fake)");
       fetchCourses();
     } catch (err) {
-      message.error("❌ Lỗi khi xóa khóa học");
       console.error(err);
+      message.error("❌ Lỗi khi xóa khóa học!");
     }
-  };
+  }, [fetchCourses]);
 
-  const columns = [
-    { title: "#", render: (_: unknown, __: unknown, i: number) => i + 1, width: 50 },
-    { title: "Tên khóa học", dataIndex: "TenKhoaHoc", width: 200 },
-    { title: "Mô tả", dataIndex: "MoTa", width: 300 },
-    {
-      title: "Giá",
-      dataIndex: "Gia",
-      width: 120,
-      render: (gia: number) => (gia ? gia.toLocaleString("vi-VN") + " đ" : ""),
-    },
-    {
-      title: "Thao tác",
-      width: 260,
-      render: (_: unknown, record: Course) => (
-        <Space>
-          {/* ✅ Nút mới để xem danh sách chương */}
-          <Button onClick={() => navigate(`/admin/chapters/${record.KhoaHocId}`)}>
-            Chi tiết chương
-          </Button>
-
-          <Button type="primary" onClick={() => handleEdit(record)}>
-            Sửa
-          </Button>
-
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa khóa học này?"
-            onConfirm={() => handleDelete()}
-            okText="Xóa"
-            cancelText="Hủy"
-          >
-            <Button danger>Xóa</Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  // Cột của bảng
+  const columns = useMemo(
+    () => [
+      { title: "#", render: (_: unknown, __: unknown, i: number) => i + 1, width: 60 },
+      { title: "Tên khóa học", dataIndex: "TenKhoaHoc" },
+      { title: "Mô tả", dataIndex: "MoTa" },
+      {
+        title: "Giá (VNĐ)",
+        dataIndex: "Gia",
+        render: (val: number) => val?.toLocaleString("vi-VN") + " ₫",
+      },
+      {
+        title: "Thao tác",
+        render: (_: unknown, record: Course) => (
+          <Space>
+            <Button
+              type="default"
+              icon={<ReadOutlined />}
+              size="small"
+              onClick={() => navigate(`/admin/chapters/${record.KhoaHocId}`)}
+            >
+              Chi tiết
+            </Button>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => handleEdit(record)}
+            />
+            <Popconfirm
+              title="Bạn có chắc muốn xóa khóa học này?"
+              onConfirm={() => handleDelete(record.KhoaHocId)}
+              okText="Xóa"
+              cancelText="Hủy"
+            >
+              <Button danger icon={<DeleteOutlined />} size="small" />
+            </Popconfirm>
+          </Space>
+        ),
+      },
+    ],
+    [handleEdit, handleDelete, navigate]
+  );
 
   return (
-    <div className="fade-in" style={{ padding: 20 }}>
-      <Title level={3}>🎓 Quản lý Khóa học</Title>
+    <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
+      <Title level={3} style={{ marginBottom: 24 }}>
+        🎓 Quản lý Khóa học
+      </Title>
 
-      <Card
-        title={editingId ? "✏️ Cập nhật khóa học" : "➕ Thêm khóa học"}
-        style={{ marginBottom: 24 }}
-        hoverable
-      >
-        <Form layout="vertical" form={form} onFinish={onFinish}>
-          <Form.Item
-            label="Tên khóa học"
-            name="TenKhoaHoc"
-            rules={[{ required: true, message: "Vui lòng nhập tên khóa học" }]}
-          >
-            <Input placeholder="Nhập tên khóa học" />
-          </Form.Item>
+      {/* Nút toggle ẩn/hiện form */}
+      <div style={{ textAlign: "right", marginBottom: 12 }}>
+        <Button
+          type="primary"
+          icon={showForm ? <UpOutlined /> : <PlusOutlined />}
+          onClick={() => setShowForm((prev) => !prev)}
+        >
+          {showForm ? "Ẩn form" : "Thêm khóa học mới"}
+        </Button>
+      </div>
 
-          <Form.Item
-            label="Mô tả"
-            name="MoTa"
-            rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
-          >
-            <Input.TextArea rows={3} placeholder="Nhập mô tả khóa học" />
-          </Form.Item>
+      {/* Form thêm / sửa */}
+      {showForm && (
+        <Card
+          title={editingId ? "✏️ Chỉnh sửa khóa học" : "➕ Thêm khóa học mới"}
+          bordered={false}
+          style={{
+            borderRadius: "1rem",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+            marginBottom: 20,
+          }}
+        >
+          <Form layout="vertical" form={form} onFinish={handleFinish}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "20px",
+              }}
+            >
+              <Form.Item
+                name="TenKhoaHoc"
+                label="Tên khóa học"
+                rules={[{ required: true, message: "Vui lòng nhập tên khóa học" }]}
+              >
+                <Input placeholder="Tên khóa học..." prefix={<BookOutlined />} />
+              </Form.Item>
 
-          <Form.Item
-            label="Giá"
-            name="Gia"
-            rules={[{ required: true, message: "Vui lòng nhập giá khóa học" }]}
-          >
-            <InputNumber
-              min={0}
-              style={{ width: "100%" }}
-              placeholder="Nhập giá"
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-            />
-          </Form.Item>
+              <Form.Item
+                name="Gia"
+                label="Giá khóa học (VNĐ)"
+                rules={[{ required: true, message: "Vui lòng nhập giá" }]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={0}
+                  placeholder="Nhập giá..."
+                  formatter={(value) =>
+                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                />
+              </Form.Item>
 
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" loading={loading}>
-                {editingId ? "Cập nhật" : "Thêm mới"}
-              </Button>
-              {editingId && (
-                <Button
-                  onClick={() => {
-                    form.resetFields();
-                    setEditingId(null);
-                  }}
-                >
-                  Hủy
+              <Form.Item
+                name="MoTa"
+                label="Mô tả"
+                rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
+              >
+                <Input.TextArea rows={3} placeholder="Mô tả ngắn về khóa học..." />
+              </Form.Item>
+            </div>
+
+            <div style={{ textAlign: "right", marginTop: 20 }}>
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  {editingId ? "Cập nhật" : "Thêm mới"}
                 </Button>
-              )}
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
+                {editingId && (
+                  <Button
+                    onClick={() => {
+                      form.resetFields();
+                      setEditingId(null);
+                    }}
+                  >
+                    Hủy
+                  </Button>
+                )}
+              </Space>
+            </div>
+          </Form>
+        </Card>
+      )}
 
-      <Table
-        columns={columns}
-        dataSource={courses}
-        rowKey="KhoaHocId"
-        pagination={{ pageSize: 5 }}
-        bordered
-        scroll={{ x: "max-content" }}
-      />
+      {/* Bảng danh sách khóa học */}
+      <Card
+        style={{
+          borderRadius: "1rem",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+        }}
+        bordered={false}
+      >
+        <Table
+          columns={columns}
+          dataSource={courses}
+          rowKey="KhoaHocId"
+          scroll={{ x: true }}
+          bordered
+        />
+      </Card>
     </div>
   );
 };

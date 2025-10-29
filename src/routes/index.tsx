@@ -17,6 +17,7 @@ import PracticePage from "../pages/Practice/PracticePage";
 import NotFountPage from "../pages/Error/NotFoundPage";
 import FeaturedCourses from "../pages/User/FeaturedCourses";
 import AllCourses from "../pages/User/AllCourses";
+import UserProfile from "../pages/User/UserProfile";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -40,6 +41,7 @@ const AppRoutes: React.FC = () => {
           <Route path="practice" element={<PracticePage />} />
           <Route path="featured-courses" element={<FeaturedCourses></FeaturedCourses>}></Route>
           <Route path="all-courses" element={<AllCourses></AllCourses>}></Route>
+          <Route path="profile" element={<UserProfile />} />
         </Route>
 
 

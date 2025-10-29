@@ -36,14 +36,23 @@ const LoginPage: React.FC = () => {
 
       const user = res.data.user;
       const role = user?.role ?? user?.roles?.[0] ?? "User";
+      const name = user?.name ?? user?.email.split("@")[0]; // fallback nếu name rỗng
 
-      // 🧱 Lưu localStorage
-      localStorage.setItem("user", JSON.stringify({ ...user, role }));
+      // 🧱 Lưu localStorage để các trang khác (Header) lấy thông tin
+      localStorage.setItem("username", name);
+      localStorage.setItem("role", role);
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(user));
 
-      alert("Đăng nhập thành công!");
+      alert(`Đăng nhập thành công! Xin chào ${name}`);
 
-      navigate(role === "Admin" ? "/admin/dashboard" : "/");
+      // ✅ Điều hướng theo vai trò
+      if (role.toLowerCase() === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/user"); // tất cả user, giáo viên, học viên... đều vào đây
+      }
+
     } catch (error: any) {
       console.error("❌ Lỗi đăng nhập:", error);
 
@@ -89,9 +98,7 @@ const LoginPage: React.FC = () => {
             required
           />
 
-          <button 
-            type="submit" 
-            className={styles["login-button"]}>
+          <button type="submit" className={styles["login-button"]}>
             {loading ? "Đang xử lý..." : "Đăng nhập"}
           </button>
 
