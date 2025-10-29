@@ -38,7 +38,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      <div className={`${styles["row"]}`}>
+      <div className="row">
         <StatCard title="DOANH THU HÔM NAY" value="0" color="primary" />
         <StatCard title="HỌC VIÊN MỚI" value="0" color="success" />
         <StatCard title="KHÓA HỌC MỚI" value="0" color="danger" />
