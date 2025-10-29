@@ -1,61 +1,111 @@
 import React, { useState, type FormEvent } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../styles/LoginPage.module.css";
 import { FcGoogle } from "react-icons/fc";
+import axiosClient from "../service/axiosClient";
+import { jwtDecode } from "jwt-decode";
 
-// 🧠 Interface mô tả dữ liệu trả về từ API
-interface User {
-  id: number;
-  email: string;
-  name?: string;
-  role?: string;
-  roles?: string[];
-}
-
+// 🧩 Kiểu dữ liệu trả về từ API (phù hợp với BE)
 interface LoginResponse {
-  user: User;
-  token: string;
+  success: boolean;
+  data: string; // chính là token
+  message: string;
 }
 
+// 🧩 Kiểu dữ liệu trong token
+interface DecodedToken {
+  userId: string;
+  email: string;
+  roles?: string[]; // có thể có hoặc không
+  role?: string; // phòng trường hợp backend gửi role đơn lẻ
+  iat: number;
+  exp: number;
+}
+
+// 🧠 Dịch vụ xác thực
+export const authService = {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
+    const response = await axiosClient.post<LoginResponse>("/users/login", {
+      email,
+      password,
+    });
+    return response.data;
+  },
+
+  logout: () => {
+    localStorage.clear();
+  },
+
+  getCurrentUser: () => {
+    const userStr = localStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  },
+
+  isAuthenticated: () => !!localStorage.getItem("token"),
+
+  isAdmin: () => {
+    const user = authService.getCurrentUser();
+    return user?.role?.toLowerCase() === "admin";
+  },
+};
+
+// 🧱 Component LoginPage
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ Xử lý đăng nhập
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await axios.post<LoginResponse>("http://localhost:3000/api/users/login", {
-        email,
-        password,
-      });
+      const res = await authService.login(email, password);
+      const token = res.data;
 
-      const user = res.data.user;
-      const role = user?.role ?? user?.roles?.[0] ?? "User";
-      const name = user?.name ?? user?.email.split("@")[0]; // fallback nếu name rỗng
+      // 🧱 Giải mã token để lấy thông tin người dùng
+      const decoded = jwtDecode<DecodedToken>(token);
 
-      // 🧱 Lưu localStorage để các trang khác (Header) lấy thông tin
-      localStorage.setItem("username", name);
-      localStorage.setItem("role", role);
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(user));
+      console.log("🔍 Token giải mã:", decoded);
 
-      alert(`Đăng nhập thành công! Xin chào ${name}`);
+      // Lấy role từ token (ưu tiên roles[0], fallback role)
+      const role =
+        decoded.roles?.[0] ||
+        decoded.role ||
+        "user"; // fallback nếu backend không có field roles
 
-      // ✅ Điều hướng theo vai trò
-      if (role.toLowerCase() === "admin") {
+      const normalizedRole = role.trim().toLowerCase();
+      const userName = decoded.email?.split("@")[0] || "Người dùng";
+
+      // 🧱 Lưu thông tin vào localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", normalizedRole);
+      localStorage.setItem("username", userName);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: decoded.userId,
+          email: decoded.email,
+          role: normalizedRole,
+          userName,
+        })
+      );
+
+      alert(`✅ Đăng nhập thành công! Xin chào ${userName}`);
+
+      // 🔀 Điều hướng theo vai trò
+      if (normalizedRole === "admin") {
         navigate("/admin/dashboard");
+      } else if (normalizedRole === "user") {
+        navigate("/user/main");
       } else {
-        navigate("/user"); // tất cả user, giáo viên, học viên... đều vào đây
+        // Nếu không xác định rõ role thì quay về trang chính
+        navigate("/");
       }
-
     } catch (error: any) {
       console.error("❌ Lỗi đăng nhập:", error);
-
       if (error.response) {
         alert(
           error.response.data?.message ||
@@ -69,7 +119,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // ⚙️ Xử lý đăng nhập Google (chưa có API thật)
+  // ⚙️ Tạm thời chưa dùng Google Login
   const handleGoogleLogin = () => {
     alert("Tính năng đăng nhập Google sẽ được cập nhật sau 🚀");
   };
@@ -102,7 +152,6 @@ const LoginPage: React.FC = () => {
             {loading ? "Đang xử lý..." : "Đăng nhập"}
           </button>
 
-          {/* 🔹 Nút đăng nhập Google */}
           <button
             type="button"
             className={styles["google-button"]}

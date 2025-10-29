@@ -1,22 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import styles from "../../styles/AdminStyle.module.css";
+import { jwtDecode } from "jwt-decode";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
-  const [username, setUsername] = useState<string>("");
+interface DecodedToken {
+  userId: string;
+  email: string;
+  name?: string;
+  role?: string;
+  exp?: number;
+}
 
-  // Khi component load, lấy tên người dùng từ localStorage (hoặc sessionStorage)
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
+  const [userInfo, setUserInfo] = useState<{ name?: string; email?: string }>({
+    name: "",
+    email: "",
+  });
+
   useEffect(() => {
-    const storedName =
-      localStorage.getItem("username") || sessionStorage.getItem("username");
-    if (storedName) {
-      setUsername(storedName);
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      try {
+        const decoded: DecodedToken = jwtDecode(token);
+        setUserInfo({
+          name: decoded.name,
+          email: decoded.email,
+        });
+      } catch (error) {
+        console.error("Lỗi khi giải mã token:", error);
+      }
     }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login"; // điều hướng về trang đăng nhập
+  };
 
   return (
     <nav
@@ -25,10 +50,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       }`}
     >
       <div className="container-fluid">
+        {/* Nút toggle sidebar */}
         <button className="btn btn-primary" onClick={onToggleSidebar}>
           ☰
         </button>
 
+        {/* Bên phải: thanh tìm kiếm + dropdown người dùng */}
         <div className="ms-auto d-flex align-items-center">
           <input
             type="text"
@@ -37,9 +64,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           />
 
           <div className="dropdown d-flex align-items-center">
-            {/* Hiển thị tên người dùng bên cạnh icon */}
+            {/* Hiển thị tên hoặc email người dùng */}
             <span className="me-2 fw-bold text-primary">
-              {username ? username : "Người dùng"}
+              {userInfo.name || userInfo.email || "Admin"}
             </span>
 
             <button
@@ -48,19 +75,15 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             >
               <FaUser />
             </button>
+
             <ul className="dropdown-menu dropdown-menu-end">
               <li>
-                <a
-                  className="dropdown-item"
-                  href="#"
-                  onClick={() => {
-                    localStorage.removeItem("username");
-                    sessionStorage.removeItem("username");
-                    window.location.reload(); // hoặc điều hướng về trang đăng nhập
-                  }}
+                <button
+                  className="dropdown-item text-danger"
+                  onClick={handleLogout}
                 >
                   Đăng Xuất
-                </a>
+                </button>
               </li>
             </ul>
           </div>
