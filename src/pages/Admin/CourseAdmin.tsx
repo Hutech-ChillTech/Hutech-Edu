@@ -10,6 +10,7 @@ import {
   message,
   Card,
   Popconfirm,
+  Select,
 } from "antd";
 import {
   EditOutlined,
@@ -20,89 +21,169 @@ import {
   ReadOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import {jwtDecode} from "jwt-decode"; // 🟢 thêm thư viện này: npm install jwt-decode
 
 const { Title } = Typography;
+const { Option } = Select;
 
 interface Course {
-  KhoaHocId: number;
-  TenKhoaHoc: string;
-  MoTa: string;
-  Gia: number;
+  courseId: string;
+  courseName: string;
+  courseDescription: string;
+  coursePrice: number;
+  level: string;
+}
+
+interface DecodedToken {
+  id?: string;
+  userId?: string;
+  role?: string;
+  exp?: number;
 }
 
 const CourseAdmin: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [form] = Form.useForm();
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState<boolean>(false);
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
-  // Lấy danh sách khóa học (fake data)
-  const fetchCourses = useCallback(() => {
-    setCourses([
-      { KhoaHocId: 1, TenKhoaHoc: "React cơ bản", MoTa: "Học React từ A-Z", Gia: 1000000 },
-      { KhoaHocId: 2, TenKhoaHoc: "TypeScript nâng cao", MoTa: "Thành thạo TS", Gia: 1200000 },
-    ]);
-  }, []);
+  // 🟢 Giải mã token để lấy thông tin admin
+  const decoded = useMemo(() => {
+    if (!token) return null;
+    try {
+      return jwtDecode<DecodedToken>(token);
+    } catch (error) {
+      console.error("Token decode error:", error);
+      return null;
+    }
+  }, [token]);
+
+  const adminId = decoded?.userId || decoded?.id;
+
+  // 🟢 Lấy danh sách khóa học
+  const fetchCourses = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:3000/api/courses", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setCourses(data.data);
+      } else {
+        message.warning(data.message || "Không lấy được danh sách khóa học!");
+      }
+    } catch (error) {
+      console.error(error);
+      message.error("❌ Lỗi khi tải danh sách khóa học!");
+    }
+  }, [token]);
 
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
 
-  // Thêm / cập nhật khóa học
+  // 🟢 Thêm / Cập nhật khóa học
   const handleFinish = async (values: any) => {
     try {
+      const payload = {
+        courseName: values.courseName,
+        courseDescription: values.courseDescription,
+        coursePrice: values.coursePrice,
+        level: values.level,
+        createdBy: adminId, // 🟢 gửi id admin lên server
+      };
+
+      let url = "http://localhost:3000/api/courses/create";
+      let method = "POST";
+
       if (editingId) {
-        message.success("✅ Cập nhật khóa học thành công! (Fake)");
-      } else {
-        message.success("✅ Thêm khóa học mới thành công! (Fake)");
+        url = `http://localhost:3000/api/courses/update/${editingId}`;
+        method = "PUT";
       }
-      form.resetFields();
-      setEditingId(null);
-      setShowForm(false);
-      fetchCourses();
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        message.success(editingId ? "✅ Cập nhật khóa học thành công!" : "✅ Thêm khóa học thành công!");
+        form.resetFields();
+        setEditingId(null);
+        setShowForm(false);
+        fetchCourses();
+      } else {
+        message.error(data.message || "❌ Lỗi khi lưu khóa học!");
+      }
     } catch (err) {
       console.error(err);
       message.error("❌ Lỗi khi lưu khóa học!");
     }
   };
 
-  // Sửa khóa học
+  // 🟢 Sửa khóa học
   const handleEdit = useCallback(
     (record: Course) => {
       setShowForm(true);
       form.setFieldsValue({
-        TenKhoaHoc: record.TenKhoaHoc,
-        MoTa: record.MoTa,
-        Gia: record.Gia,
+        courseName: record.courseName,
+        courseDescription: record.courseDescription,
+        coursePrice: record.coursePrice,
+        level: record.level,
       });
-      setEditingId(record.KhoaHocId);
+      setEditingId(record.courseId);
     },
     [form]
   );
 
-  // Xóa khóa học
-  const handleDelete = useCallback(async (KhoaHocId: number) => {
-    try {
-      message.success("🗑️ Xóa khóa học thành công! (Fake)");
-      fetchCourses();
-    } catch (err) {
-      console.error(err);
-      message.error("❌ Lỗi khi xóa khóa học!");
-    }
-  }, [fetchCourses]);
+  // 🟢 Xóa khóa học
+  const handleDelete = useCallback(
+    async (courseId: string) => {
+      try {
+        const res = await fetch(
+          `http://localhost:3000/api/courses/delete/${courseId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await res.json();
 
-  // Cột của bảng
+        if (data.success) {
+          message.success("🗑️ Xóa khóa học thành công!");
+          fetchCourses();
+        } else {
+          message.error(data.message || "❌ Lỗi khi xóa khóa học!");
+        }
+      } catch (err) {
+        console.error(err);
+        message.error("❌ Không thể xóa khóa học!");
+      }
+    },
+    [fetchCourses, token]
+  );
+
+  // 🟢 Cấu hình bảng hiển thị
   const columns = useMemo(
     () => [
       { title: "#", render: (_: unknown, __: unknown, i: number) => i + 1, width: 60 },
-      { title: "Tên khóa học", dataIndex: "TenKhoaHoc" },
-      { title: "Mô tả", dataIndex: "MoTa" },
+      { title: "Tên khóa học", dataIndex: "courseName" },
+      { title: "Mô tả", dataIndex: "courseDescription" },
       {
         title: "Giá (VNĐ)",
-        dataIndex: "Gia",
+        dataIndex: "coursePrice",
         render: (val: number) => val?.toLocaleString("vi-VN") + " ₫",
       },
+      { title: "Cấp độ", dataIndex: "level" },
       {
         title: "Thao tác",
         render: (_: unknown, record: Course) => (
@@ -111,7 +192,7 @@ const CourseAdmin: React.FC = () => {
               type="default"
               icon={<ReadOutlined />}
               size="small"
-              onClick={() => navigate(`/admin/chapters/${record.KhoaHocId}`)}
+              onClick={() => navigate(`/admin/chapters/${record.courseId}`)}
             >
               Chi tiết
             </Button>
@@ -123,7 +204,7 @@ const CourseAdmin: React.FC = () => {
             />
             <Popconfirm
               title="Bạn có chắc muốn xóa khóa học này?"
-              onConfirm={() => handleDelete(record.KhoaHocId)}
+              onConfirm={() => handleDelete(record.courseId)}
               okText="Xóa"
               cancelText="Hủy"
             >
@@ -142,7 +223,6 @@ const CourseAdmin: React.FC = () => {
         🎓 Quản lý Khóa học
       </Title>
 
-      {/* Nút toggle ẩn/hiện form */}
       <div style={{ textAlign: "right", marginBottom: 12 }}>
         <Button
           type="primary"
@@ -153,7 +233,6 @@ const CourseAdmin: React.FC = () => {
         </Button>
       </div>
 
-      {/* Form thêm / sửa */}
       {showForm && (
         <Card
           title={editingId ? "✏️ Chỉnh sửa khóa học" : "➕ Thêm khóa học mới"}
@@ -173,7 +252,7 @@ const CourseAdmin: React.FC = () => {
               }}
             >
               <Form.Item
-                name="TenKhoaHoc"
+                name="courseName"
                 label="Tên khóa học"
                 rules={[{ required: true, message: "Vui lòng nhập tên khóa học" }]}
               >
@@ -181,9 +260,9 @@ const CourseAdmin: React.FC = () => {
               </Form.Item>
 
               <Form.Item
-                name="Gia"
+                name="coursePrice"
                 label="Giá khóa học (VNĐ)"
-                rules={[{ required: true, message: "Vui lòng nhập giá" }]}
+                rules={[{ required: true, message: "Vui lòng nhập giá khóa học" }]}
               >
                 <InputNumber
                   style={{ width: "100%" }}
@@ -196,11 +275,23 @@ const CourseAdmin: React.FC = () => {
               </Form.Item>
 
               <Form.Item
-                name="MoTa"
+                name="courseDescription"
                 label="Mô tả"
-                rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
+                rules={[{ required: true, message: "Vui lòng nhập mô tả khóa học" }]}
               >
                 <Input.TextArea rows={3} placeholder="Mô tả ngắn về khóa học..." />
+              </Form.Item>
+
+              <Form.Item
+                name="level"
+                label="Cấp độ"
+                rules={[{ required: true, message: "Vui lòng chọn cấp độ" }]}
+              >
+                <Select placeholder="Chọn cấp độ">
+                  <Option value="Basic">Beginner</Option>
+                  <Option value="Intermediate">Intermediate</Option>
+                  <Option value="Advanced">Advanced</Option>
+                </Select>
               </Form.Item>
             </div>
 
@@ -225,7 +316,6 @@ const CourseAdmin: React.FC = () => {
         </Card>
       )}
 
-      {/* Bảng danh sách khóa học */}
       <Card
         style={{
           borderRadius: "1rem",
@@ -236,9 +326,9 @@ const CourseAdmin: React.FC = () => {
         <Table
           columns={columns}
           dataSource={courses}
-          rowKey="KhoaHocId"
-          scroll={{ x: true }}
+          rowKey="courseId"
           bordered
+          scroll={{ x: true }}
         />
       </Card>
     </div>

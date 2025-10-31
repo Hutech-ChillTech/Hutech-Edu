@@ -36,7 +36,7 @@ const AppRoutes: React.FC = () => {
         </Route>
 
         {/* User routes */}
-        <Route path="/user" element={<UserLayout />}>
+        <Route path="/" element={<UserLayout />}>
           <Route index element={<UserMain />} />
           <Route path="practice" element={<PracticePage />} />
           <Route path="featured-courses" element={<FeaturedCourses></FeaturedCourses>}></Route>

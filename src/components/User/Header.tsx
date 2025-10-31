@@ -8,6 +8,7 @@ import {jwtDecode} from "jwt-decode";
 interface JWTPayload {
   userId: string;
   email: string;
+  userName: string;
   exp?: number;
 }
 
@@ -31,7 +32,7 @@ const UserHeader: React.FC = () => {
           console.warn("Token đã hết hạn. Đang đăng xuất...");
           handleLogout();
         } else {
-          setUser({ email: decoded.email, userId: decoded.userId });
+          setUser({ email: decoded.email, userId: decoded.userId, userName: decoded.userName });
         }
       } catch (err) {
         console.error("Token không hợp lệ:", err);
@@ -80,14 +81,14 @@ const UserHeader: React.FC = () => {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto align-items-center">
             <li className="nav-item">
-              <Link className={`nav-link ${styles["nav-link"]}`} to="/user">
+              <Link className={`nav-link ${styles["nav-link"]}`} to="/">
                 Trang chủ
               </Link>
             </li>
             <li className="nav-item">
               <Link
                 className={`nav-link ${styles["nav-link"]}`}
-                to="/user/all-courses"
+                to="/all-courses"
               >
                 Khóa học
               </Link>
@@ -95,7 +96,7 @@ const UserHeader: React.FC = () => {
             <li className="nav-item">
               <Link
                 className={`nav-link ${styles["nav-link"]}`}
-                to="/user/about"
+                to="/about"
               >
                 Giới thiệu
               </Link>
@@ -103,7 +104,7 @@ const UserHeader: React.FC = () => {
             <li className="nav-item">
               <Link
                 className={`nav-link ${styles["nav-link"]}`}
-                to="/user/contact"
+                to="/contact"
               >
                 Liên hệ
               </Link>
@@ -140,7 +141,7 @@ const UserHeader: React.FC = () => {
                   style={{ borderColor: "white" }}
                 >
                   <FaUserCircle className="me-2" />
-                  {user.email}
+                  {user.userName || user.email}
                 </button>
                 <ul className="dropdown-menu dropdown-menu-end">
                   <li>

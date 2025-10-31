@@ -1,41 +1,98 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import styles from "../../styles/UserCoursePage.module.css";
 
+interface Course {
+  courseId: string;
+  courseName: string;
+  courseDescription: string;
+  coursePrice: number;
+  avatarURL: string | null;
+  level: string;
+}
+
 const AllCourses: React.FC = () => {
-  const courses = [
-    { id: 11, title: "Java căn bản", image: "/images/course11.jpg", price: "399.000đ" },
-    { id: 12, title: "HTML, CSS & JavaScript Pro", image: "/images/course12.jpg", price: "499.000đ" },
-    { id: 13, title: "Phân tích dữ liệu với Python", image: "/images/course13.jpg", price: "599.000đ" },
-    { id: 14, title: "Thiết kế UI/UX cho người mới", image: "/images/course14.jpg", price: "449.000đ" },
-    { id: 15, title: "Spring Boot và Microservices", image: "/images/course15.jpg", price: "799.000đ" },
-  ];
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/courses", {
+          params: { page: 1, limit: 20 }, // tuỳ chỉnh số lượng
+        });
+
+        if (response.data.success) {
+          setCourses(response.data.data);
+        } else {
+          setError("Không thể tải danh sách khóa học.");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Lỗi kết nối đến server.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  if (loading)
+    return (
+      <div className={styles.loading}>
+        <p>Đang tải danh sách khóa học...</p>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className={styles.error}>
+        <p>{error}</p>
+      </div>
+    );
 
   return (
     <div className={styles["blog-main"]}>
       <div className={`container ${styles["course-section"]}`}>
         <div className={styles["section-header"]}>
-          <h2>DANH SÁCH CÁC KHÓA HỌC</h2>
+          <h2>TẤT CẢ KHÓA HỌC</h2>
+          <p>Khám phá toàn bộ khóa học hiện có trên nền tảng</p>
         </div>
 
-        <div className={styles["course-grid"]}>
-          {courses.map((course) => (
-            <div className={styles["course-card"]} key={course.id}>
-              <img
-                src={course.image}
-                alt={course.title}
-                className={styles["course-img"]}
-              />
-              <div className={styles["course-info"]}>
-                <h5 className={styles["course-title"]}>{course.title}</h5>
-                <p className={styles["course-price"]}>{course.price}</p>
-                <div className={styles["course-buttons"]}>
-                  <button className={styles["btn-view"]}>Xem</button>
-                  <button className={styles["btn-buy"]}>Mua ngay</button>
+        {courses.length === 0 ? (
+          <p className={styles["no-course"]}>Chưa có khóa học nào.</p>
+        ) : (
+          <div className={styles["course-grid"]}>
+            {courses.map((course) => (
+              <div className={styles["course-card"]} key={course.courseId}>
+                <img
+                  src={
+                    course.avatarURL
+                      ? course.avatarURL
+                      : "/images/default-course.jpg"
+                  }
+                  alt={course.courseName}
+                  className={styles["course-img"]}
+                />
+                <div className={styles["course-info"]}>
+                  <h5 className={styles["course-title"]}>{course.courseName}</h5>
+                  <p className={styles["course-price"]}>
+                    {course.coursePrice.toLocaleString("vi-VN")}đ
+                  </p>
+                  <p className={styles["course-level"]}>
+                    Trình độ: {course.level}
+                  </p>
+                  <div className={styles["course-buttons"]}>
+                    <button className={styles["btn-view"]}>Xem</button>
+                    <button className={styles["btn-buy"]}>Mua ngay</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

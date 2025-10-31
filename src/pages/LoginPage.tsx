@@ -99,7 +99,7 @@ const LoginPage: React.FC = () => {
       if (normalizedRole === "admin") {
         navigate("/admin/dashboard");
       } else if (normalizedRole === "user") {
-        navigate("/user");
+        navigate("/");
       } else {
         // Nếu không xác định rõ role thì quay về trang chính
         navigate("/");
