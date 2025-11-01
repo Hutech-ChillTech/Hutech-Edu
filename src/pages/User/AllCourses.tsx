@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // Thêm dòng này
 import axios from "axios";
 import styles from "../../styles/UserCoursePage.module.css";
 
@@ -12,6 +13,7 @@ interface Course {
 }
 
 const AllCourses: React.FC = () => {
+  const navigate = useNavigate(); // Thêm dòng này
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,7 @@ const AllCourses: React.FC = () => {
     const fetchCourses = async () => {
       try {
         const response = await axios.get("http://localhost:3000/api/courses", {
-          params: { page: 1, limit: 20 }, // tuỳ chỉnh số lượng
+          params: { page: 1, limit: 20 },
         });
 
         if (response.data.success) {
@@ -38,6 +40,10 @@ const AllCourses: React.FC = () => {
 
     fetchCourses();
   }, []);
+
+  const handleViewCourse = (courseId: string) => {
+    navigate(`/course/${courseId}`);
+  };
 
   if (loading)
     return (
@@ -85,8 +91,19 @@ const AllCourses: React.FC = () => {
                     Trình độ: {course.level}
                   </p>
                   <div className={styles["course-buttons"]}>
-                    <button className={styles["btn-view"]}>Xem</button>
-                    <button className={styles["btn-buy"]}>Mua ngay</button>
+                    {/* Thêm onClick handler */}
+                    <button 
+                      className={styles["btn-view"]}
+                      onClick={() => handleViewCourse(course.courseId)}
+                    >
+                      Xem
+                    </button>
+                    <button 
+                      className={styles["btn-buy"]}
+                      onClick={() => handleViewCourse(course.courseId)}
+                    >
+                      Mua ngay
+                    </button>
                   </div>
                 </div>
               </div>

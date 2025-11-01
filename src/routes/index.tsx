@@ -18,6 +18,7 @@ import NotFountPage from "../pages/Error/NotFoundPage";
 import FeaturedCourses from "../pages/User/FeaturedCourses";
 import AllCourses from "../pages/User/AllCourses";
 import UserProfile from "../pages/User/UserProfile";
+import CourseDetailPage from "../pages/User/CourseDetailPage";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -42,6 +43,7 @@ const AppRoutes: React.FC = () => {
           <Route path="featured-courses" element={<FeaturedCourses></FeaturedCourses>}></Route>
           <Route path="all-courses" element={<AllCourses></AllCourses>}></Route>
           <Route path="profile" element={<UserProfile />} />
+          <Route path="/course/:id" element={<CourseDetailPage />} />
         </Route>
 
 

@@ -1,25 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import styles from "../../styles/UserMain.module.css";
 
 interface Course {
   courseId: string;
   courseName: string;
-  courseDescription: string;
+  courseDescription?: string;
   coursePrice: number;
   avatarURL: string | null;
   level: string;
 }
 
 const Main: React.FC = () => {
+  const navigate = useNavigate();
   const [apiCourses, setApiCourses] = useState<Course[]>([]);
+  const [popularCourses, setPopularCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const categories = ["Frontend", "Backend", "Data", "AI", "DevOps"];
 
-  // === Gọi API để lấy danh sách khóa học thật ===
+  const handleViewCourse = (courseId: string) => {
+    navigate(`/course/${courseId}`);
+  };
+
+  // === 1. Lấy toàn bộ khóa học ===
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -40,82 +46,22 @@ const Main: React.FC = () => {
     fetchCourses();
   }, []);
 
-  // === Mock data cho 2 phần đầu ===
-  const courseSections = [
-    {
-      title: "Gợi ý khóa học theo lộ trình",
-      link: "/user/featured-courses",
-      courses: [
-        {
-          id: 1,
-          title: "Lộ trình Frontend Developer",
-          image: "/images/course1.jpg",
-          price: "499.000đ",
-        },
-        {
-          id: 2,
-          title: "Lộ trình Backend Developer",
-          image: "/images/course2.jpg",
-          price: "599.000đ",
-        },
-        {
-          id: 3,
-          title: "Fullstack Web Developer",
-          image: "/images/course3.jpg",
-          price: "799.000đ",
-        },
-        {
-          id: 4,
-          title: "Cơ bản về AI & Machine Learning",
-          image: "/images/course4.jpg",
-          price: "699.000đ",
-        },
-        {
-          id: 5,
-          title: "DevOps cho người mới bắt đầu",
-          image: "/images/course5.jpg",
-          price: "499.000đ",
-        },
-      ],
-    },
-    {
-      title: "Khóa học Nổi bật",
-      link: "/user/featured-courses",
-      courses: [
-        {
-          id: 6,
-          title: "ReactJS từ cơ bản đến nâng cao",
-          image: "/images/course6.jpg",
-          price: "499.000đ",
-        },
-        {
-          id: 7,
-          title: "Node.js và Express thực chiến",
-          image: "/images/course7.jpg",
-          price: "599.000đ",
-        },
-        {
-          id: 8,
-          title: "C# và ASP.NET Core Web API",
-          image: "/images/course8.jpg",
-          price: "699.000đ",
-        },
-        {
-          id: 9,
-          title: "Python cho người mới bắt đầu",
-          image: "/images/course9.jpg",
-          price: "399.000đ",
-        },
-        {
-          id: 10,
-          title: "SQL & Database Design",
-          image: "/images/course10.jpg",
-          price: "499.000đ",
-        },
-      ],
-    },
-  ];
+  // === 2. Lấy khóa học nổi bật (popular) ===
+  useEffect(() => {
+    const fetchPopular = async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/api/courses/popular?limit=5");
+        if (res.data.success) {
+          setPopularCourses(res.data.data);
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải khóa học nổi bật:", err);
+      }
+    };
+    fetchPopular();
+  }, []);
 
+  // === Dữ liệu bài viết (giữ nguyên) ===
   const posts = [
     {
       title: "Làm quen với Frontend: HTML, CSS, JS",
@@ -157,39 +103,62 @@ const Main: React.FC = () => {
         ))}
       </div>
 
-      {/* === 1. GỢI Ý KHÓA HỌC THEO LỘ TRÌNH === */}
-      {courseSections.map((section, index) => (
-        <div key={index} className={`container ${styles["course-section"]}`}>
-          <div className={styles["section-header"]}>
-            <h2>{section.title}</h2>
-            <Link to={section.link} className={styles["view-more-btn"]}>
-              Xem thêm →
-            </Link>
-          </div>
+      {/* === KHÓA HỌC NỔI BẬT (TỪ API) === */}
+      <div className={`container ${styles["course-section"]}`}>
+        <div className={styles["section-header"]}>
+          <h2>Khóa học Nổi bật</h2>
+          <Link to="/user/featured-courses" className={styles["view-more-btn"]}>
+            Xem thêm →
+          </Link>
+        </div>
 
+        {popularCourses.length === 0 ? (
+          <p className="text-center text-muted">
+            Chưa có khóa học nổi bật nào.
+          </p>
+        ) : (
           <div className={styles["course-grid"]}>
-            {section.courses.map((course) => (
-              <div className={styles["course-card"]} key={course.id}>
+            {popularCourses.map((course) => (
+              <div className={styles["course-card"]} key={course.courseId}>
                 <img
-                  src={course.image}
-                  alt={course.title}
+                  src={
+                    course.avatarURL
+                      ? course.avatarURL
+                      : "/images/default-course.jpg"
+                  }
+                  alt={course.courseName}
                   className={styles["course-img"]}
                 />
                 <div className={styles["course-info"]}>
-                  <h5 className={styles["course-title"]}>{course.title}</h5>
-                  <p className={styles["course-price"]}>{course.price}</p>
+                  <h5 className={styles["course-title"]}>{course.courseName}</h5>
+                  <p className={styles["course-price"]}>
+                    {course.coursePrice.toLocaleString("vi-VN")}đ
+                  </p>
+                  <p className={styles["course-level"]}>
+                    Trình độ: {course.level}
+                  </p>
                   <div className={styles["course-buttons"]}>
-                    <button className={styles["btn-view"]}>Xem</button>
-                    <button className={styles["btn-buy"]}>Mua ngay</button>
+                    <button 
+                      className={styles["btn-view"]}
+                      onClick={() => handleViewCourse(course.courseId)}
+                    >
+                      Xem
+                    </button>
+                    <button 
+                      className={styles["btn-buy"]}
+                      onClick={() => handleViewCourse(course.courseId)}
+                    >
+                      Mua ngay
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      ))}
+        )}
+      </div>
 
-      {/* === 3. CÁC KHÓA HỌC THẬT TỪ API === */}
+      {/* === CÁC KHÓA HỌC KHÁC === */}
       <div className={`container ${styles["course-section"]}`}>
         <div className={styles["section-header"]}>
           <h2>Các khóa học tại SkillCoder</h2>
