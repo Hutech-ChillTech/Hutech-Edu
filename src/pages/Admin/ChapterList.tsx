@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   Table,
   Button,
@@ -61,7 +61,7 @@ const ChapterList: React.FC = () => {
     }
   }, [token]);
 
-  // ✅ Lấy tên khóa học
+  //Lấy tên khóa học nếu chưa có
   const fetchCourseName = useCallback(async () => {
     if (!courseId || courseName) return;
     try {
@@ -77,7 +77,7 @@ const ChapterList: React.FC = () => {
     }
   }, [courseId, courseName, token]);
 
-  // ✅ Lấy danh sách chương theo courseId
+  //Lấy danh sách chương theo courseId
   const fetchChapters = useCallback(async () => {
     if (!courseId) return;
     try {
@@ -87,9 +87,13 @@ const ChapterList: React.FC = () => {
       const data = await res.json();
 
       if (data.success && Array.isArray(data.data)) {
-        const filtered = data.data.filter(
-          (ch: Chapter) => ch.courseId === courseId
-        );
+        const filtered = data.data
+          .filter((ch: Chapter) => ch.courseId === courseId)
+          .sort((a: Chapter, b: Chapter) => {
+            const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return dateA - dateB;
+          });
         setChapters(filtered);
       } else {
         message.warning(data.message || "Không thể tải danh sách chương!");
@@ -105,7 +109,7 @@ const ChapterList: React.FC = () => {
     fetchChapters();
   }, [fetchCourseName, fetchChapters]);
 
-  // ✅ Thêm hoặc cập nhật chương
+  //Thêm hoặc cập nhật chương
   const handleFinish = async (values: any) => {
     if (!courseId) return message.warning("Thiếu mã khóa học!");
     setLoading(true);
@@ -135,8 +139,8 @@ const ChapterList: React.FC = () => {
       if (data.success) {
         message.success(
           editingId
-            ? "✅ Cập nhật chương thành công!"
-            : "✅ Thêm chương mới thành công!"
+            ? "Cập nhật chương thành công!"
+            : "Thêm chương mới thành công!"
         );
         form.resetFields();
         setEditingId(null);
@@ -153,7 +157,7 @@ const ChapterList: React.FC = () => {
     }
   };
 
-  // ✅ Sửa chương
+  // Sửa chương
   const handleEdit = (record: Chapter) => {
     form.setFieldsValue({
       chapterName: record.chapterName,
@@ -163,7 +167,7 @@ const ChapterList: React.FC = () => {
     setShowForm(true);
   };
 
-  // ✅ Xóa chương
+  //Xóa chương
   const handleDelete = async (chapterId: string) => {
     try {
       const res = await fetch(
@@ -233,28 +237,46 @@ const ChapterList: React.FC = () => {
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
       <Space style={{ marginBottom: 16 }}>
         <Button onClick={() => navigate("/admin/course")}>⬅️ Quay lại</Button>
-        <Title level={3}>📘 Khóa học: {courseName || "Đang tải..."}</Title>
+        <Title level={3}> Khóa học: {courseName || "Đang tải..."}</Title>
       </Space>
 
-      <div style={{ textAlign: "right", marginBottom: 12 }}>
+      <Card
+        style={{
+          borderRadius: "1rem",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+          marginBottom: 20,
+        }}
+        variant="borderless"
+      >
+        <Table
+          columns={columns}
+          dataSource={chapters}
+          rowKey="chapterId"
+          bordered
+          pagination={false}
+          locale={{ emptyText: "Chưa có chương nào" }}
+        />
+      </Card>
+
+      {/* ✅ Form nằm ở DƯỚI bảng */}
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
         <Button
           type="primary"
           icon={showForm ? <UpOutlined /> : <PlusOutlined />}
           onClick={() => setShowForm((prev) => !prev)}
         >
-          {showForm ? "Ẩn form" : "Thêm chương mới"}
+          {showForm ? "Ẩn form thêm chương" : "Thêm chương mới"}
         </Button>
       </div>
 
       {showForm && (
         <Card
           title={editingId ? "✏️ Cập nhật chương" : "➕ Thêm chương mới"}
-          bordered={false}
           style={{
             borderRadius: "1rem",
             boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-            marginBottom: 20,
           }}
+          variant="borderless"
         >
           <Form layout="vertical" form={form} onFinish={handleFinish}>
             <Form.Item
@@ -293,23 +315,6 @@ const ChapterList: React.FC = () => {
           </Form>
         </Card>
       )}
-
-      <Card
-        style={{
-          borderRadius: "1rem",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-        }}
-        bordered={false}
-      >
-        <Table
-          columns={columns}
-          dataSource={chapters}
-          rowKey="chapterId"
-          bordered
-          pagination={false}
-          locale={{ emptyText: "Chưa có chương nào" }}
-        />
-      </Card>
     </div>
   );
 };

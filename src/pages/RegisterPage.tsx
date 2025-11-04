@@ -48,7 +48,7 @@ const RegisterPage: React.FC = () => {
         <h2 className={styles["register-title"]}>Đăng ký tài khoản</h2>
 
         <form onSubmit={handleRegister}>
-          {/* 👤 Tên người dùng */}
+          {/* Tên người dùng */}
           <input
             type="text"
             className={styles["register-input"]}
@@ -59,7 +59,7 @@ const RegisterPage: React.FC = () => {
             required
           />
 
-          {/* ✉️ Email */}
+          {/* Email */}
           <input
             type="email"
             className={styles["register-input"]}
@@ -70,7 +70,7 @@ const RegisterPage: React.FC = () => {
             required
           />
 
-          {/* 🔒 Mật khẩu */}
+          {/* Mật khẩu */}
           <input
             type="password"
             className={styles["register-input"]}
@@ -93,7 +93,7 @@ const RegisterPage: React.FC = () => {
             <option value="Advanced">Advanced</option>
           </select>
 
-          {/* 🚻 Giới tính */}
+          {/* Giới tính */}
           <select
             className={styles["register-select"]}
             name="gender"

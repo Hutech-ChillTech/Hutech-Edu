@@ -5,14 +5,14 @@ import { FcGoogle } from "react-icons/fc";
 import axiosClient from "../service/axiosClient";
 import { jwtDecode } from "jwt-decode";
 
-// 🧩 Kiểu dữ liệu trả về từ API (phù hợp với BE)
+//  Kiểu dữ liệu trả về từ API (phù hợp với BE)
 interface LoginResponse {
   success: boolean;
   data: string; // chính là token
   message: string;
 }
 
-// 🧩 Kiểu dữ liệu trong token
+//  Kiểu dữ liệu trong token
 interface DecodedToken {
   userId: string;
   email: string;
@@ -22,7 +22,7 @@ interface DecodedToken {
   exp: number;
 }
 
-// 🧠 Dịch vụ xác thực
+//  Dịch vụ xác thực
 export const authService = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     const response = await axiosClient.post<LoginResponse>("/users/login", {
@@ -49,14 +49,14 @@ export const authService = {
   },
 };
 
-// 🧱 Component LoginPage
+//  Component LoginPage
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ Xử lý đăng nhập
+  //  Xử lý đăng nhập
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
       const res = await authService.login(email, password);
       const token = res.data;
 
-      // 🧱 Giải mã token để lấy thông tin người dùng
+      //  Giải mã token để lấy thông tin người dùng
       const decoded = jwtDecode<DecodedToken>(token);
 
       console.log("🔍 Token giải mã:", decoded);
@@ -79,7 +79,7 @@ const LoginPage: React.FC = () => {
       const normalizedRole = role.trim().toLowerCase();
       const userName = decoded.email?.split("@")[0] || "Người dùng";
 
-      // 🧱 Lưu thông tin vào localStorage
+      //  Lưu thông tin vào localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", normalizedRole);
       localStorage.setItem("username", userName);
@@ -95,7 +95,7 @@ const LoginPage: React.FC = () => {
 
       alert(`✅ Đăng nhập thành công! Xin chào ${userName}`);
 
-      // 🔀 Điều hướng theo vai trò
+      //  Điều hướng theo vai trò
       if (normalizedRole === "admin") {
         navigate("/admin/dashboard");
       } else if (normalizedRole === "user") {
@@ -119,7 +119,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // ⚙️ Tạm thời chưa dùng Google Login
+  //  Tạm thời chưa dùng Google Login
   const handleGoogleLogin = () => {
     alert("Tính năng đăng nhập Google sẽ được cập nhật sau 🚀");
   };

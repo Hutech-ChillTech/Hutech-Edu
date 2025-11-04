@@ -19,6 +19,7 @@ import FeaturedCourses from "../pages/User/FeaturedCourses";
 import AllCourses from "../pages/User/AllCourses";
 import UserProfile from "../pages/User/UserProfile";
 import CourseDetailPage from "../pages/User/CourseDetailPage";
+import LessonList from "../pages/Admin/LessonList";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const AppRoutes: React.FC = () => {
           <Route path="users" element={<AdminUser />} />
           <Route path="course" element={<CourseAdmin />} />
           <Route path="chapters/:courseId" element={<ChapterList />} />
+          <Route path="lessons/:chapterId" element={<LessonList />} />
         </Route>
 
         {/* User routes */}

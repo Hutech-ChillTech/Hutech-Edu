@@ -21,7 +21,7 @@ import {
   ReadOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import {jwtDecode} from "jwt-decode"; // 🟢 thêm thư viện này: npm install jwt-decode
+import { jwtDecode } from "jwt-decode"; // npm install jwt-decode
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -49,7 +49,7 @@ const CourseAdmin: React.FC = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  // 🟢 Giải mã token để lấy thông tin admin
+  //  Giải mã token để lấy thông tin admin
   const decoded = useMemo(() => {
     if (!token) return null;
     try {
@@ -62,7 +62,7 @@ const CourseAdmin: React.FC = () => {
 
   const adminId = decoded?.userId || decoded?.id;
 
-  // 🟢 Lấy danh sách khóa học
+  //  Lấy danh sách khóa học
   const fetchCourses = useCallback(async () => {
     try {
       const res = await fetch("http://localhost:3000/api/courses", {
@@ -71,7 +71,13 @@ const CourseAdmin: React.FC = () => {
       const data = await res.json();
 
       if (data.success) {
-        setCourses(data.data);
+        //  Sắp xếp tăng dần theo ngày tạo (nếu có)
+        const sorted = [...data.data].sort(
+          (a: any, b: any) =>
+            new Date(a.created_at || 0).getTime() -
+            new Date(b.created_at || 0).getTime()
+        );
+        setCourses(sorted);
       } else {
         message.warning(data.message || "Không lấy được danh sách khóa học!");
       }
@@ -85,7 +91,7 @@ const CourseAdmin: React.FC = () => {
     fetchCourses();
   }, [fetchCourses]);
 
-  // 🟢 Thêm / Cập nhật khóa học
+  //  Thêm / Cập nhật khóa học
   const handleFinish = async (values: any) => {
     try {
       const payload = {
@@ -93,7 +99,7 @@ const CourseAdmin: React.FC = () => {
         courseDescription: values.courseDescription,
         coursePrice: values.coursePrice,
         level: values.level,
-        createdBy: adminId, // 🟢 gửi id admin lên server
+        createdBy: adminId,
       };
 
       let url = "http://localhost:3000/api/courses/create";
@@ -116,7 +122,11 @@ const CourseAdmin: React.FC = () => {
       const data = await res.json();
 
       if (data.success) {
-        message.success(editingId ? "✅ Cập nhật khóa học thành công!" : "✅ Thêm khóa học thành công!");
+        message.success(
+          editingId
+            ? "✅ Cập nhật khóa học thành công!"
+            : "✅ Thêm khóa học thành công!"
+        );
         form.resetFields();
         setEditingId(null);
         setShowForm(false);
@@ -130,7 +140,7 @@ const CourseAdmin: React.FC = () => {
     }
   };
 
-  // 🟢 Sửa khóa học
+  //  Sửa khóa học
   const handleEdit = useCallback(
     (record: Course) => {
       setShowForm(true);
@@ -144,8 +154,7 @@ const CourseAdmin: React.FC = () => {
     },
     [form]
   );
-
-  // 🟢 Xóa khóa học
+  //  Xóa khóa học
   const handleDelete = useCallback(
     async (courseId: string) => {
       try {
@@ -172,10 +181,14 @@ const CourseAdmin: React.FC = () => {
     [fetchCourses, token]
   );
 
-  // 🟢 Cấu hình bảng hiển thị
+  //  Cấu hình bảng hiển thị
   const columns = useMemo(
     () => [
-      { title: "#", render: (_: unknown, __: unknown, i: number) => i + 1, width: 60 },
+      {
+        title: "#",
+        render: (_: unknown, __: unknown, i: number) => i + 1,
+        width: 60,
+      },
       { title: "Tên khóa học", dataIndex: "courseName" },
       { title: "Mô tả", dataIndex: "courseDescription" },
       {
@@ -236,7 +249,7 @@ const CourseAdmin: React.FC = () => {
       {showForm && (
         <Card
           title={editingId ? "✏️ Chỉnh sửa khóa học" : "➕ Thêm khóa học mới"}
-          bordered={false}
+          variant="borderless" // ✅ Thay bordered={false}
           style={{
             borderRadius: "1rem",
             boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
@@ -254,7 +267,9 @@ const CourseAdmin: React.FC = () => {
               <Form.Item
                 name="courseName"
                 label="Tên khóa học"
-                rules={[{ required: true, message: "Vui lòng nhập tên khóa học" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập tên khóa học" },
+                ]}
               >
                 <Input placeholder="Tên khóa học..." prefix={<BookOutlined />} />
               </Form.Item>
@@ -262,7 +277,9 @@ const CourseAdmin: React.FC = () => {
               <Form.Item
                 name="coursePrice"
                 label="Giá khóa học (VNĐ)"
-                rules={[{ required: true, message: "Vui lòng nhập giá khóa học" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập giá khóa học" },
+                ]}
               >
                 <InputNumber
                   style={{ width: "100%" }}
@@ -277,15 +294,22 @@ const CourseAdmin: React.FC = () => {
               <Form.Item
                 name="courseDescription"
                 label="Mô tả"
-                rules={[{ required: true, message: "Vui lòng nhập mô tả khóa học" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập mô tả khóa học" },
+                ]}
               >
-                <Input.TextArea rows={3} placeholder="Mô tả ngắn về khóa học..." />
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Mô tả ngắn về khóa học..."
+                />
               </Form.Item>
 
               <Form.Item
                 name="level"
                 label="Cấp độ"
-                rules={[{ required: true, message: "Vui lòng chọn cấp độ" }]}
+                rules={[
+                  { required: true, message: "Vui lòng chọn cấp độ" },
+                ]}
               >
                 <Select placeholder="Chọn cấp độ">
                   <Option value="Basic">Beginner</Option>
@@ -317,11 +341,11 @@ const CourseAdmin: React.FC = () => {
       )}
 
       <Card
+        variant="borderless" // ✅ Thay bordered={false}
         style={{
           borderRadius: "1rem",
           boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
         }}
-        bordered={false}
       >
         <Table
           columns={columns}
@@ -329,6 +353,7 @@ const CourseAdmin: React.FC = () => {
           rowKey="courseId"
           bordered
           scroll={{ x: true }}
+          locale={{ emptyText: "Chưa có khóa học nào" }}
         />
       </Card>
     </div>
