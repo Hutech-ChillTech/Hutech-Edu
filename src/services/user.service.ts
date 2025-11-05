@@ -50,9 +50,7 @@ class UserService {
 
   async loginWithEmail(email: string, password: string) {
     try {
-      console.log("🔥 Bắt đầu loginWithEmail");
       const firebaseApiKey = process.env.FIREBASE_API_KEY;
-      console.log("đang chạy đến đây");
 
       const response = await axios.post(
         `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
@@ -96,7 +94,7 @@ class UserService {
       console.log('✅ Đăng nhập thành công');
       return payload;
     } catch (error) {
-      console.error('❌lLogin with email error:', error);
+      console.error('❌Login with email error:', error);
       throw createHttpError(401, 'Đăng nhập thất bại');
     }
   }
