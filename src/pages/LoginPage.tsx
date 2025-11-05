@@ -5,30 +5,46 @@ import { FcGoogle } from "react-icons/fc";
 import axiosClient from "../service/axiosClient";
 import { jwtDecode } from "jwt-decode";
 
+
 //  Kiểu dữ liệu trả về từ API (phù hợp với BE)
-interface LoginResponse {
+export interface LoginResponse {
   success: boolean;
-  data: string; // chính là token
+  data: {
+    uid: string;
+    userId: string;
+    roleId: string;
+    role: string;
+    email: string;
+    token: string;
+  };
   message: string;
 }
 
-//  Kiểu dữ liệu trong token
-interface DecodedToken {
-  userId: string;
-  email: string;
-  roles?: string[]; // có thể có hoặc không
-  role?: string; // phòng trường hợp backend gửi role đơn lẻ
-  iat: number;
-  exp: number;
-}
+
+
 
 //  Dịch vụ xác thực
 export const authService = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
-    const response = await axiosClient.post<LoginResponse>("/users/login", {
+
+    const backendURL = import.meta.env.VITE_BACKEND_URL;
+
+    const url = `${backendURL}/api/users/login`;
+
+
+    const response = await axiosClient.post(url, {
       email,
       password,
+      returnSecureToken: true,
     });
+
+    const { idToken, refeshToken, localId, email: userEmail } = response.data;
+
+    localStorage.setItem("token: ", idToken);
+    localStorage.setItem("refeshToken: ", refeshToken);
+    localStorage.setItem("email:", userEmail);
+    localStorage.setItem("uid: ", localId);
+
     return response.data;
   },
 
@@ -63,53 +79,29 @@ const LoginPage: React.FC = () => {
 
     try {
       const res = await authService.login(email, password);
-      const token = res.data;
+      const userData = res.data;
 
-      //  Giải mã token để lấy thông tin người dùng
-      const decoded = jwtDecode<DecodedToken>(token);
+      console.log("User Data:", userData);
 
-      console.log("🔍 Token giải mã:", decoded);
+      // Lưu token vào localStorage nếu cần
+      localStorage.setItem("token", userData.token);
 
-      // Lấy role từ token (ưu tiên roles[0], fallback role)
-      const role =
-        decoded.roles?.[0] ||
-        decoded.role ||
-        "user"; // fallback nếu backend không có field roles
+      alert(`✅ Đăng nhập thành công! Xin chào ${userData.email}`);
 
-      const normalizedRole = role.trim().toLowerCase();
-      const userName = decoded.email?.split("@")[0] || "Người dùng";
+      const normalizedRole = userData.role.trim().toLowerCase();
 
-      //  Lưu thông tin vào localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", normalizedRole);
-      localStorage.setItem("username", userName);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: decoded.userId,
-          email: decoded.email,
-          role: normalizedRole,
-          userName,
-        })
-      );
-
-      alert(`✅ Đăng nhập thành công! Xin chào ${userName}`);
-
-      //  Điều hướng theo vai trò
       if (normalizedRole === "admin") {
         navigate("/admin/dashboard");
-      } else if (normalizedRole === "user") {
-        navigate("/");
       } else {
-        // Nếu không xác định rõ role thì quay về trang chính
         navigate("/");
       }
+
     } catch (error: any) {
       console.error("❌ Lỗi đăng nhập:", error);
       if (error.response) {
         alert(
           error.response.data?.message ||
-            "Email hoặc mật khẩu không đúng. Vui lòng thử lại!"
+          "Email hoặc mật khẩu không đúng. Vui lòng thử lại!"
         );
       } else {
         alert("Không thể kết nối đến server. Hãy kiểm tra lại backend!");
@@ -118,6 +110,7 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+
 
   //  Tạm thời chưa dùng Google Login
   const handleGoogleLogin = () => {
