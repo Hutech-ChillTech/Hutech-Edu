@@ -6,7 +6,6 @@ import CourseController from "../controllers/course.controller";
 import { validate } from "../middlewares/validate";
 import { authenticate, optionalAuth } from "../middlewares/auth.middleware";
 import {
-  requireRole,
   requirePermission,
   requireCourseOwnerOrAdmin,
 } from "../middlewares/role.middleware";
@@ -19,6 +18,9 @@ import {
   paginationSchema,
 } from "../validators/course.validate";
 
+import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken";
+import { verifyRole } from "../middlewares/verifyRole";
+
 const courseRepository = new CourseRepository(Prisma, "courseId");
 const courseService = new CourseService(courseRepository);
 const courseController = new CourseController(courseService);
@@ -27,66 +29,85 @@ const router = Router();
 
 router.get(
   "/",
-  optionalAuth,
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
+  requirePermission([Permissions.COURSE_READ]),
   validate(paginationSchema, "query"),
   (req, res, next) => courseController.getAllCourses(req, res, next)
 );
 
 router.get(
   "/search",
-  optionalAuth,
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
   validate(searchCourseSchema, "query"),
   (req, res, next) => courseController.searchCourseByName(req, res, next)
 );
 
-router.get("/popular", optionalAuth, (req, res, next) =>
+router.get("/popular", 
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]), (req, res, next) =>
   courseController.getPopularCourses(req, res, next)
 );
 
 router.get(
   "/filter",
-  optionalAuth,
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
   validate(filterCourseSchema, "query"),
   (req, res, next) => courseController.filterCourses(req, res, next)
 );
 
-router.get("/count", optionalAuth, (req, res, next) =>
+router.get("/count",
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]), (req, res, next) =>
   courseController.countCourses(req, res, next)
 );
 
 router.get(
   "/level/:level",
-  optionalAuth,
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
   validate(paginationSchema, "query"),
   (req, res, next) => courseController.getCoursesByLevel(req, res, next)
 );
 
-router.get("/:courseId", optionalAuth, (req, res, next) =>
+router.get("/:courseId", 
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]), (req, res, next) =>
   courseController.getCourseById(req, res, next)
 );
 
-router.get("/:courseId/details", optionalAuth, (req, res, next) =>
+router.get("/:courseId/details", 
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]), (req, res, next) =>
   courseController.getCourseWithDetails(req, res, next)
 );
 
-router.get("/:courseId/content", optionalAuth, (req, res, next) =>
+router.get("/:courseId/content", 
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]), (req, res, next) =>
   courseController.getCourseWithChaptersAndLessons(req, res, next)
 );
 
-router.get("/:courseId/stats", optionalAuth, (req, res, next) =>
+router.get("/:courseId/stats", 
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]), (req, res, next) =>
   courseController.getCourseStats(req, res, next)
 );
 
 router.get(
   "/creator/:userId",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
   validate(paginationSchema, "query"),
   (req, res, next) => courseController.getCoursesByCreator(req, res, next)
 );
 
 router.post(
   "/create",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.COURSE_CREATE]),
   validate(createCourseSchema),
   (req, res, next) => courseController.createCourse(req, res, next)
@@ -94,8 +115,8 @@ router.post(
 
 router.put(
   "/update/:courseId",
-  authenticate,
-  requireCourseOwnerOrAdmin(),
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.COURSE_UPDATE]),
   validate(updateCourseSchema),
   (req, res, next) => courseController.updateCourse(req, res, next)
@@ -103,8 +124,8 @@ router.put(
 
 router.delete(
   "/delete/:courseId",
-  authenticate,
-  requireRole([UserRoles.ADMIN]),
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.COURSE_DELETE]),
   (req, res, next) => courseController.deleteCourse(req, res, next)
 );

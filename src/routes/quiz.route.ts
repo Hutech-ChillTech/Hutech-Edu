@@ -7,7 +7,7 @@ import QuizService from "../services/quiz.service";
 import QuizController from "../controllers/quiz.controller";
 import { validate } from "../middlewares/validate";
 import { authenticate, optionalAuth } from "../middlewares/auth.middleware";
-import { requireRole, requirePermission } from "../middlewares/role.middleware";
+import {  requirePermission } from "../middlewares/role.middleware";
 import { UserRoles, Permissions } from "../constants/roles";
 import {
   createQuizSchema,
@@ -67,7 +67,6 @@ router.put(
 router.delete(
   "/:chapterQuizId",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.QUIZ_DELETE]),
   (req, res, next) => quizController.deleteQuiz(req, res, next)
 );
@@ -99,7 +98,6 @@ router.put(
 router.delete(
   "/questions/:quizQuestionId",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.QUIZ_DELETE]),
   (req, res, next) => quizController.deleteQuestion(req, res, next)
 );
@@ -133,7 +131,6 @@ router.put(
 router.delete(
   "/options/:quizOptionId",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.QUIZ_DELETE]),
   (req, res, next) => quizController.deleteOption(req, res, next)
 );

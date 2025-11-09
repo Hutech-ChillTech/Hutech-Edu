@@ -41,6 +41,14 @@ export enum Permissions {
   ROLE_UPDATE = "role:update",
   ROLE_DELETE = "role:delete",
   ROLE_ASSIGN = "role:assign",
+
+  TESTCASE_CREATE = "testCase:create",
+  TESTCASE_READ = "testCase:read",
+  TESTCASE_UPDATE = "testCase:update",
+  TESTCASE_DELETE = "testCase:delete",
+  TESTCASE_ASSIGN = "testCase:assign",
+
+
 }
 
 export const RolePermissions: Record<UserRoles, Permissions[]> = {
@@ -76,6 +84,11 @@ export const RolePermissions: Record<UserRoles, Permissions[]> = {
     Permissions.ROLE_UPDATE,
     Permissions.ROLE_DELETE,
     Permissions.ROLE_ASSIGN,
+    Permissions.TESTCASE_CREATE,
+    Permissions.TESTCASE_READ,
+    Permissions.TESTCASE_UPDATE,
+    Permissions.TESTCASE_DELETE,
+    Permissions.TESTCASE_ASSIGN,
   ],
 
   [UserRoles.USER]: [

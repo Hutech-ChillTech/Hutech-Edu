@@ -221,6 +221,7 @@ class CourseController {
   async createCourse(req: Request, res: Response, next: NextFunction) {
     try {
       const data = req.body;
+      console.log(data);
       const course = await this.courseService.createCourse(data);
       sendSuccess(res, course, "Thêm mới course thành công");
     } catch (error) {

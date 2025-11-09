@@ -8,7 +8,6 @@ import UserController from "../controllers/user.controller";
 import { validate } from "../middlewares/validate";
 import { authenticate } from "../middlewares/auth.middleware";
 import {
-  requireRole,
   requireOwnerOrAdmin,
 } from "../middlewares/role.middleware";
 import { UserRoles } from "../constants/roles";
@@ -42,7 +41,6 @@ router.post("/register", validate(createUserSchema), (req, res, next) =>
 router.get(
   "/search",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   validate(searchUserSchema, "query"),
   (req, res, next) => userController.searchUserByName(req, res, next)
 );
@@ -50,7 +48,6 @@ router.get(
 router.get(
   "/search/name",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   validate(getUserByNameSchema, "query"),
   (req, res, next) => userController.getUserByName(req, res, next)
 );
@@ -58,7 +55,6 @@ router.get(
 router.get(
   "/search/email",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   validate(getUserByEmailSchema, "query"),
   (req, res, next) => userController.getUserByEmail(req, res, next)
 );
@@ -66,7 +62,6 @@ router.get(
 router.get(
   "/",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   validate(paginationSchema, "query"),
   (req, res, next) => userController.getAllUser(req, res, next)
 );
@@ -107,7 +102,6 @@ router.put(
 router.delete(
   "/:userId",
   authenticate,
-  requireRole([UserRoles.ADMIN]),
   (req, res, next) => userController.deleteUser(req, res, next)
 );
 

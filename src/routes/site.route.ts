@@ -5,6 +5,7 @@ import courseRoute from "./course.route";
 import lessonRoute from "./lesson.route";
 import enrollmentRoute from "./enrollment.route";
 import quizRoute from "./quiz.route";
+import testCaseRoute from "./testCase.route";
 
 function setUpRoutes(app: Express) {
   app.use("/api/users", userRoute);
@@ -13,6 +14,7 @@ function setUpRoutes(app: Express) {
   app.use("/api/lessons", lessonRoute);
   app.use("/api/enrollments", enrollmentRoute);
   app.use("/api/quizzes", quizRoute);
+  app.use("/api/testCases", testCaseRoute);
 }
 
 export default setUpRoutes;

@@ -1,55 +1,32 @@
 import { Response, NextFunction } from "express";
-import { AuthRequest } from "./auth.middleware";
+import { AuthRequest } from "../types/authRequest";
+import Prisma from "../configs/prismaClient";
 import { UserRoles, Permissions } from "../constants/roles";
+import { sendUnauthorized } from "../utils/responseHelper";
 
 /*
  * Middleware kiểm tra user có role cụ thể không
  */
-export const requireRole = (roles: UserRoles[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    // Kiểm tra user đã authenticated chưa
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized - Please login first",
-      });
-    }
-
-    // Kiểm tra user có ít nhất 1 trong các roles yêu cầu
-    const hasRole = req.user.roles.some((userRole) =>
-      roles.includes(userRole as UserRoles)
-    );
-
-    if (!hasRole) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Forbidden - You don't have permission to access this resource",
-        requiredRoles: roles,
-        yourRoles: req.user.roles,
-      });
-    }
-
-    next();
-  };
-};
-
-/**
- * Middleware kiểm tra user có permission cụ thể không
- */
 export const requirePermission = (permissions: Permissions[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    // Kiểm tra user đã authenticated chưa
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized - Please login first",
-      });
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+    
+    const roleId = req.user?.roleId;
+
+    if (!roleId) {
+      sendUnauthorized(res, "Không tìm thấy vai trò của người dùng");
+      return;
     }
 
-    // Kiểm tra user có ít nhất 1 trong các permissions yêu cầu
-    const hasPermission = req.user.permissions.some((userPermission) =>
-      permissions.includes(userPermission as Permissions)
+    // Lấy danh sách quyền từ RoleClaim
+    const roleClaims = await Prisma.roleClaim.findMany({
+      where: { roleId },
+      select: { permission: true }
+    });
+
+    const userPermissions = roleClaims.map(rc => rc.permission);
+
+    const hasPermission = userPermissions.some((p) =>
+      permissions.includes(p as Permissions)
     );
 
     if (!hasPermission) {
@@ -57,50 +34,52 @@ export const requirePermission = (permissions: Permissions[]) => {
         success: false,
         message: "Forbidden - You don't have required permission",
         requiredPermissions: permissions,
-        yourPermissions: req.user.permissions,
+        yourPermissions: userPermissions,
       });
     }
 
     next();
-  };
+   };
 };
+
+
 
 /**
  * Middleware kiểm tra user có TẤT CẢ permissions yêu cầu không
  */
-export const requireAllPermissions = (permissions: Permissions[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized - Please login first",
-      });
-    }
+// export const requireAllPermissions = (permissions: Permissions[]) => {
+//   return (req: AuthRequest, res: Response, next: NextFunction) => {
+//     if (!req.user) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Unauthorized - Please login first",
+//       });
+//     }
 
-    // Kiểm tra user có ĐỦ TẤT CẢ permissions không
-    const hasAllPermissions = permissions.every((permission) =>
-      req.user!.permissions.includes(permission)
-    );
+//     // Kiểm tra user có ĐỦ TẤT CẢ permissions không
+//     const hasAllPermissions = permissions.every((permission) =>
+//       req.user!.permissions.includes(permission)
+//     );
 
-    if (!hasAllPermissions) {
-      const missingPermissions = permissions.filter(
-        (permission) => !req.user!.permissions.includes(permission)
-      );
+//     if (!hasAllPermissions) {
+//       const missingPermissions = permissions.filter(
+//         (permission) => !req.user!.permissions.includes(permission)
+//       );
 
-      return res.status(403).json({
-        success: false,
-        message: "Forbidden - Missing required permissions",
-        missingPermissions,
-      });
-    }
+//       return res.status(403).json({
+//         success: false,
+//         message: "Forbidden - Missing required permissions",
+//         missingPermissions,
+//       });
+//     }
 
-    next();
-  };
-};
+//     next();
+//   };
+// };
 
-/**
- * Middleware kiểm tra user là owner của resource hoặc là Admin
- */
+// /**
+//  * Middleware kiểm tra user là owner của resource hoặc là Admin
+//  */
 export const requireOwnerOrAdmin = (
   getUserIdFromRequest: (req: AuthRequest) => string
 ) => {
@@ -114,7 +93,7 @@ export const requireOwnerOrAdmin = (
 
     const targetUserId = getUserIdFromRequest(req);
     const isOwner = req.user.userId === targetUserId;
-    const isAdmin = req.user.roles.includes(UserRoles.ADMIN);
+    const isAdmin = req.user.roleId.includes(UserRoles.ADMIN);
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({
@@ -141,7 +120,7 @@ export const requireCourseOwnerOrAdmin = () => {
     }
 
     // Admin có full access
-    if (req.user.roles.includes(UserRoles.ADMIN)) {
+    if (req.user.roleId.includes(UserRoles.ADMIN)) {
       return next();
     }
 

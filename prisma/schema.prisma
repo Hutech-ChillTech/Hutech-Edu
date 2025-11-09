@@ -142,12 +142,12 @@ model Lesson {
 
   chapter         Chapter  @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
   submissions     Submission[]
-  testCodes       TestCode[]
+  testCases       TestCase[]
   lessonsProgress UserLessonProgress[]
 }
 
-model TestCode {
-  testCodeId     String @id @default(uuid()) @db.Uuid
+model TestCase {
+  testCaseId     String @id @default(uuid()) @db.Uuid
   description    String?
   input          String?
   expectedOutput String?

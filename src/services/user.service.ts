@@ -78,19 +78,22 @@ class UserService {
 
 
       const roleName = await this.roleRepository.getById(roleId);
-      if(!roleName){
+      if (!roleName) {
         throw new Error("Không tìm thấy role phù hợp với ID");
       }
 
       const payload = {
         uid,
-        userId: userId,
+        user: {
+          userId: userId,
+          email: account.email
+        },
         roleId: roleId,
         role: roleName.name,
         email: decodedToken.email,
         token: idToken,
       };
-      
+
       console.log('✅ Đăng nhập thành công');
       return payload;
     } catch (error) {
