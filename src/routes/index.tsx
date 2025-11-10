@@ -21,6 +21,7 @@ import UserProfile from "../pages/User/UserProfile";
 import CourseDetailPage from "../pages/User/CourseDetailPage";
 import LessonList from "../pages/Admin/LessonList";
 import LessonVideoPage from "../pages/User/LessonVideoPage";
+import LearningPathMap from "../pages/LearningPathMap/LearningPathMap";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -49,6 +50,8 @@ const AppRoutes: React.FC = () => {
           <Route path="/course/:id" element={<CourseDetailPage />} />
           <Route path="/course/:courseId/lesson-video/:lessonId" element={<LessonVideoPage />} />
           <Route path="/lesson-video" element={<LessonVideoPage />} /> {/* test lesson-video page*/}
+          <Route path="/LearningPathMap" element={<LearningPathMap/>} />
+          
         </Route>
 
 
