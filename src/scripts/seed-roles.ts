@@ -1,6 +1,6 @@
 import Prisma from "../configs/prismaClient";
 import { UserRoles, Permissions, RolePermissions } from "../constants/roles";
-import { Gender } from "@prisma/client";
+import { Gender, Level } from "@prisma/client";
 import argon2 from "argon2";
 
 const ADMIN_ACCOUNTS = [
@@ -9,18 +9,75 @@ const ADMIN_ACCOUNTS = [
     email: "admin1@hutech.edu.vn",
     password: "Admin@123",
     gender: Gender.MALE,
+    region: "Việt Nam",
+    level: Level.Advanced,
+    dateOfBirth: new Date("2000-01-01"),
   },
   {
     userName: "admin2",
     email: "admin2@hutech.edu.vn",
     password: "Admin@123",
     gender: Gender.FEMALE,
+    region: "Việt Nam",
+    level: Level.Advanced,
+    dateOfBirth: new Date("2000-05-15"),
   },
   {
     userName: "admin3",
     email: "admin3@hutech.edu.vn",
     password: "Admin@123",
     gender: Gender.MALE,
+    region: "Việt Nam",
+    level: Level.Advanced,
+    dateOfBirth: new Date("2000-10-20"),
+  },
+];
+
+const USER_ACCOUNTS = [
+  {
+    userName: "user1",
+    email: "user1@hutech.edu.vn",
+    password: "User@123",
+    gender: Gender.MALE,
+    region: "Việt Nam",
+    level: Level.Basic,
+    dateOfBirth: new Date("2002-03-15"),
+  },
+  {
+    userName: "user2",
+    email: "user2@hutech.edu.vn",
+    password: "User@123",
+    gender: Gender.FEMALE,
+    region: "Việt Nam",
+    level: Level.Intermediate,
+    dateOfBirth: new Date("2001-07-20"),
+  },
+  {
+    userName: "user3",
+    email: "user3@hutech.edu.vn",
+    password: "User@123",
+    gender: Gender.MALE,
+    region: "Việt Nam",
+    level: Level.Basic,
+    dateOfBirth: new Date("2003-11-05"),
+  },
+  {
+    userName: "user4",
+    email: "user4@hutech.edu.vn",
+    password: "User@123",
+    gender: Gender.FEMALE,
+    region: "Việt Nam",
+    level: Level.Intermediate,
+    dateOfBirth: new Date("2002-09-12"),
+  },
+  {
+    userName: "user5",
+    email: "user5@hutech.edu.vn",
+    password: "User@123",
+    gender: Gender.MALE,
+    region: "Việt Nam",
+    level: Level.Advanced,
+    dateOfBirth: new Date("2001-12-25"),
   },
 ];
 
@@ -95,6 +152,9 @@ async function seedRoles() {
           email: adminData.email,
           password: hashedPassword,
           gender: adminData.gender,
+          region: adminData.region,
+          level: adminData.level,
+          dateOfBirth: adminData.dateOfBirth,
         },
       });
 
@@ -107,6 +167,52 @@ async function seedRoles() {
 
       console.log(
         `   ✅ Tạo ADMIN: ${adminData.email} (password: ${adminData.password})`
+      );
+    }
+
+    console.log("\n👥 Tạo tài khoản USER...");
+
+    const userRole = await Prisma.role.findUnique({
+      where: { name: UserRoles.USER },
+    });
+
+    if (!userRole) {
+      throw new Error("Không tìm thấy role USER");
+    }
+
+    for (const userData of USER_ACCOUNTS) {
+      const existingUser = await Prisma.user.findUnique({
+        where: { email: userData.email },
+      });
+
+      if (existingUser) {
+        console.log(`   ⚠️  ${userData.email} đã tồn tại, bỏ qua...`);
+        continue;
+      }
+
+      const hashedPassword = await argon2.hash(userData.password);
+
+      const user = await Prisma.user.create({
+        data: {
+          userName: userData.userName,
+          email: userData.email,
+          password: hashedPassword,
+          gender: userData.gender,
+          region: userData.region,
+          level: userData.level,
+          dateOfBirth: userData.dateOfBirth,
+        },
+      });
+
+      await Prisma.userRole.create({
+        data: {
+          userId: user.userId,
+          roleId: userRole.roleId,
+        },
+      });
+
+      console.log(
+        `   ✅ Tạo USER: ${userData.email} (password: ${userData.password})`
       );
     }
 

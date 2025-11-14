@@ -1,3 +1,4 @@
+import { RolePermissions } from "./../constants/roles";
 import { Request, Response, NextFunction } from "express";
 import { validate as isUUID } from "uuid";
 import UserService from "../services/user.service";
@@ -17,11 +18,18 @@ class UserController {
     try {
       const { email, password } = req.body;
       const userData = await this.userService.login(email, password);
+
+      // Tạo JWT token với userId, email và roles
       const token = jwt.sign(
-        { userId: userData.userId, email: userData.email },
+        {
+          userId: userData.userId,
+          email: userData.email,
+          roles: userData.roles,
+        },
         JWT_SECRET,
         { expiresIn: "7d" }
       );
+
       sendSuccess(res, token, "Đăng nhập thành công");
     } catch (error) {
       const msg = (error as Error).message || "Lỗi máy chủ";

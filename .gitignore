@@ -27,5 +27,7 @@ npm-debug.log*
 # Migration
 prisma/migrations/
 
+# Readme
+README.md
 
 

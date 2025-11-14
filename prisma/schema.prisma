@@ -19,12 +19,25 @@ enum Level {
   Advanced
 }
 
+enum SubLevel {
+  Low
+  Mid
+  High
+}
+
+enum LearningSpeed {
+  Slow      // Học chậm
+  Normal    // Bình thường
+  Fast      // Học nhanh
+}
+
 model User {
   userId String @id @default(uuid()) @db.Uuid
   userName     String
   password     String
   email        String   @unique
   gender       Gender
+  specialization String?        // Chuyên ngành của người dùng
   avatarURL    String?
   region       String?
   dateOfBirth  DateTime?
@@ -32,18 +45,25 @@ model User {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  account            Account?
-  roles              UserRole[]
-  roleClaims         RoleClaim[]   @relation("UserRoleClaims")
-  coursesCreated     Course[]
-  comments           Comment[]
-  payments           Payment[]
-  certificates       Certificate[]
-  notifications      Notification[]
-  userCoursePreviews UserCoursePreview[]
-  submissions        Submission[]
-  lessonsProgress    UserLessonProgress[]
-  enrollments        Enrollment[]
+  account               Account?
+  roles                 UserRole[]
+  roleClaims            RoleClaim[]   @relation("UserRoleClaims")
+  coursesCreated        Course[]
+  comments              Comment[]
+  payments              Payment[]
+  certificates          Certificate[]
+  notifications         Notification[]
+  userCoursePreviews    UserCoursePreview[]
+  submissions           Submission[]
+  lessonsProgress       UserLessonProgress[]
+  enrollments           Enrollment[]
+  learningPathsCreated  LearningPath[]           // Lộ trình đã tạo
+  userLearningPaths     UserLearningPath[]       // Lộ trình đang follow
+  learningSpeedTracking UserLearningSpeed[]      // Tracking tốc độ học
+  courseRecommendations CourseRecommendation[]   // Gợi ý khóa học
+  learningSessions      LearningSession[]        // Session học
+  activityLogs          ActivityLog[]            // Lịch sử hoạt động
+  inactivityWarnings    InactivityWarning[]      // Cảnh báo không hoạt động
 
   @@index([email])
   @@index([userName])
@@ -105,16 +125,21 @@ model Course {
   discount          Float?
   avatarURL         String?
   level             Level?
+  subLevel          SubLevel?         // Cấp độ chi tiết: Low, Mid, High
+  estimatedDuration Int?              // Thời gian ước lượng (giờ) để hoàn thành khóa học
+  specialization    String?           // Chuyên ngành ví dụ CNTT, Marketing,...
+  tag               String?           // tag phân loại ví dụ như C#, Excel,...
   createdBy         String? @db.Uuid
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
-  user               User?               @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
-  chapters           Chapter[]
-  comments           Comment[]
-  enrollments        Enrollment[]
-  certificates       Certificate[]
-  userCoursePreviews UserCoursePreview[]
+  user                  User?                  @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
+  chapters              Chapter[]
+  comments              Comment[]
+  enrollments           Enrollment[]
+  certificates          Certificate[]
+  userCoursePreviews    UserCoursePreview[]
+  learningPathCourses   LearningPathCourse[]   // Khóa học thuộc lộ trình nào
 
   @@index([courseName])
 }
@@ -143,7 +168,6 @@ model Lesson {
   updated_at     DateTime @updatedAt
 
   chapter         Chapter  @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
-  submissions     Submission[]
   testCodes       TestCode[]
   lessonsProgress UserLessonProgress[]
 }
@@ -216,59 +240,78 @@ model UserCoursePreview {
 
 model Certificate {
   certificateId    String @id @default(uuid()) @db.Uuid
-  submissionId     String? @db.Uuid
   certificateTitle String?
   userId           String @db.Uuid
   courseId         String @db.Uuid
   certificateURL   String?
+  averageScore     Float?         // Điểm trung bình của tất cả chapters (VD: 85.5%)
+  totalScore       Float?         // Phần trăm điểm đạt được
+  maxScore         Float?         // Tổng điểm tối đa có thể đạt
   issuedAt         DateTime @default(now())
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  user       User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  course     Course      @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
-  submission Submission? @relation(fields: [submissionId], references: [submissionId], onDelete: SetNull)
+  user       User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course     Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
 }
 
 model Submission {
   submissionId  String @id @default(uuid()) @db.Uuid
-  score         Float?
-  isPassed      Boolean  @default(false)
+  score         Float?            // Điểm đạt được trong bài quiz này
+  maxScore      Float?            // Điểm tối đa của bài quiz này (=100)
+  isPassed      Boolean @default(false) // Đạt hay không 
+  answers       Json?             // Lưu câu trả lời của user
+  submittedAt   DateTime?         // Thời gian nộp bài
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
   userId        String @db.Uuid
-  chapterQuizId String? @db.Uuid
-  lessonId      String? @db.Uuid
+  chapterQuizId String @db.Uuid   
 
-  user         User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  chapterQuiz  ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
-  lesson       Lesson?      @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
-  certificates Certificate[]
+  user         User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  chapterQuiz  ChapterQuiz @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
+
+  @@unique([userId, chapterQuizId]) 
+  @@index([userId])
+  @@index([chapterQuizId])
+  @@index([isPassed])
 }
 
 model ChapterQuiz {
   chapterQuizId String @id @default(uuid()) @db.Uuid
   title         String
   description   String?
+  duration      Int?              // Thời gian làm bài (phút)
+  passingScore  Float?            // Điểm đạt (%) - VD: 70.0 nghĩa là 70%
+  totalPoints   Float?            // Tổng điểm tối đa của quiz này (=100)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
-  chapterId     String? @db.Uuid
+  chapterId     String @db.Uuid   // BẮT BUỘC - không optional
 
-  chapter       Chapter?       @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
+  chapter       Chapter        @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
   quizQuestions QuizQuestion[]
   submissions   Submission[]
+
+  @@unique([chapterId])
+  @@index([chapterId])
 }
 
 model QuizQuestion {
   quizQuestionId String @id @default(uuid()) @db.Uuid
   questionText   String 
-  questionType   String
+  questionType   String            // multiple_choice, true_false, short_answer, essay
+  points         Float @default(1.0) // Điểm của câu hỏi này
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
-  chapterQuizId  String? @db.Uuid
+  chapterQuizId  String @db.Uuid 
 
-  chapterQuiz ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
+  chapterQuiz ChapterQuiz  @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
   quizOptions QuizOption[]
+
+  @@index([chapterQuizId])
 }
 
 model QuizOption {
@@ -310,4 +353,203 @@ model Enrollment {
   @@index([userId])
   @@index([courseId])
   @@index([createdAt])
+}
+
+// ========================================
+// LEARNING PATH MODELS
+// ========================================
+
+// Lộ trình học (Template cố định do Admin/Creator tạo)
+model LearningPath {
+  learningPathId  String @id @default(uuid()) @db.Uuid
+  title           String                     // VD: "Lộ trình Full-stack Developer"
+  description     String?
+  level           Level                      // Basic, Intermediate, Advanced
+  estimatedHours  Int?                       // Thời gian ước tính (giờ)
+  isPublished     Boolean @default(false)    // Đã public chưa
+  createdBy       String? @db.Uuid
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  creator             User?                    @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
+  courses             LearningPathCourse[]     // Các khóa học trong lộ trình
+  userLearningPaths   UserLearningPath[]       // User đang follow lộ trình này
+
+  @@index([level])
+  @@index([isPublished])
+  @@index([createdBy])
+}
+
+// Các khóa học trong lộ trình (Many-to-Many giữa LearningPath và Course)
+model LearningPathCourse {
+  id              String @id @default(uuid()) @db.Uuid
+  learningPathId  String @db.Uuid
+  courseId        String @db.Uuid
+  orderIndex      Int                        // Thứ tự khóa học trong lộ trình (1, 2, 3...)
+  isRequired      Boolean @default(true)     // Bắt buộc hay tùy chọn
+  created_at      DateTime @default(now())
+
+  learningPath    LearningPath @relation(fields: [learningPathId], references: [learningPathId], onDelete: Cascade)
+  course          Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@unique([learningPathId, courseId])
+  @@index([learningPathId])
+  @@index([courseId])
+  @@index([orderIndex])
+}
+
+// User đang follow lộ trình nào
+model UserLearningPath {
+  id              String @id @default(uuid()) @db.Uuid
+  userId          String @db.Uuid
+  learningPathId  String @db.Uuid
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?                  // Thời gian hoàn thành
+  progress        Float @default(0)          // Tiến độ % (0-100)
+  isCompleted     Boolean @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  learningPath    LearningPath @relation(fields: [learningPathId], references: [learningPathId], onDelete: Cascade)
+
+  @@unique([userId, learningPathId])
+  @@index([userId])
+  @@index([learningPathId])
+  @@index([isCompleted])
+}
+
+// Tracking tốc độ học của user trong từng khóa học
+model UserLearningSpeed {
+  id                  String @id @default(uuid()) @db.Uuid
+  userId              String @db.Uuid
+  courseId            String @db.Uuid
+  
+  // Dữ liệu để tính toán
+  totalLearningTime   Int?                     // Tổng thời gian học thực tế (giờ)
+  finalScore          Float?                   // Điểm cuối cùng (= totalScore từ Certificate)
+  
+  // Kết quả tính toán
+  speedScore          Float?                   // (finalScore/100 * estimatedDuration) / totalLearningTime
+  learningSpeed       LearningSpeed?           // Slow (<1), Normal (=1), Fast (>1)
+  
+  // Deprecated fields (giữ để backward compatibility)
+  averageTimePerLesson Float?                  // Thời gian TB mỗi bài (phút)
+  completionRate      Float @default(0)        // Tỷ lệ hoàn thành (%)
+  quizAverageScore    Float?                   // Điểm TB các quiz
+  
+  lastUpdated         DateTime @default(now())
+  created_at          DateTime @default(now())
+
+  user                User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([learningSpeed])
+}
+
+// Gợi ý khóa học cho user (AI-based recommendations)
+model CourseRecommendation {
+  id              String @id @default(uuid()) @db.Uuid
+  userId          String @db.Uuid
+  recommendedCourseId String @db.Uuid
+  reason          String?                    // Lý do gợi ý
+  score           Float?                     // Điểm độ phù hợp (0-1)
+  isViewed        Boolean @default(false)
+  isEnrolled      Boolean @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isViewed])
+  @@index([isEnrolled])
+}
+
+// ========================================
+// SESSION TRACKING & ACTIVITY MONITORING
+// ========================================
+
+// Session học của user (Tracking thời gian học thực tế)
+model LearningSession {
+  sessionId       String @id @default(uuid()) @db.Uuid
+  userId          String @db.Uuid
+  courseId        String @db.Uuid
+  lessonId        String? @db.Uuid              // Đang học lesson nào
+  
+  // Thời gian
+  startTime       DateTime @default(now())      // Bắt đầu session
+  endTime         DateTime?                     // Kết thúc session
+  totalActiveTime Int @default(0)               // Tổng thời gian active (giây)
+  totalPausedTime Int @default(0)               // Tổng thời gian pause (giây)
+  
+  // Trạng thái
+  isActive        Boolean @default(true)        // Đang active hay không
+  lastActivityAt  DateTime @default(now())      // Lần tương tác cuối
+  
+  // Video tracking
+  videoProgress   Json?                         // { lessonId: watchedSeconds }
+  completedVideos Int @default(0)               // Số video đã hoàn thành
+  
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user                User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  activityLogs        ActivityLog[]
+  inactivityWarnings  InactivityWarning[]
+  
+  @@index([userId])
+  @@index([courseId])
+  @@index([isActive])
+  @@index([startTime])
+}
+
+// Lịch sử tương tác (Heartbeat tracking)
+model ActivityLog {
+  activityId      String @id @default(uuid()) @db.Uuid
+  sessionId       String @db.Uuid
+  userId          String @db.Uuid
+  
+  activityType    String                        // "video_start", "video_pause", "video_complete", "interaction", "idle_warning", "idle_timeout"
+  timestamp       DateTime @default(now())
+  metadata        Json?                         // { lessonId, videoPosition, etc }
+  
+  created_at      DateTime @default(now())
+
+  session         LearningSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  user            User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@index([sessionId])
+  @@index([userId])
+  @@index([activityType])
+  @@index([timestamp])
+}
+
+// Cảnh báo không hoạt động
+model InactivityWarning {
+  warningId       String @id @default(uuid()) @db.Uuid
+  sessionId       String @db.Uuid
+  userId          String @db.Uuid
+  
+  warningType     String                        // "video_ended", "no_interaction"
+  triggeredAt     DateTime @default(now())
+  respondedAt     DateTime?
+  response        String?                       // "continue", "exit", "timeout"
+  
+  // Thời gian chờ
+  waitTimeSeconds Int @default(300)             // 5 phút = 300 giây
+  timeoutAt       DateTime                      // Thời điểm sẽ timeout
+  
+  isResolved      Boolean @default(false)
+  
+  created_at      DateTime @default(now())
+
+  session         LearningSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  user            User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@index([sessionId])
+  @@index([userId])
+  @@index([isResolved])
+  @@index([triggeredAt])
 }

@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "migrate": "prisma migrate dev ",
-    "seed": "ts-node src/scripts/seed-roles.ts"
+    "seed": "ts-node src/scripts/seed-roles.ts",
+    "seed-data": "ts-node src/scripts/seed-data.ts"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "http-errors": "^2.0.0",
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",

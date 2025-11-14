@@ -11,6 +11,7 @@ class CourseRepository extends BaseRepository<
     super(prisma, "course", primaryKey);
   }
 
+  // Lấy khóa học theo tên chính xác
   async getCourseByName(courseName: string) {
     return await this.prisma.course.findMany({
       where: { courseName },
@@ -29,6 +30,7 @@ class CourseRepository extends BaseRepository<
     });
   }
 
+  // Tìm kiếm khóa học theo tên (contains - không phân biệt hoa thường)
   async searchCourseByName(searchTerm: string, limit: number = 20) {
     return await this.prisma.course.findMany({
       where: {
@@ -52,6 +54,7 @@ class CourseRepository extends BaseRepository<
     });
   }
 
+  // Lấy khóa học bắt đầu bằng prefix (startsWith)
   async getCourseByNamePrefix(prefix: string) {
     return await this.prisma.course.findMany({
       where: {
@@ -74,6 +77,7 @@ class CourseRepository extends BaseRepository<
     });
   }
 
+  // Lấy tất cả khóa học có sắp xếp (sort) và phân trang
   async getAllSorted(
     sortField: string = "created_at",
     sortOrder: "asc" | "desc" = "desc",
@@ -98,6 +102,7 @@ class CourseRepository extends BaseRepository<
     });
   }
 
+  // Lấy chi tiết khóa học kèm thông tin creator, chapters, enrollments, comments
   async getCourseWithDetails(courseId: string) {
     const course = await this.prisma.course.findUnique({
       where: { courseId },
@@ -170,6 +175,7 @@ class CourseRepository extends BaseRepository<
     };
   }
 
+  // Lấy danh sách khóa học theo cấp độ
   async getCoursesByLevel(
     level: Level,
     options?: { skip?: number; take?: number }
@@ -196,6 +202,7 @@ class CourseRepository extends BaseRepository<
     });
   }
 
+  // Lấy khóa học theo người tạo (creator/instructor)
   async getCoursesByCreator(
     userId: string,
     options?: { skip?: number; take?: number }
@@ -223,6 +230,7 @@ class CourseRepository extends BaseRepository<
     });
   }
 
+  // Lấy khóa học phổ biến/nổi bật dựa vào số lượng người đăng ký
   async getPopularCourses(limit: number = 10) {
     const courses = await this.prisma.course.findMany({
       select: {
@@ -254,6 +262,7 @@ class CourseRepository extends BaseRepository<
     }));
   }
 
+  // Lấy thống kê của khóa học (số lượng enrollments, chapters, comments, certificates)
   async getCourseStats(courseId: string) {
     const [totalEnrollments, totalChapters, totalComments, totalCertificates] =
       await Promise.all([
@@ -271,6 +280,7 @@ class CourseRepository extends BaseRepository<
     };
   }
 
+  // Lọc khóa học theo nhiều tiêu chí (level, price range, search term)
   async filterCourses(filters: {
     level?: Level;
     minPrice?: number;
@@ -320,6 +330,7 @@ class CourseRepository extends BaseRepository<
     });
   }
 
+  // Đếm số lượng khóa học theo bộ lọc
   async countCourses(filters?: {
     level?: Level;
     minPrice?: number;
@@ -350,6 +361,7 @@ class CourseRepository extends BaseRepository<
     return await this.prisma.course.count({ where });
   }
 
+  // Lấy khóa học kèm theo chapters và lessons của từng chapter
   async getCourseWithChaptersAndLessons(courseId: string) {
     const course = await this.prisma.course.findUnique({
       where: { courseId },

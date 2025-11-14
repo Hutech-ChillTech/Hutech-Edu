@@ -25,6 +25,7 @@ const courseController = new CourseController(courseService);
 
 const router = Router();
 
+// Lấy tất cả khóa học (có phân trang)
 router.get(
   "/",
   optionalAuth,
@@ -32,6 +33,7 @@ router.get(
   (req, res, next) => courseController.getAllCourses(req, res, next)
 );
 
+// Tìm kiếm khóa học theo tên (contains - không phân biệt hoa thường)
 router.get(
   "/search",
   optionalAuth,
@@ -39,10 +41,12 @@ router.get(
   (req, res, next) => courseController.searchCourseByName(req, res, next)
 );
 
+// Lấy khóa học phổ biến/nổi bật (sắp xếp theo số lượng người đăng ký)
 router.get("/popular", optionalAuth, (req, res, next) =>
   courseController.getPopularCourses(req, res, next)
 );
 
+// Lọc khóa học theo nhiều tiêu chí (level, price range, searchTerm)
 router.get(
   "/filter",
   optionalAuth,
@@ -50,10 +54,12 @@ router.get(
   (req, res, next) => courseController.filterCourses(req, res, next)
 );
 
+// Đếm số lượng khóa học theo bộ lọc
 router.get("/count", optionalAuth, (req, res, next) =>
   courseController.countCourses(req, res, next)
 );
 
+// Lấy khóa học theo cấp độ (Basic, Intermediate, Advanced)
 router.get(
   "/level/:level",
   optionalAuth,
@@ -61,22 +67,27 @@ router.get(
   (req, res, next) => courseController.getCoursesByLevel(req, res, next)
 );
 
+// Lấy thông tin cơ bản của khóa học theo ID
 router.get("/:courseId", optionalAuth, (req, res, next) =>
   courseController.getCourseById(req, res, next)
 );
 
+// Lấy chi tiết khóa học (kèm creator, chapters, enrollments, comments)
 router.get("/:courseId/details", optionalAuth, (req, res, next) =>
   courseController.getCourseWithDetails(req, res, next)
 );
 
+// Lấy nội dung khóa học (chapters + lessons của từng chapter)
 router.get("/:courseId/content", optionalAuth, (req, res, next) =>
   courseController.getCourseWithChaptersAndLessons(req, res, next)
 );
 
+// Lấy thống kê khóa học (enrollments, chapters, comments, certificates)
 router.get("/:courseId/stats", optionalAuth, (req, res, next) =>
   courseController.getCourseStats(req, res, next)
 );
 
+// Lấy tất cả khóa học của một creator/instructor
 router.get(
   "/creator/:userId",
   authenticate,
@@ -84,6 +95,7 @@ router.get(
   (req, res, next) => courseController.getCoursesByCreator(req, res, next)
 );
 
+// Tạo khóa học mới (cần quyền COURSE_CREATE)
 router.post(
   "/create",
   authenticate,
@@ -92,6 +104,7 @@ router.post(
   (req, res, next) => courseController.createCourse(req, res, next)
 );
 
+// Cập nhật khóa học (chỉ creator hoặc admin)
 router.put(
   "/update/:courseId",
   authenticate,
@@ -101,6 +114,7 @@ router.put(
   (req, res, next) => courseController.updateCourse(req, res, next)
 );
 
+// Xóa khóa học (chỉ admin)
 router.delete(
   "/delete/:courseId",
   authenticate,

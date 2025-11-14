@@ -19,10 +19,12 @@ class UserService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.userRepository.getUserByEmail(email);
+    const user = await this.userRepository.getUserByEmailWithRoles(email);
+
     if (!user) {
       throw new Error("Email hoặc mật khẩu không đúng");
     }
+
     try {
       await this.verifyPassword(user.password, password);
     } catch (err) {
@@ -30,8 +32,14 @@ class UserService {
         (err as Error).message || "Email hoặc mật khẩu không đúng"
       );
     }
+
+    const roles = user.roles.map((userRole) => userRole.role.name);
+
     const { password: _, ...userData } = user;
-    return userData;
+    return {
+      ...userData,
+      roles,
+    };
   }
 
   async getUserById(userId: string) {

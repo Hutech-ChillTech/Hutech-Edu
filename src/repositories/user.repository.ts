@@ -36,6 +36,19 @@ class UserRepository extends BaseRepository<
     });
   }
 
+  async getUserByEmailWithRoles(email: string) {
+    return await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
   async searchUserByName(searchTerm: string, limit: number = 20) {
     return await this.prisma.user.findMany({
       where: {

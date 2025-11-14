@@ -29,6 +29,13 @@ export const createCourseSchema = Joi.object({
     .messages({
       "any.only": "Level phải là Basic, Intermediate hoặc Advanced",
     }),
+  subLevel: Joi.string().optional().valid("Low", "Mid", "High").messages({
+    "any.only": "SubLevel phải là Low, Mid hoặc High",
+  }),
+  estimatedDuration: Joi.number().optional().min(1).messages({
+    "number.base": "Thời gian ước lượng phải là số",
+    "number.min": "Thời gian ước lượng phải lớn hơn 0",
+  }),
   createdBy: Joi.string().optional().uuid().messages({
     "string.guid": "CreatedBy phải là UUID hợp lệ",
   }),
@@ -60,6 +67,13 @@ export const updateCourseSchema = Joi.object({
     .messages({
       "any.only": "Level phải là Basic, Intermediate hoặc Advanced",
     }),
+  subLevel: Joi.string().optional().valid("Low", "Mid", "High").messages({
+    "any.only": "SubLevel phải là Low, Mid hoặc High",
+  }),
+  estimatedDuration: Joi.number().optional().min(1).messages({
+    "number.base": "Thời gian ước lượng phải là số",
+    "number.min": "Thời gian ước lượng phải lớn hơn 0",
+  }),
   createdBy: Joi.string().optional().uuid().messages({
     "string.guid": "CreatedBy phải là UUID hợp lệ",
   }),
@@ -76,6 +90,9 @@ export const filterCourseSchema = Joi.object({
     .messages({
       "any.only": "Level phải là Basic, Intermediate hoặc Advanced",
     }),
+  subLevel: Joi.string().optional().valid("Low", "Mid", "High").messages({
+    "any.only": "SubLevel phải là Low, Mid hoặc High",
+  }),
   minPrice: Joi.number().optional().min(0).messages({
     "number.base": "Giá tối thiểu phải là số",
     "number.min": "Giá tối thiểu không được âm",
