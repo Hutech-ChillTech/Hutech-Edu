@@ -25,6 +25,8 @@ async function seedData() {
         level: Level.Basic,
         subLevel: SubLevel.Low,
         duration: 30,
+        specialization: "Công nghệ thông tin",
+        tag: "HTML/CSS",
       },
       {
         name: "JavaScript căn bản",
@@ -33,6 +35,8 @@ async function seedData() {
         level: Level.Basic,
         subLevel: SubLevel.Mid,
         duration: 40,
+        specialization: "Công nghệ thông tin",
+        tag: "JavaScript",
       },
       {
         name: "JavaScript nâng cao",
@@ -41,6 +45,8 @@ async function seedData() {
         level: Level.Basic,
         subLevel: SubLevel.High,
         duration: 45,
+        specialization: "Công nghệ thông tin",
+        tag: "JavaScript",
       },
       {
         name: "Python cơ bản",
@@ -49,6 +55,8 @@ async function seedData() {
         level: Level.Basic,
         subLevel: SubLevel.Low,
         duration: 35,
+        specialization: "Công nghệ thông tin",
+        tag: "Python",
       },
       {
         name: "Git và GitHub",
@@ -57,6 +65,8 @@ async function seedData() {
         level: Level.Basic,
         subLevel: SubLevel.Mid,
         duration: 20,
+        specialization: "Công nghệ thông tin",
+        tag: "DevOps",
       },
 
       // Intermediate Level - 5 courses
@@ -67,6 +77,8 @@ async function seedData() {
         level: Level.Intermediate,
         subLevel: SubLevel.Low,
         duration: 50,
+        specialization: "Công nghệ thông tin",
+        tag: "JavaScript",
       },
       {
         name: "React + Redux",
@@ -75,6 +87,8 @@ async function seedData() {
         level: Level.Intermediate,
         subLevel: SubLevel.Mid,
         duration: 55,
+        specialization: "Công nghệ thông tin",
+        tag: "JavaScript",
       },
       {
         name: "Next.js Full-stack",
@@ -83,6 +97,8 @@ async function seedData() {
         level: Level.Intermediate,
         subLevel: SubLevel.High,
         duration: 60,
+        specialization: "Công nghệ thông tin",
+        tag: "JavaScript",
       },
       {
         name: "Node.js Backend",
@@ -91,6 +107,8 @@ async function seedData() {
         level: Level.Intermediate,
         subLevel: SubLevel.Low,
         duration: 55,
+        specialization: "Công nghệ thông tin",
+        tag: "JavaScript",
       },
       {
         name: "TypeScript Advanced",
@@ -99,6 +117,8 @@ async function seedData() {
         level: Level.Intermediate,
         subLevel: SubLevel.Mid,
         duration: 40,
+        specialization: "Công nghệ thông tin",
+        tag: "TypeScript",
       },
 
       // Advanced Level - 5 courses
@@ -109,6 +129,8 @@ async function seedData() {
         level: Level.Advanced,
         subLevel: SubLevel.Low,
         duration: 70,
+        specialization: "Công nghệ thông tin",
+        tag: "Architecture",
       },
       {
         name: "System Design",
@@ -117,6 +139,8 @@ async function seedData() {
         level: Level.Advanced,
         subLevel: SubLevel.Mid,
         duration: 80,
+        specialization: "Công nghệ thông tin",
+        tag: "Architecture",
       },
       {
         name: "Distributed Systems",
@@ -125,6 +149,8 @@ async function seedData() {
         level: Level.Advanced,
         subLevel: SubLevel.High,
         duration: 90,
+        specialization: "Công nghệ thông tin",
+        tag: "Architecture",
       },
       {
         name: "AWS Solutions Architect",
@@ -133,6 +159,8 @@ async function seedData() {
         level: Level.Advanced,
         subLevel: SubLevel.Mid,
         duration: 85,
+        specialization: "Công nghệ thông tin",
+        tag: "Cloud",
       },
       {
         name: "DevOps Master",
@@ -141,6 +169,8 @@ async function seedData() {
         level: Level.Advanced,
         subLevel: SubLevel.Low,
         duration: 75,
+        specialization: "Công nghệ thông tin",
+        tag: "DevOps",
       },
     ];
 
@@ -156,6 +186,8 @@ async function seedData() {
           level: course.level,
           subLevel: course.subLevel,
           estimatedDuration: course.duration,
+          specialization: course.specialization,
+          tag: course.tag,
           createdBy: firstUser.userId,
         },
       });

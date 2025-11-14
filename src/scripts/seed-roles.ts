@@ -11,6 +11,7 @@ const ADMIN_ACCOUNTS = [
     gender: Gender.MALE,
     region: "Việt Nam",
     level: Level.Advanced,
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2000-01-01"),
   },
   {
@@ -20,6 +21,7 @@ const ADMIN_ACCOUNTS = [
     gender: Gender.FEMALE,
     region: "Việt Nam",
     level: Level.Advanced,
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2000-05-15"),
   },
   {
@@ -29,6 +31,7 @@ const ADMIN_ACCOUNTS = [
     gender: Gender.MALE,
     region: "Việt Nam",
     level: Level.Advanced,
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2000-10-20"),
   },
 ];
@@ -41,6 +44,7 @@ const USER_ACCOUNTS = [
     gender: Gender.MALE,
     region: "Việt Nam",
     level: Level.Basic,
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2002-03-15"),
   },
   {
@@ -50,6 +54,7 @@ const USER_ACCOUNTS = [
     gender: Gender.FEMALE,
     region: "Việt Nam",
     level: Level.Intermediate,
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2001-07-20"),
   },
   {
@@ -59,6 +64,7 @@ const USER_ACCOUNTS = [
     gender: Gender.MALE,
     region: "Việt Nam",
     level: Level.Basic,
+    specialization: "Marketing",
     dateOfBirth: new Date("2003-11-05"),
   },
   {
@@ -68,6 +74,7 @@ const USER_ACCOUNTS = [
     gender: Gender.FEMALE,
     region: "Việt Nam",
     level: Level.Intermediate,
+    specialization: "Thiết kế đồ họa",
     dateOfBirth: new Date("2002-09-12"),
   },
   {
@@ -77,6 +84,7 @@ const USER_ACCOUNTS = [
     gender: Gender.MALE,
     region: "Việt Nam",
     level: Level.Advanced,
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2001-12-25"),
   },
 ];
@@ -154,6 +162,7 @@ async function seedRoles() {
           gender: adminData.gender,
           region: adminData.region,
           level: adminData.level,
+          specialization: adminData.specialization,
           dateOfBirth: adminData.dateOfBirth,
         },
       });
@@ -200,6 +209,7 @@ async function seedRoles() {
           gender: userData.gender,
           region: userData.region,
           level: userData.level,
+          specialization: userData.specialization,
           dateOfBirth: userData.dateOfBirth,
         },
       });

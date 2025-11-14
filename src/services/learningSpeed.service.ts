@@ -169,17 +169,34 @@ export class LearningSpeedService {
   }
 
   /**
-   * 🎯 GỢI Ý KHÓA HỌC DựA TRÊN TỐC ĐỘ HỌC
+   * 🎯 GỢI Ý KHÓA HỌC DựA TRÊN TỐC ĐỘ HỌC + CHUYÊN NGÀNH + TAG
    *
    * - Fast (>1): +2 cấp (VD: Basic-Low → Basic-High)
    * - Normal (=1): Cùng cấp (VD: Basic-Mid → Basic-Mid)
    * - Slow (<1): -1 cấp (VD: Basic-High → Basic-Mid)
+   *
+   * Ưu tiên gợi ý:
+   * 1. Khóa học cùng specialization với user
+   * 2. Khóa học cùng tag với khóa vừa hoàn thành
+   * 3. Khóa học cùng level/subLevel phù hợp
    */
   async recommendNextCourses(userId: string, completedCourseId: string) {
-    // 1. Lấy thông tin khóa học vừa hoàn thành
+    // 1. Lấy thông tin user (specialization)
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: { specialization: true },
+    });
+
+    // 2. Lấy thông tin khóa học vừa hoàn thành
     const completedCourse = await prisma.course.findUnique({
       where: { courseId: completedCourseId },
-      select: { level: true, subLevel: true, estimatedDuration: true },
+      select: {
+        level: true,
+        subLevel: true,
+        estimatedDuration: true,
+        specialization: true,
+        tag: true,
+      },
     });
 
     if (
@@ -190,7 +207,7 @@ export class LearningSpeedService {
       throw new Error("Course level/subLevel not found");
     }
 
-    // 2. Lấy learning speed của user cho khóa học này
+    // 3. Lấy learning speed của user cho khóa học này
     const userSpeed = await prisma.userLearningSpeed.findUnique({
       where: {
         userId_courseId: { userId, courseId: completedCourseId },
@@ -244,25 +261,92 @@ export class LearningSpeedService {
     // 5. Chuyển đổi vị trí thành Level + SubLevel
     const recommendedLevel = this.positionToSubLevel(recommendedPosition);
 
-    // 6. Tìm khóa học phù hợp
-    const recommendedCourses = await prisma.course.findMany({
+    // 6. Tìm khóa học phù hợp với NHIỀU TIÊU CHÍ
+    // 6.1. Ưu tiên 1: Cùng TAG + Điều chỉnh LEVEL theo tốc độ học
+    // Nếu Fast (+2 cấp), Normal (cùng cấp), Slow (-1 cấp)
+    const coursesByTag = completedCourse.tag
+      ? await prisma.course.findMany({
+          where: {
+            tag: completedCourse.tag,
+            level: recommendedLevel.level,
+            subLevel: recommendedLevel.subLevel,
+            courseId: { not: completedCourseId },
+          },
+          take: 3,
+          orderBy: { created_at: "desc" },
+        })
+      : [];
+
+    // 6.2. Ưu tiên 2: Cùng specialization với user + cùng level được gợi ý
+    const coursesBySpecialization = user?.specialization
+      ? await prisma.course.findMany({
+          where: {
+            level: recommendedLevel.level,
+            subLevel: recommendedLevel.subLevel,
+            specialization: user.specialization,
+            courseId: {
+              not: completedCourseId,
+              notIn: coursesByTag.map((c) => c.courseId),
+            },
+          },
+          take: 2,
+          orderBy: { created_at: "desc" },
+        })
+      : [];
+
+    // 6.3. Ưu tiên 3: Các khóa học khác cùng level (fallback)
+    const otherCourses = await prisma.course.findMany({
       where: {
         level: recommendedLevel.level,
         subLevel: recommendedLevel.subLevel,
-        courseId: { not: completedCourseId }, // Không gợi ý lại khóa vừa học
+        courseId: {
+          not: completedCourseId,
+          notIn: [
+            ...coursesByTag.map((c) => c.courseId),
+            ...coursesBySpecialization.map((c) => c.courseId),
+          ],
+        },
       },
-      take: 5,
+      take: 5 - coursesByTag.length - coursesBySpecialization.length,
       orderBy: { created_at: "desc" },
     });
 
-    // 7. Lưu recommendations vào database
+    // Gộp tất cả khóa học theo thứ tự ưu tiên: TAG → SPECIALIZATION → OTHERS
+    const recommendedCourses = [
+      ...coursesByTag,
+      ...coursesBySpecialization,
+      ...otherCourses,
+    ];
+
+    // 7. Tạo reason chi tiết dựa trên tiêu chí match
+    const createDetailedReason = (course: any) => {
+      const reasons = [];
+
+      // Ưu tiên hiển thị tag trước
+      if (completedCourse.tag && course.tag === completedCourse.tag) {
+        reasons.push(`cùng chủ đề ${course.tag}`);
+      }
+
+      if (
+        user?.specialization &&
+        course.specialization === user.specialization
+      ) {
+        reasons.push(`phù hợp với chuyên ngành ${user.specialization}`);
+      }
+
+      reasons.push(reason); // Lý do từ learning speed
+
+      return reasons.join(", ");
+    };
+
+    // 8. Lưu recommendations vào database
     const recommendations = await Promise.all(
       recommendedCourses.map((course) =>
         prisma.courseRecommendation.create({
           data: {
             userId,
             recommendedCourseId: course.courseId,
-            reason,
+            reason: createDetailedReason(course),
             score: userSpeed.speedScore || 0,
           },
         })
@@ -283,6 +367,17 @@ export class LearningSpeedService {
       learningSpeed: userSpeed.learningSpeed,
       speedScore: userSpeed.speedScore,
       reason,
+      matchCriteria: {
+        userSpecialization: user?.specialization || null,
+        courseTag: completedCourse.tag || null,
+        courseSpecialization: completedCourse.specialization || null,
+      },
+      recommendationBreakdown: {
+        byTag: coursesByTag.length,
+        bySpecialization: coursesBySpecialization.length,
+        others: otherCourses.length,
+        total: recommendedCourses.length,
+      },
       courses: recommendedCourses,
       recommendations,
     };
