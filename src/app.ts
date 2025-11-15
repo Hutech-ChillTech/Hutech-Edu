@@ -11,8 +11,10 @@ import { connectPostgresDB } from "./configs/database.config";
 // Tất cả error sẽ được truyền về middleware
 import { errorHandler } from "./middlewares/errorHandler.middleware";
 
-dotenv.config();
+// Rate limiting
+import { generalLimiter } from "./middlewares/rateLimiter.middleware";
 
+dotenv.config();
 
 const app = express();
 
@@ -27,6 +29,9 @@ app.use(
 app.use(express.json());
 
 app.use(morgan("dev"));
+
+// Apply rate limiting cho tất cả routes
+app.use("/api", generalLimiter);
 
 routes(app);
 

@@ -8,6 +8,10 @@ import { authenticate, optionalAuth } from "../middlewares/auth.middleware";
 import { requireRole, requirePermission } from "../middlewares/role.middleware";
 import { UserRoles, Permissions } from "../constants/roles";
 import {
+  readLimiter,
+  createLimiter,
+} from "../middlewares/rateLimiter.middleware";
+import {
   createLessonSchema,
   updateLessonSchema,
 } from "../validators/lesson.validate";
@@ -18,16 +22,17 @@ const lessonController = new LessonController(lessonService);
 
 const router = Router();
 
-router.get("/", optionalAuth, (req, res, next) =>
+router.get("/", readLimiter, optionalAuth, (req, res, next) =>
   lessonController.getAllLessons(req, res, next)
 );
 
-router.get("/:lessonId", optionalAuth, (req, res, next) =>
+router.get("/:lessonId", readLimiter, optionalAuth, (req, res, next) =>
   lessonController.getLessonById(req, res, next)
 );
 
 router.post(
   "/create",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.LESSON_CREATE]),
   validate(createLessonSchema),
@@ -36,6 +41,7 @@ router.post(
 
 router.put(
   "/update/:lessonId",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.LESSON_UPDATE]),
   validate(updateLessonSchema),
@@ -44,6 +50,7 @@ router.put(
 
 router.delete(
   "/delete/:lessonId",
+  createLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.LESSON_DELETE]),

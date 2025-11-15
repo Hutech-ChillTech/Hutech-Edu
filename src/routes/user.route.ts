@@ -6,6 +6,11 @@ import UserController from "../controllers/user.controller";
 import { validate } from "../middlewares/validate";
 import { authenticate } from "../middlewares/auth.middleware";
 import {
+  authLimiter,
+  readLimiter,
+  createLimiter,
+} from "../middlewares/rateLimiter.middleware";
+import {
   requireRole,
   requireOwnerOrAdmin,
 } from "../middlewares/role.middleware";
@@ -27,16 +32,20 @@ const userController = new UserController(userService);
 
 const router = Router();
 
-router.post("/login", validate(loginSchema), (req, res, next) =>
+router.post("/login", authLimiter, validate(loginSchema), (req, res, next) =>
   userController.login(req, res, next)
 );
 
-router.post("/register", validate(createUserSchema), (req, res, next) =>
-  userController.createUser(req, res, next)
+router.post(
+  "/register",
+  authLimiter,
+  validate(createUserSchema),
+  (req, res, next) => userController.createUser(req, res, next)
 );
 
 router.get(
   "/search",
+  readLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   validate(searchUserSchema, "query"),
@@ -45,6 +54,7 @@ router.get(
 
 router.get(
   "/search/name",
+  readLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   validate(getUserByNameSchema, "query"),
@@ -53,6 +63,7 @@ router.get(
 
 router.get(
   "/search/email",
+  readLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   validate(getUserByEmailSchema, "query"),
@@ -61,18 +72,20 @@ router.get(
 
 router.get(
   "/",
+  readLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   validate(paginationSchema, "query"),
   (req, res, next) => userController.getAllUser(req, res, next)
 );
 
-router.get("/:userId", authenticate, (req, res, next) =>
+router.get("/:userId", readLimiter, authenticate, (req, res, next) =>
   userController.getUserById(req, res, next)
 );
 
 router.get(
   "/:userId/details",
+  readLimiter,
   authenticate,
   requireOwnerOrAdmin((req) => req.params.userId),
   (req, res, next) => userController.getUserWithRelations(req, res, next)
@@ -80,6 +93,7 @@ router.get(
 
 router.get(
   "/:userId/courses",
+  readLimiter,
   authenticate,
   requireOwnerOrAdmin((req) => req.params.userId),
   (req, res, next) => userController.getUserEnrolledCourses(req, res, next)
@@ -87,6 +101,7 @@ router.get(
 
 router.get(
   "/:userId/enrollment/:courseId",
+  readLimiter,
   authenticate,
   requireOwnerOrAdmin((req) => req.params.userId),
   (req, res, next) => userController.checkEnrollment(req, res, next)
@@ -94,6 +109,7 @@ router.get(
 
 router.put(
   "/:userId",
+  createLimiter,
   authenticate,
   requireOwnerOrAdmin((req) => req.params.userId),
   validate(updateUserSchema),
@@ -102,6 +118,7 @@ router.put(
 
 router.delete(
   "/:userId",
+  createLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   (req, res, next) => userController.deleteUser(req, res, next)
@@ -109,6 +126,7 @@ router.delete(
 
 router.patch(
   "/:userId/change-password",
+  authLimiter,
   authenticate,
   requireOwnerOrAdmin((req) => req.params.userId),
   validate(changePasswordSchema),

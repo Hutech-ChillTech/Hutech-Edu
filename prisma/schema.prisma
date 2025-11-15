@@ -31,6 +31,21 @@ enum LearningSpeed {
   Fast      // Học nhanh
 }
 
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  MOMO
+  VNPAY
+  BANK_TRANSFER
+  CASH
+}
+
 model User {
   userId String @id @default(uuid()) @db.Uuid
   userName     String
@@ -140,6 +155,7 @@ model Course {
   certificates          Certificate[]
   userCoursePreviews    UserCoursePreview[]
   learningPathCourses   LearningPathCourse[]   // Khóa học thuộc lộ trình nào
+  payments              Payment[]              // Thanh toán cho khóa học
 
   @@index([courseName])
 }
@@ -213,17 +229,31 @@ model Notification {
 model Payment {
   paymentId           String @id @default(uuid()) @db.Uuid
   description         String?
-  currency            String?
+  currency            String?          // VND, USD
   amount              Float
   method              String?
+  paymentMethod       PaymentMethod?
+  paymentStatus       PaymentStatus @default(PENDING)
+  transactionId       String?          // ID từ MoMo/VNPay
+  orderInfo           String?          // Thông tin đơn hàng
   paidAt              DateTime?
   userId              String? @db.Uuid
+  courseId            String? @db.Uuid
+  enrollmentId        String? @db.Uuid
   userCoursePreviewId String? @db.Uuid
+  metadata            Json?            // Lưu thông tin bổ sung (response từ gateway)
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
   user              User?              @relation(fields: [userId], references: [userId], onDelete: SetNull)
+  course            Course?            @relation(fields: [courseId], references: [courseId], onDelete: SetNull)
+  enrollment        Enrollment?        @relation(fields: [enrollmentId], references: [enrollmentId], onDelete: SetNull)
   userCoursePreview UserCoursePreview? @relation(fields: [userCoursePreviewId], references: [userCoursePreviewId], onDelete: SetNull)
+
+  @@index([transactionId])
+  @@index([paymentStatus])
+  @@index([courseId])
+  @@index([enrollmentId])
 }
 
 model UserCoursePreview {
@@ -346,8 +376,9 @@ model Enrollment {
   userId       String @db.Uuid
   courseId     String @db.Uuid
 
-  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course   Course    @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  payments Payment[] // Thanh toán liên quan đến enrollment
 
   @@unique([userId, courseId])
   @@index([userId])

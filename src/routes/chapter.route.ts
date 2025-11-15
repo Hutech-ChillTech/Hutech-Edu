@@ -8,6 +8,10 @@ import { authenticate, optionalAuth } from "../middlewares/auth.middleware";
 import { requireRole, requirePermission } from "../middlewares/role.middleware";
 import { UserRoles, Permissions } from "../constants/roles";
 import {
+  readLimiter,
+  createLimiter,
+} from "../middlewares/rateLimiter.middleware";
+import {
   createChapterSchema,
   updateChapterSchema,
 } from "../validators/chapter.validate";
@@ -18,16 +22,17 @@ const chapterController = new ChapterController(chapterService);
 
 const router = Router();
 
-router.get("/", optionalAuth, (req, res, next) =>
+router.get("/", readLimiter, optionalAuth, (req, res, next) =>
   chapterController.getAllChapter(req, res, next)
 );
 
-router.get("/:chapterId", optionalAuth, (req, res, next) =>
+router.get("/:chapterId", readLimiter, optionalAuth, (req, res, next) =>
   chapterController.getChapterById(req, res, next)
 );
 
 router.post(
   "/",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.CHAPTER_CREATE]),
   validate(createChapterSchema),
@@ -36,6 +41,7 @@ router.post(
 
 router.put(
   "/:chapterId",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.CHAPTER_UPDATE]),
   validate(updateChapterSchema),
@@ -44,6 +50,7 @@ router.put(
 
 router.delete(
   "/:chapterId",
+  createLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.CHAPTER_DELETE]),

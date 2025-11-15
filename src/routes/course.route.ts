@@ -12,6 +12,10 @@ import {
 } from "../middlewares/role.middleware";
 import { UserRoles, Permissions } from "../constants/roles";
 import {
+  readLimiter,
+  createLimiter,
+} from "../middlewares/rateLimiter.middleware";
+import {
   createCourseSchema,
   updateCourseSchema,
   filterCourseSchema,
@@ -28,6 +32,7 @@ const router = Router();
 // Lấy tất cả khóa học (có phân trang)
 router.get(
   "/",
+  readLimiter,
   optionalAuth,
   validate(paginationSchema, "query"),
   (req, res, next) => courseController.getAllCourses(req, res, next)
@@ -36,60 +41,64 @@ router.get(
 // Tìm kiếm khóa học theo tên (contains - không phân biệt hoa thường)
 router.get(
   "/search",
+  readLimiter,
   optionalAuth,
   validate(searchCourseSchema, "query"),
   (req, res, next) => courseController.searchCourseByName(req, res, next)
 );
 
 // Lấy khóa học phổ biến/nổi bật (sắp xếp theo số lượng người đăng ký)
-router.get("/popular", optionalAuth, (req, res, next) =>
+router.get("/popular", readLimiter, optionalAuth, (req, res, next) =>
   courseController.getPopularCourses(req, res, next)
 );
 
 // Lọc khóa học theo nhiều tiêu chí (level, price range, searchTerm)
 router.get(
   "/filter",
+  readLimiter,
   optionalAuth,
   validate(filterCourseSchema, "query"),
   (req, res, next) => courseController.filterCourses(req, res, next)
 );
 
 // Đếm số lượng khóa học theo bộ lọc
-router.get("/count", optionalAuth, (req, res, next) =>
+router.get("/count", readLimiter, optionalAuth, (req, res, next) =>
   courseController.countCourses(req, res, next)
 );
 
 // Lấy khóa học theo cấp độ (Basic, Intermediate, Advanced)
 router.get(
   "/level/:level",
+  readLimiter,
   optionalAuth,
   validate(paginationSchema, "query"),
   (req, res, next) => courseController.getCoursesByLevel(req, res, next)
 );
 
 // Lấy thông tin cơ bản của khóa học theo ID
-router.get("/:courseId", optionalAuth, (req, res, next) =>
+router.get("/:courseId", readLimiter, optionalAuth, (req, res, next) =>
   courseController.getCourseById(req, res, next)
 );
 
 // Lấy chi tiết khóa học (kèm creator, chapters, enrollments, comments)
-router.get("/:courseId/details", optionalAuth, (req, res, next) =>
+router.get("/:courseId/details", readLimiter, optionalAuth, (req, res, next) =>
   courseController.getCourseWithDetails(req, res, next)
 );
 
 // Lấy nội dung khóa học (chapters + lessons của từng chapter)
-router.get("/:courseId/content", optionalAuth, (req, res, next) =>
+router.get("/:courseId/content", readLimiter, optionalAuth, (req, res, next) =>
   courseController.getCourseWithChaptersAndLessons(req, res, next)
 );
 
 // Lấy thống kê khóa học (enrollments, chapters, comments, certificates)
-router.get("/:courseId/stats", optionalAuth, (req, res, next) =>
+router.get("/:courseId/stats", readLimiter, optionalAuth, (req, res, next) =>
   courseController.getCourseStats(req, res, next)
 );
 
 // Lấy tất cả khóa học của một creator/instructor
 router.get(
   "/creator/:userId",
+  readLimiter,
   authenticate,
   validate(paginationSchema, "query"),
   (req, res, next) => courseController.getCoursesByCreator(req, res, next)
@@ -98,6 +107,7 @@ router.get(
 // Tạo khóa học mới (cần quyền COURSE_CREATE)
 router.post(
   "/create",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.COURSE_CREATE]),
   validate(createCourseSchema),
@@ -107,6 +117,7 @@ router.post(
 // Cập nhật khóa học (chỉ creator hoặc admin)
 router.put(
   "/update/:courseId",
+  createLimiter,
   authenticate,
   requireCourseOwnerOrAdmin(),
   requirePermission([Permissions.COURSE_UPDATE]),
@@ -117,6 +128,7 @@ router.put(
 // Xóa khóa học (chỉ admin)
 router.delete(
   "/delete/:courseId",
+  createLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.COURSE_DELETE]),

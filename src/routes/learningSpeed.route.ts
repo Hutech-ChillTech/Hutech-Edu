@@ -1,5 +1,9 @@
 import { Router } from "express";
 import LearningSpeedController from "../controllers/learningSpeed.controller";
+import {
+  learningSpeedLimiter,
+  readLimiter,
+} from "../middlewares/rateLimiter.middleware";
 
 const router = Router();
 
@@ -8,7 +12,11 @@ const router = Router();
  * Tính toán learning speed sau khi hoàn thành khóa học
  * Body: { userId, courseId }
  */
-router.post("/calculate", LearningSpeedController.calculateSpeed);
+router.post(
+  "/calculate",
+  learningSpeedLimiter,
+  LearningSpeedController.calculateSpeed
+);
 
 /**
  * GET /api/learning-speed/recommendations/:userId/:courseId
@@ -16,6 +24,7 @@ router.post("/calculate", LearningSpeedController.calculateSpeed);
  */
 router.get(
   "/recommendations/:userId/:courseId",
+  readLimiter,
   LearningSpeedController.getRecommendations
 );
 
@@ -23,13 +32,17 @@ router.get(
  * GET /api/learning-speed/history/:userId
  * Lấy lịch sử learning speed của user
  */
-router.get("/history/:userId", LearningSpeedController.getHistory);
+router.get("/history/:userId", readLimiter, LearningSpeedController.getHistory);
 
 /**
  * POST /api/learning-speed/manual
  * Tính toán learning speed thủ công (để test)
  * Body: { userId, courseId, totalScore, estimatedDuration, totalLearningTime }
  */
-router.post("/manual", LearningSpeedController.calculateManual);
+router.post(
+  "/manual",
+  learningSpeedLimiter,
+  LearningSpeedController.calculateManual
+);
 
 export default router;

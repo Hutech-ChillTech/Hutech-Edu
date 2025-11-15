@@ -10,6 +10,10 @@ import { authenticate, optionalAuth } from "../middlewares/auth.middleware";
 import { requireRole, requirePermission } from "../middlewares/role.middleware";
 import { UserRoles, Permissions } from "../constants/roles";
 import {
+  readLimiter,
+  createLimiter,
+} from "../middlewares/rateLimiter.middleware";
+import {
   createQuizSchema,
   updateQuizSchema,
   createQuestionSchema,
@@ -36,20 +40,21 @@ const quizController = new QuizController(quizService);
 
 const router = Router();
 
-router.get("/", optionalAuth, (req, res, next) =>
+router.get("/", readLimiter, optionalAuth, (req, res, next) =>
   quizController.getAllQuizzes(req, res, next)
 );
 
-router.get("/chapter/:chapterId", optionalAuth, (req, res, next) =>
+router.get("/chapter/:chapterId", readLimiter, optionalAuth, (req, res, next) =>
   quizController.getQuizzesByChapter(req, res, next)
 );
 
-router.get("/:chapterQuizId", optionalAuth, (req, res, next) =>
+router.get("/:chapterQuizId", readLimiter, optionalAuth, (req, res, next) =>
   quizController.getQuizById(req, res, next)
 );
 
 router.post(
   "/",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.QUIZ_CREATE]),
   validate(createQuizSchema),
@@ -58,6 +63,7 @@ router.post(
 
 router.put(
   "/:chapterQuizId",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.QUIZ_UPDATE]),
   validate(updateQuizSchema),
@@ -66,30 +72,39 @@ router.put(
 
 router.delete(
   "/:chapterQuizId",
+  createLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.QUIZ_DELETE]),
   (req, res, next) => quizController.deleteQuiz(req, res, next)
 );
 
-router.get("/:chapterQuizId/questions", optionalAuth, (req, res, next) =>
-  quizController.getQuestionsByQuiz(req, res, next)
+router.get(
+  "/:chapterQuizId/questions",
+  readLimiter,
+  optionalAuth,
+  (req, res, next) => quizController.getQuestionsByQuiz(req, res, next)
 );
 
 router.post(
   "/questions",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.QUIZ_CREATE]),
   validate(createQuestionSchema),
   (req, res, next) => quizController.createQuestion(req, res, next)
 );
 
-router.get("/questions/:quizQuestionId", optionalAuth, (req, res, next) =>
-  quizController.getQuestionById(req, res, next)
+router.get(
+  "/questions/:quizQuestionId",
+  readLimiter,
+  optionalAuth,
+  (req, res, next) => quizController.getQuestionById(req, res, next)
 );
 
 router.put(
   "/questions/:quizQuestionId",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.QUIZ_UPDATE]),
   validate(updateQuestionSchema),
@@ -98,6 +113,7 @@ router.put(
 
 router.delete(
   "/questions/:quizQuestionId",
+  createLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.QUIZ_DELETE]),
@@ -106,24 +122,30 @@ router.delete(
 
 router.get(
   "/questions/:quizQuestionId/options",
+  readLimiter,
   optionalAuth,
   (req, res, next) => quizController.getOptionsByQuestion(req, res, next)
 );
 
 router.post(
   "/options",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.QUIZ_CREATE]),
   validate(createOptionSchema),
   (req, res, next) => quizController.createOption(req, res, next)
 );
 
-router.get("/options/:quizOptionId", optionalAuth, (req, res, next) =>
-  quizController.getOptionById(req, res, next)
+router.get(
+  "/options/:quizOptionId",
+  readLimiter,
+  optionalAuth,
+  (req, res, next) => quizController.getOptionById(req, res, next)
 );
 
 router.put(
   "/options/:quizOptionId",
+  createLimiter,
   authenticate,
   requirePermission([Permissions.QUIZ_UPDATE]),
   validate(updateOptionSchema),
@@ -132,6 +154,7 @@ router.put(
 
 router.delete(
   "/options/:quizOptionId",
+  createLimiter,
   authenticate,
   requireRole([UserRoles.ADMIN]),
   requirePermission([Permissions.QUIZ_DELETE]),
