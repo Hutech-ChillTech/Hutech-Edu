@@ -96,9 +96,9 @@ const UserHeader: React.FC = () => {
             <li className="nav-item">
               <Link
                 className={`nav-link ${styles["nav-link"]}`}
-                to="/about"
+                to="/learningPathMap"
               >
-                Giới thiệu
+                Lộ trình
               </Link>
             </li>
             <li className="nav-item">

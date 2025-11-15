@@ -50,7 +50,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/course/:id" element={<CourseDetailPage />} />
           <Route path="/course/:courseId/lesson-video/:lessonId" element={<LessonVideoPage />} />
           <Route path="/lesson-video" element={<LessonVideoPage />} /> {/* test lesson-video page*/}
-          <Route path="/LearningPathMap" element={<LearningPathMap/>} />
+          <Route path="/learningPathMap" element={<LearningPathMap/>} />
           
         </Route>
 

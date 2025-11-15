@@ -240,6 +240,16 @@ const ChapterList: React.FC = () => {
         <Title level={3}> Khóa học: {courseName || "Đang tải..."}</Title>
       </Space>
 
+      <div style={{ textAlign: "right", marginBottom: 12 }}>
+        <Button
+          type="primary"
+          icon={showForm ? <UpOutlined /> : <PlusOutlined />}
+          onClick={() => setShowForm((prev) => !prev)}
+        >
+          {showForm ? "Ẩn form" : "Thêm chương học mới"}
+        </Button>
+      </div>
+
       <Card
         style={{
           borderRadius: "1rem",
@@ -257,17 +267,6 @@ const ChapterList: React.FC = () => {
           locale={{ emptyText: "Chưa có chương nào" }}
         />
       </Card>
-
-      {/* ✅ Form nằm ở DƯỚI bảng */}
-      <div style={{ textAlign: "center", marginBottom: 16 }}>
-        <Button
-          type="primary"
-          icon={showForm ? <UpOutlined /> : <PlusOutlined />}
-          onClick={() => setShowForm((prev) => !prev)}
-        >
-          {showForm ? "Ẩn form thêm chương" : "Thêm chương mới"}
-        </Button>
-      </div>
 
       {showForm && (
         <Card
