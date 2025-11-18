@@ -465,7 +465,7 @@ const LessonList: React.FC = () => {
                 {/* Header Form */}
                 <Card
                   style={{
-                    borderLeft: "6px solid #673ab7",
+                    borderLeft: "6px solid #3a49b7ff",
                     marginBottom: 16,
                     borderRadius: 8,
                   }}
@@ -504,7 +504,7 @@ const LessonList: React.FC = () => {
                   <Card
                     key={question.id}
                     style={{
-                      borderLeft: "6px solid #673ab7",
+                      borderLeft: "6px solid #3a49b7ff",
                       marginBottom: 16,
                       borderRadius: 8,
                     }}

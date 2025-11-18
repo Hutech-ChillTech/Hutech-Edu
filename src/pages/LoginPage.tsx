@@ -241,8 +241,11 @@ const LoginPage: React.FC = () => {
       const role = decoded.roles?.[0] || decoded.role || "user";
       const normalizedRole = role.trim().toLowerCase();
       const userName = decoded.email?.split("@")[0] || "Người dùng";
+      const userId = decoded.userId; // ✅ Lấy userId từ token
 
+      // ✅ Lưu userId + token
       localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
       localStorage.setItem("role", normalizedRole);
       localStorage.setItem("username", userName);
       localStorage.setItem(
