@@ -11,13 +11,10 @@ logs/
 npm-debug.log*
 
 # Environment variables
+src/configs/skillcoder-b2fac-firebase-adminsdk-fbsvc-35333b9125.json
 .env
 .env.local
 .env.*.local
-
-# Firebase Service Account Key (CRITICAL - DO NOT COMMIT!)
-src/configs/serviceAccountKey.json
-src/configs/*firebase*.json
 
 # TypeScript
 *.tsbuildinfo
@@ -31,7 +28,6 @@ src/configs/*firebase*.json
 # Migration
 prisma/migrations/
 
-# Readme
-README.md
 
 
+src/configs/skillcoder-b2fac-firebase-adminsdk-fbsvc-35333b9125.json

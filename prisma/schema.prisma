@@ -50,6 +50,7 @@ model User {
   userId String @id @default(uuid()) @db.Uuid
   userName     String
   password     String
+  firebaseUid  String?  @unique       // Firebase UID cho OAuth login
   email        String   @unique
   gender       Gender
   specialization String?        // Chuyên ngành của người dùng

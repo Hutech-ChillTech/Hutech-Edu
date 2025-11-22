@@ -32,6 +32,9 @@ const userController = new UserController(userService);
 
 const router = Router();
 
+// ============================================
+// AUTHENTICATION ROUTES (JWT - Traditional)
+// ============================================
 router.post("/login", authLimiter, validate(loginSchema), (req, res, next) =>
   userController.login(req, res, next)
 );
@@ -41,6 +44,27 @@ router.post(
   authLimiter,
   validate(createUserSchema),
   (req, res, next) => userController.createUser(req, res, next)
+);
+
+// ============================================
+// FIREBASE AUTHENTICATION ROUTES
+// ============================================
+router.post(
+  "/firebase/login",
+  authLimiter,
+  validate(loginSchema),
+  (req, res, next) => userController.loginWithFirebase(req, res, next)
+);
+
+router.post(
+  "/firebase/register",
+  authLimiter,
+  validate(createUserSchema),
+  (req, res, next) => userController.registerWithFirebase(req, res, next)
+);
+
+router.post("/firebase/verify", authLimiter, (req, res, next) =>
+  userController.verifyFirebaseTokenController(req, res, next)
 );
 
 router.get(

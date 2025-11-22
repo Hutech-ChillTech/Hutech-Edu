@@ -221,6 +221,65 @@ class UserController {
       return next(error);
     }
   }
+
+  // ============================================
+  // FIREBASE AUTHENTICATION CONTROLLERS
+  // ============================================
+
+  /**
+   * Đăng nhập với Firebase
+   */
+  async loginWithFirebase(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, password } = req.body;
+      const result = await this.userService.loginWithFirebase(email, password);
+      sendSuccess(res, result, "Đăng nhập Firebase thành công");
+    } catch (error) {
+      const status = (error as any).statusCode || 500;
+      const message = (error as Error).message || "Lỗi máy chủ";
+      res.status(status).json({ success: false, message });
+      return next(error);
+    }
+  }
+
+  /**
+   * Đăng ký với Firebase
+   */
+  async registerWithFirebase(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = req.body;
+      const user = await this.userService.registerWithFirebase(data);
+      sendSuccess(res, user, "Đăng ký Firebase thành công");
+    } catch (error) {
+      const status = (error as any).statusCode || 500;
+      const message = (error as Error).message || "Lỗi máy chủ";
+      res.status(status).json({ success: false, message });
+      return next(error);
+    }
+  }
+
+  /**
+   * Verify Firebase token
+   */
+  async verifyFirebaseTokenController(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return res.status(400).json({ message: "Token không được để trống" });
+      }
+      const user = await this.userService.verifyFirebaseToken(idToken);
+      sendSuccess(res, user, "Token hợp lệ");
+    } catch (error) {
+      const status = (error as any).statusCode || 500;
+      const message = (error as Error).message || "Lỗi máy chủ";
+      res.status(status).json({ success: false, message });
+      return next(error);
+    }
+  }
 }
 
 export default UserController;

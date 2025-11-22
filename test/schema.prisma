@@ -1,0 +1,311 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Level {
+  Basic
+  Intermediate
+  Advanced
+}
+
+model User {
+  userId String @id @default(uuid()) @db.Uuid
+  userName     String
+  password     String
+  firebaseUid  String
+  email        String   @unique
+  gender       Gender
+  avatarURL    String?
+  region       String?
+  dateOfBirth  DateTime?
+  level        Level?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  account            Account?
+  roles              UserRole[]
+  coursesCreated     Course[]
+  comments           Comment[]
+  payments           Payment[]
+  certificates       Certificate[]
+  notifications      Notification[]
+  userCoursePreviews UserCoursePreview[]
+  submissions        Submission[]
+  lessonsProgress    UserLessonProgress[]
+  enrollments        Enrollment[]
+
+  @@index([email])
+  @@index([userName])
+  @@index([level])
+  @@index([created_at])
+}
+
+model Account {
+  id                String @id @default(uuid()) @db.Uuid
+  userId            String @unique @db.Uuid
+  provider          String
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model Role {
+  roleId     String @id @default(uuid()) @db.Uuid
+  name       String
+  userRoles  UserRole[]
+  roleClaims RoleClaim[]
+
+  @@unique([name])
+}
+
+model UserRole {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  roleId String @db.Uuid
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model RoleClaim {
+  roleClaimId String @id @default(uuid()) @db.Uuid
+  roleId      String? @db.Uuid
+  permission  String
+  claimType   String?
+  claimValue  String?
+
+  role Role? @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+}
+
+model Course {
+  courseId          String @id @default(uuid()) @db.Uuid
+  courseName        String
+  courseDescription String?
+  coursePrice       Float
+  discount          Float?
+  avatarURL         String?
+  level             Level?
+  createdBy         String? @db.Uuid
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  user               User?               @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
+  chapters           Chapter[]
+  comments           Comment[]
+  enrollments        Enrollment[]
+  certificates       Certificate[]
+  userCoursePreviews UserCoursePreview[]
+
+  @@index([courseName])
+}
+
+model Chapter {
+  chapterId    String @id @default(uuid()) @db.Uuid
+  chapterName  String
+  totalLesson  Int
+  courseId     String @db.Uuid
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  course         Course        @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  lessons        Lesson[]
+  chapterQuizzes ChapterQuiz[]
+}
+
+model Lesson {
+  lessonId       String @id @default(uuid()) @db.Uuid
+  lessonName     String
+  videoUrl       String?
+  content        String?
+  isPreview      Boolean  @default(false)
+  chapterId      String @db.Uuid
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  chapter         Chapter  @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
+  submissions     Submission[]
+  testCases       TestCase[]
+  lessonsProgress UserLessonProgress[]
+}
+
+model TestCase {
+  testCaseId     String @id @default(uuid()) @db.Uuid
+  description    String?
+  input          String?
+  expectedOutput String?
+  lessonId       String @db.Uuid
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+}
+
+model Comment {
+  commentId  String @id @default(uuid()) @db.Uuid
+  courseId   String @db.Uuid
+  userId     String @db.Uuid
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+}
+
+model Notification {
+  notificationId String @id @default(uuid()) @db.Uuid
+  userId         String @db.Uuid
+  type           String?
+  title          String?
+  message        String?
+  isRead         Boolean  @default(false)
+  link           String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model Payment {
+  paymentId           String @id @default(uuid()) @db.Uuid
+  description         String?
+  currency            String?
+  amount              Float
+  method              String?
+  paidAt              DateTime?
+  userId              String? @db.Uuid
+  userCoursePreviewId String? @db.Uuid
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  user              User?              @relation(fields: [userId], references: [userId], onDelete: SetNull)
+  userCoursePreview UserCoursePreview? @relation(fields: [userCoursePreviewId], references: [userCoursePreviewId], onDelete: SetNull)
+}
+
+model UserCoursePreview {
+  userCoursePreviewId String @id @default(uuid()) @db.Uuid
+  userId              String @db.Uuid
+  courseId            String @db.Uuid
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  user     User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course   Course  @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  payments Payment[]
+}
+
+model Certificate {
+  certificateId    String @id @default(uuid()) @db.Uuid
+  submissionId     String? @db.Uuid
+  certificateTitle String?
+  userId           String @db.Uuid
+  courseId         String @db.Uuid
+  certificateURL   String?
+  issuedAt         DateTime @default(now())
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course     Course      @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  submission Submission? @relation(fields: [submissionId], references: [submissionId], onDelete: SetNull)
+}
+
+model Submission {
+  submissionId  String @id @default(uuid()) @db.Uuid
+  score         Float?
+  isPassed      Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  userId        String @db.Uuid
+  chapterQuizId String? @db.Uuid
+  lessonId      String? @db.Uuid
+
+  user         User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  chapterQuiz  ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
+  lesson       Lesson?      @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+  certificates Certificate[]
+}
+
+model ChapterQuiz {
+  chapterQuizId String @id @default(uuid()) @db.Uuid
+  title         String
+  description   String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  chapterId     String? @db.Uuid
+
+  chapter       Chapter?       @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
+  quizQuestions QuizQuestion[]
+  submissions   Submission[]
+}
+
+model QuizQuestion {
+  quizQuestionId String @id @default(uuid()) @db.Uuid
+  questionText   String 
+  questionType   String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  chapterQuizId  String? @db.Uuid
+
+  chapterQuiz ChapterQuiz? @relation(fields: [chapterQuizId], references: [chapterQuizId], onDelete: Cascade)
+  quizOptions QuizOption[]
+}
+
+model QuizOption {
+  quizOptionId   String @id @default(uuid()) @db.Uuid
+  optionText     String
+  isCorrect      Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  quizQuestionId String @db.Uuid
+
+  quizQuestion QuizQuestion @relation(fields: [quizQuestionId], references: [quizQuestionId], onDelete: Cascade)
+}
+
+model UserLessonProgress {
+  id           String @id @default(uuid()) @db.Uuid
+  userId       String @db.Uuid
+  lessonId     String @db.Uuid
+  isCompleted  Boolean  @default(false)
+  lastAccessAt DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+model Enrollment {
+  enrollmentId String @id @default(uuid()) @db.Uuid
+  createdAt    DateTime @default(now())
+  userId       String @db.Uuid
+  courseId     String @db.Uuid
+
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([createdAt])
+}

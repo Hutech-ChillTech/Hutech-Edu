@@ -2,6 +2,10 @@ import { Prisma } from "@prisma/client";
 import UserRepository from "../repositories/user.repository";
 import PrismaClient from "../configs/prismaClient";
 import { UserRoles } from "../constants/roles";
+import admin from "../configs/firebaseAdminConfig";
+import axios from "axios";
+import createHttpError from "http-errors";
+import argon2 from "argon2";
 
 class UserService {
   private readonly userRepository: UserRepository;
@@ -154,6 +158,165 @@ class UserService {
 
   async isUserEnrolledInCourse(userId: string, courseId: string) {
     return this.userRepository.isUserEnrolledInCourse(userId, courseId);
+  }
+
+  // ============================================
+  // FIREBASE AUTHENTICATION METHODS
+  // ============================================
+
+  /**
+   * Đăng nhập với Firebase Authentication
+   * Sử dụng Firebase REST API để xác thực
+   */
+  async loginWithFirebase(email: string, password: string) {
+    try {
+      const firebaseApiKey = process.env.FIREBASE_API_KEY;
+
+      if (!firebaseApiKey) {
+        throw createHttpError(500, "Firebase API Key chưa được cấu hình");
+      }
+
+      // 1. Gọi Firebase REST API để xác thực
+      const response = await axios.post(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
+        { email, password, returnSecureToken: true }
+      );
+
+      const { idToken, refreshToken } = response.data;
+
+      // 2. Verify token với Firebase Admin
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+      // 3. Tìm user trong database theo firebaseUid
+      const user = await this.userRepository.findUserByFirebaseUid(
+        decodedToken.uid
+      );
+
+      if (!user) {
+        throw createHttpError(404, "Người dùng chưa đăng ký tài khoản");
+      }
+
+      // 4. Extract roles
+      const roles = user.roles.map((ur) => ur.role.name);
+
+      // 5. Trả về token + user info
+      return {
+        token: idToken,
+        refreshToken,
+        user: {
+          userId: user.userId,
+          email: user.email,
+          userName: user.userName,
+          avatarURL: user.avatarURL,
+          roles,
+        },
+      };
+    } catch (error: any) {
+      if (error.response?.data?.error?.message) {
+        const firebaseError = error.response.data.error.message;
+        if (
+          firebaseError === "INVALID_PASSWORD" ||
+          firebaseError === "EMAIL_NOT_FOUND"
+        ) {
+          throw createHttpError(401, "Email hoặc mật khẩu không đúng");
+        }
+        throw createHttpError(401, `Đăng nhập thất bại: ${firebaseError}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Đăng ký với Firebase Authentication
+   * Tạo user trong Firebase và đồng bộ vào PostgreSQL
+   */
+  async registerWithFirebase(userData: Prisma.UserCreateInput) {
+    try {
+      const result = await PrismaClient.$transaction(async (tx) => {
+        // 1. Kiểm tra email đã tồn tại chưa
+        const existingUser = await tx.user.findUnique({
+          where: { email: userData.email },
+        });
+
+        if (existingUser) {
+          throw createHttpError(400, "Email đã được đăng ký");
+        }
+
+        // 2. Tạo user trong Firebase Authentication
+        const firebaseUser = await admin.auth().createUser({
+          email: userData.email,
+          password: userData.password,
+          displayName: userData.userName,
+        });
+
+        console.log("✅ Firebase account created:", firebaseUser.uid);
+
+        // 3. Hash password và lưu vào PostgreSQL
+        const hashedPassword = await argon2.hash(userData.password);
+
+        const newUser = await tx.user.create({
+          data: {
+            userName: userData.userName,
+            password: hashedPassword,
+            email: userData.email,
+            gender: userData.gender,
+            level: userData.level,
+            firebaseUid: firebaseUser.uid, // ⭐ Link với Firebase
+          },
+        });
+
+        // 4. Gán role User mặc định
+        const defaultRole = await tx.role.findUnique({
+          where: { name: UserRoles.USER },
+        });
+
+        if (!defaultRole) {
+          throw new Error("Role mặc định 'User' chưa được khởi tạo");
+        }
+
+        await tx.userRole.create({
+          data: {
+            userId: newUser.userId,
+            roleId: defaultRole.roleId,
+          },
+        });
+
+        return newUser;
+      });
+
+      const { password: _, ...userDataWithoutPassword } = result;
+      return userDataWithoutPassword;
+    } catch (error: any) {
+      // Xử lý lỗi Firebase
+      if (error.code === "auth/email-already-exists") {
+        throw createHttpError(400, "Email đã tồn tại trên Firebase");
+      }
+      if (error.code === "auth/invalid-password") {
+        throw createHttpError(400, "Mật khẩu phải có ít nhất 6 ký tự");
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Verify Firebase token và lấy thông tin user
+   */
+  async verifyFirebaseToken(idToken: string) {
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      const user = await this.userRepository.findUserByFirebaseUid(
+        decodedToken.uid
+      );
+
+      if (!user) {
+        throw createHttpError(404, "Người dùng không tồn tại");
+      }
+
+      const { password: _, ...userData } = user;
+      return userData;
+    } catch (error) {
+      throw createHttpError(401, "Token không hợp lệ hoặc hết hạn");
+    }
   }
 }
 

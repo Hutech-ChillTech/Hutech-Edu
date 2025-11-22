@@ -12,6 +12,23 @@ class UserRepository extends BaseRepository<
     super(prisma, "user", primaryKey);
   }
 
+  async findUserByUidForSystem(firebaseUid: string) {
+    return this.prisma.user.findFirst({
+      where: { firebaseUid },
+      select: {
+        email: true,
+        firebaseUid: true,
+        userId: true,
+        roles: {
+          select: {
+            id: true,
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
   async getUserByName(userName: string) {
     return await this.prisma.user.findMany({
       where: { userName },
@@ -33,49 +50,6 @@ class UserRepository extends BaseRepository<
   async getUserByEmail(email: string) {
     return await this.prisma.user.findUnique({
       where: { email },
-    });
-  }
-
-  async getUserByEmailWithRoles(email: string) {
-    return await this.prisma.user.findUnique({
-      where: { email },
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
-  }
-
-  /**
-   * Tìm user theo Firebase UID
-   */
-  async findUserByFirebaseUid(firebaseUid: string) {
-    return await this.prisma.user.findFirst({
-      where: { firebaseUid },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: {
-                roleClaims: true,
-              },
-            },
-          },
-        },
-      },
-    });
-  }
-
-  /**
-   * Cập nhật Firebase UID cho user
-   */
-  async updateFirebaseUid(userId: string, firebaseUid: string) {
-    return await this.prisma.user.update({
-      where: { userId },
-      data: { firebaseUid },
     });
   }
 
@@ -234,9 +208,9 @@ class UserRepository extends BaseRepository<
       ...enrollment,
       course: enrollment.course
         ? {
-            ...enrollment.course,
-            chapters: enrollment.course.chapters || [],
-          }
+          ...enrollment.course,
+          chapters: enrollment.course.chapters || [],
+        }
         : null,
     }));
   }
