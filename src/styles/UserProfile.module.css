@@ -1,0 +1,81 @@
+.profileContainer {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  text-align: center;
+  border-radius: 10px;
+}
+
+.avatar {
+  margin-bottom: 12px;
+}
+
+.username {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.role {
+  color: gray;
+  margin-bottom: 16px;
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: space-around;
+}
+
+.homeBtn {
+  background-color: #28a745 !important;
+  border: none;
+}
+
+.menu {
+  border-radius: 10px;
+}
+
+.menuItem {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menuItem:hover {
+  background-color: #e6f7ff;
+}
+
+.icon {
+  margin-right: 10px;
+  color: #1890ff;
+}
+
+.content {
+  flex: 1;
+}
+
+.infoCard {
+  border-radius: 10px;
+  background: #fff;
+  padding: 20px;
+}
+
+.infoList {
+  list-style: none;
+  padding: 0;
+}
+
+.infoList li {
+  margin-bottom: 8px;
+  font-size: 15px;
+}
