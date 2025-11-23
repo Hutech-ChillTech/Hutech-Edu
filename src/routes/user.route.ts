@@ -10,7 +10,6 @@ import { authenticate } from "../middlewares/auth.middleware";
 import {
   requireOwnerOrAdmin,
 } from "../middlewares/role.middleware";
-import { UserRoles } from "../constants/roles";
 import {
   loginSchema,
   createUserSchema,
@@ -21,6 +20,10 @@ import {
   getUserByEmailSchema,
   paginationSchema,
 } from "../validators/user.validate";
+import { uploadImage } from "../middlewares/upload.middleware";
+import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken";
+import { verifyRole } from "../middlewares/verifyRole";
+
 
 const roleRepository = new RoleRepository(Prisma, "roleId");
 const userRoleRepository = new UserRoleRepository(Prisma, "userRole");
@@ -66,8 +69,12 @@ router.get(
   (req, res, next) => userController.getAllUser(req, res, next)
 );
 
-router.get("/:userId", authenticate, (req, res, next) =>
+router.get("/:userId", verifyFirebaseToken, verifyRole(["Admin", "User"]), (req, res, next) =>
   userController.getUserById(req, res, next)
+);
+
+router.get("/uid/:uid", verifyFirebaseToken, verifyRole(["Admin", "User"]), (req, res, next) =>
+  userController.getUserByUid(req, res, next)
 );
 
 router.get(
@@ -93,10 +100,21 @@ router.get(
 
 router.put(
   "/:userId",
-  authenticate,
-  requireOwnerOrAdmin((req) => req.params.userId),
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
+  uploadImage.single('avatar'),
   validate(updateUserSchema),
   (req, res, next) => userController.updateUser(req, res, next)
+);
+
+
+router.put(
+  "/uid/:uid",
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
+  uploadImage.single('avatar'),
+  validate(updateUserSchema),
+  (req, res, next) => userController.updateUserByUid(req, res, next)
 );
 
 router.delete(

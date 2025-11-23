@@ -19,7 +19,7 @@ class ChapterService {
         }
     }
 
-    async getChapterById(id: string){
+    async getChapterById(id: string) {
         try {
             return await this.chapterRepository.getById(id);
         } catch (error) {
@@ -27,12 +27,11 @@ class ChapterService {
         }
     }
 
-    async createChapter(id: string , dataCourse: Prisma.ChapterCreateInput){
+    async createChapter(id: string, dataCourse: Prisma.ChapterCreateInput) {
         try {
-            console.log(id);
             const existingCourse = await this.courseRepository.getById(id);
 
-            if(!existingCourse){
+            if (!existingCourse) {
                 throw createHttpError(404, 'Khóa học không tồn tại');
             }
 
@@ -40,7 +39,7 @@ class ChapterService {
                 chapterName: dataCourse.chapterName,
                 totalLesson: dataCourse.totalLesson,
                 course: {
-                    connect: {courseId: id},
+                    connect: { courseId: id },
                 }
             });
         } catch (error) {
@@ -48,11 +47,11 @@ class ChapterService {
         }
     }
 
-    async updateChapter(id: string, data: Prisma.ChapterUpdateInput){
+    async updateChapter(id: string, data: Prisma.ChapterUpdateInput) {
         try {
             const existingChapter = await this.chapterRepository.getById(id);
 
-            if(!existingChapter){
+            if (!existingChapter) {
                 throw createHttpError(404, 'Chương học không tồn tại');
             }
             return this.chapterRepository.update(id, data);
@@ -61,11 +60,11 @@ class ChapterService {
         }
     }
 
-    async deleteChapter(id: string){
+    async deleteChapter(id: string) {
         try {
             const existingChapter = await this.chapterRepository.getById(id);
 
-            if(!existingChapter){
+            if (!existingChapter) {
                 throw createHttpError(404, 'Chương học không tồn tại');
             }
             return this.chapterRepository.delete(id);

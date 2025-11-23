@@ -6,6 +6,8 @@ export function validate(
   source: "body" | "query" | "params" = "body"
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
+
+    console.log("👉 Data received in Validate:", req.body);
     const dataToValidate = req[source];
 
     const { error, value } = schema.validate(dataToValidate, {

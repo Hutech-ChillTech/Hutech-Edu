@@ -23,31 +23,6 @@ class UserService {
     this.userRoleRepository = userRoleRepository;
   }
 
-  async verifyPassword(hash: string, plain: string) {
-    const valid = await this.userRepository.verifyPassword(hash, plain);
-    if (!valid) {
-      throw new Error("Mật khẩu không hợp lệ hoặc dữ liệu mật khẩu bị lỗi.");
-    }
-    return true;
-  }
-
-  // Đăng nhập
-  // async login(email: string, password: string) {
-  //   const user = await this.userRepository.getUserByEmail(email);
-  //   if (!user) {
-  //     throw new Error("Email hoặc mật khẩu không đúng");
-  //   }
-  //   try {
-  //     await this.verifyPassword(user.password, password);
-  //   } catch (err) {
-  //     throw new Error(
-  //       (err as Error).message || "Email hoặc mật khẩu không đúng"
-  //     );
-  //   }
-  //   const { password: _, ...userData } = user;
-  //   return userData;
-  // }
-
   async loginWithEmail(email: string, password: string) {
     try {
       const firebaseApiKey = process.env.FIREBASE_API_KEY;
@@ -174,6 +149,10 @@ class UserService {
     }
   }
 
+  async getUserByUid(uid: string) {
+    return await this.userRepository.findUserByUidForSystem(uid);
+  }
+
 
   async getUserById(userId: string) {
     const user = await this.userRepository.getById(userId);
@@ -265,6 +244,24 @@ class UserService {
       }
     }
     const updatedUser = await this.userRepository.update(userId, user);
+    const { password: _, ...userData } = updatedUser;
+    return userData;
+  }
+
+  async updateUserByUid(user: Prisma.UserUpdateInput, uid: string) {
+    const existingUser = await this.userRepository.findUserByUidForSystem(uid);
+    if (!existingUser) {
+      throw new Error("Người dùng không tồn tại");
+    }
+    if (user.email && user.email !== existingUser.email) {
+      const emailUser = await this.userRepository.getUserByEmail(
+        user.email as string
+      );
+      if (emailUser) {
+        throw new Error("Email đã tồn tại");
+      }
+    }
+    const updatedUser = await this.userRepository.updateByUid(uid, user);
     const { password: _, ...userData } = updatedUser;
     return userData;
   }

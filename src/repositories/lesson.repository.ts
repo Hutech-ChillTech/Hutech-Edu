@@ -10,6 +10,8 @@ class LessonRepository extends BaseRepository<
   constructor(prisma: PrismaClient, primaryKey: string) {
     super(prisma, "lesson", primaryKey);
   }
+
+ 
 }
 
 export default LessonRepository;

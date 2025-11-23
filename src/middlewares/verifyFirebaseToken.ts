@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AuthRequest } from "../types/authRequest";
+import { AuthRequest } from "../types/customRequest";
 import Prisma from "../configs/prismaClient";
 import admin from "../configs/firebaseAdminConfig";
 import UserRepository from "../repositories/user.repository";

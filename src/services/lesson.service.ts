@@ -1,11 +1,14 @@
 import { Prisma } from "@prisma/client";
 import LessonRepository from "../repositories/lesson.repository";
+import ChapterRepository from "../repositories/chapter.repository";
 
 class LessonService {
   private readonly lessonRepository: LessonRepository;
+  private readonly chapterRepository: ChapterRepository;
 
-  constructor(lessonRepository: LessonRepository) {
+  constructor(lessonRepository: LessonRepository, chapterRepository: ChapterRepository) {
     this.lessonRepository = lessonRepository;
+    this.chapterRepository = chapterRepository;
   }
 
   async getAllLessons() {
@@ -19,6 +22,14 @@ class LessonService {
   async getLessonById(id: string) {
     try {
       return await this.lessonRepository.getById(id);
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async getChapterById(chapterId: string){
+    try {
+      return await this.chapterRepository.getByChapterId(chapterId);
     } catch (error) {
       throw error;
     }

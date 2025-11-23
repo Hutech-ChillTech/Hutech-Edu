@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  
 }
 
 datasource db {
@@ -23,7 +25,7 @@ model User {
   userId String @id @default(uuid()) @db.Uuid
   userName     String
   password     String
-  firebaseUid  String
+  firebaseUid  String   @unique
   email        String   @unique
   gender       Gender
   avatarURL    String?
@@ -42,6 +44,7 @@ model User {
   notifications      Notification[]
   userCoursePreviews UserCoursePreview[]
   submissions        Submission[]
+  codeSubmissions    CodeSubmission[]
   lessonsProgress    UserLessonProgress[]
   enrollments        Enrollment[]
 
@@ -50,6 +53,31 @@ model User {
   @@index([level])
   @@index([created_at])
 }
+
+model CodeSubmission {
+  submissionId     String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  testCaseId       String    @db.Uuid
+  source_code      String?   
+  language_id      Int?      
+  stdin            String?   
+  expected_output  String?   
+  stdout           String?   
+  stderr           String?  
+  compile_output   String?   
+  time             String?   
+  token            String?   
+  memory           Int?      
+  status           Json?     
+  message          String?   
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  testCase         TestCase  @relation(fields: [testCaseId], references: [testCaseId], onDelete: Cascade)
+}
+
+
 
 model Account {
   id                String @id @default(uuid()) @db.Uuid
@@ -136,6 +164,7 @@ model Lesson {
   videoUrl       String?
   content        String?
   isPreview      Boolean  @default(false)
+  publicIdVideo  String?
   chapterId      String @db.Uuid
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
@@ -155,7 +184,8 @@ model TestCase {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  lesson Lesson @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+  lesson         Lesson          @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+  codeSubmissions CodeSubmission[]
 }
 
 model Comment {

@@ -12,6 +12,27 @@ class UserRepository extends BaseRepository<
     super(prisma, "user", primaryKey);
   }
 
+  async updateByUid(uid: string, data: Prisma.UserUpdateInput) {
+    return await this.prisma.user.update({
+      where: { firebaseUid: uid }, // Tìm user theo uid
+      data: data,          // Dữ liệu cần update
+    });
+  }
+
+  async updateUserAvatar(userId: string, avatarURL: string) {
+    return await this.prisma.user.update({
+      where: { userId },
+      data: { avatarURL },  
+      select: {
+        userId: true,
+        userName: true,
+        email: true,
+        avatarURL: true,
+        updated_at: true,
+      },
+    });
+  }
+
   async findUserByUidForSystem(firebaseUid: string) {
     return this.prisma.user.findFirst({
       where: { firebaseUid },

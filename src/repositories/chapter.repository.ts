@@ -9,6 +9,15 @@ class ChapterRepository extends BaseRepository<"chapter",
     constructor(prisma: PrismaClient, primaryKey: string) {
         super(prisma, "chapter", primaryKey);
     }
+
+    async getByChapterId(chapterId: string) {
+        return await this.prisma.chapter.findUnique({
+            where: { chapterId },
+            include: {
+                lessons: true, 
+            }
+        });
+    }
 }
 
 export default ChapterRepository;

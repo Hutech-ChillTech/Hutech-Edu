@@ -43,7 +43,7 @@ class ChapterController {
     async createChapter(req: Request, res: Response, next: NextFunction) {
         try {
             const dataCourse = req.body;
-            const {courseId} = req.body;
+            const { courseId } = req.body;
 
             const chapter = await this.chapterService.createChapter(courseId, dataCourse);
             return sendSuccess(res, chapter, 'Thêm mới chapter thành công.');

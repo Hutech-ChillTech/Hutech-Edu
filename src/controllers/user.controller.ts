@@ -5,8 +5,6 @@ import jwt from "jsonwebtoken";
 import { sendCreated, sendNotFound, sendSuccess } from "../utils/responseHelper";
 import createHttpError from "http-errors";
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
-
 class UserController {
   private readonly userService: UserService;
 
@@ -44,6 +42,21 @@ class UserController {
       } catch (error) {
         return next(error);
       }
+  }
+
+  async getUserByUid(req: Request, res: Response, next: NextFunction){
+    try {
+      const {uid} = req.params;
+      const user = await this.userService.getUserByUid(uid);
+
+      if(!user){
+        sendNotFound(res);
+        return;
+      }
+      sendSuccess(res, user, "Lấy người dùng theo UID thành công.");
+    } catch (error) {
+      return next(error);
+    }
   }
 
   async getUserById(req: Request, res: Response, next: NextFunction) {
@@ -132,19 +145,46 @@ class UserController {
 
   async updateUser(req: Request, res: Response, next: NextFunction) {
     try {
+      const fileAvatar = req.file;
       const { userId } = req.params;
 
       if (!isUUID(userId)) {
         return res.status(400).json({ message: "Invalid user ID 2" });
       }
 
+      if(!fileAvatar){
+        throw createHttpError(404, "Ảnh đại diện chưa được tải lên");
+      }
+
       const data = req.body;
-      const user = await this.userService.updateUser(data, userId);
+
+      const payloadUpdateUser = {
+        ...data,
+        avatarURL: fileAvatar.path
+      }
+
+      const user = await this.userService.updateUser(payloadUpdateUser, userId);
+      
       sendSuccess(res, user, "Cập nhật thông tin người dùng thành công.");
     } catch (error) {
       return next(error);
     }
   }
+
+  // user.controller.ts
+
+async updateUserByUid(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { uid } = req.params;
+      const dataToUpdate = req.body; 
+
+      const user = await this.userService.updateUserByUid(dataToUpdate, uid);
+      
+      sendSuccess(res, user, "Cập nhật thông tin người dùng thành công.");
+    } catch (error) {
+      return next(error);
+    }
+}
 
   async deleteUser(req: Request, res: Response, next: NextFunction) {
     try {

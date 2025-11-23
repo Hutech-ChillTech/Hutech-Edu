@@ -1,5 +1,5 @@
 import { Response, NextFunction } from "express";
-import { AuthRequest } from "../types/authRequest";
+import { AuthRequest } from "../types/customRequest";
 import Prisma from "../configs/prismaClient";
 import { UserRoles, Permissions } from "../constants/roles";
 import { sendUnauthorized } from "../utils/responseHelper";

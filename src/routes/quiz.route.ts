@@ -7,7 +7,7 @@ import QuizService from "../services/quiz.service";
 import QuizController from "../controllers/quiz.controller";
 import { validate } from "../middlewares/validate";
 import { authenticate, optionalAuth } from "../middlewares/auth.middleware";
-import {  requirePermission } from "../middlewares/role.middleware";
+import { requirePermission } from "../middlewares/role.middleware";
 import { UserRoles, Permissions } from "../constants/roles";
 import {
   createQuizSchema,
@@ -17,6 +17,9 @@ import {
   createOptionSchema,
   updateOptionSchema,
 } from "../validators/quiz.validate";
+
+import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken";
+import { verifyRole } from "../middlewares/verifyRole";
 
 const chapterQuizRepository = new ChapterQuizRepository(
   Prisma,
@@ -50,7 +53,8 @@ router.get("/:chapterQuizId", optionalAuth, (req, res, next) =>
 
 router.post(
   "/",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_CREATE]),
   validate(createQuizSchema),
   (req, res, next) => quizController.createQuiz(req, res, next)
@@ -58,7 +62,8 @@ router.post(
 
 router.put(
   "/:chapterQuizId",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_UPDATE]),
   validate(updateQuizSchema),
   (req, res, next) => quizController.updateQuiz(req, res, next)
@@ -66,7 +71,8 @@ router.put(
 
 router.delete(
   "/:chapterQuizId",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_DELETE]),
   (req, res, next) => quizController.deleteQuiz(req, res, next)
 );
@@ -77,7 +83,8 @@ router.get("/:chapterQuizId/questions", optionalAuth, (req, res, next) =>
 
 router.post(
   "/questions",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_CREATE]),
   validate(createQuestionSchema),
   (req, res, next) => quizController.createQuestion(req, res, next)
@@ -89,7 +96,8 @@ router.get("/questions/:quizQuestionId", optionalAuth, (req, res, next) =>
 
 router.put(
   "/questions/:quizQuestionId",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_UPDATE]),
   validate(updateQuestionSchema),
   (req, res, next) => quizController.updateQuestion(req, res, next)
@@ -97,7 +105,8 @@ router.put(
 
 router.delete(
   "/questions/:quizQuestionId",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_DELETE]),
   (req, res, next) => quizController.deleteQuestion(req, res, next)
 );
@@ -110,7 +119,8 @@ router.get(
 
 router.post(
   "/options",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_CREATE]),
   validate(createOptionSchema),
   (req, res, next) => quizController.createOption(req, res, next)
@@ -122,7 +132,8 @@ router.get("/options/:quizOptionId", optionalAuth, (req, res, next) =>
 
 router.put(
   "/options/:quizOptionId",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_UPDATE]),
   validate(updateOptionSchema),
   (req, res, next) => quizController.updateOption(req, res, next)
@@ -130,7 +141,8 @@ router.put(
 
 router.delete(
   "/options/:quizOptionId",
-  authenticate,
+  verifyFirebaseToken,
+  verifyRole(["Admin"]),
   requirePermission([Permissions.QUIZ_DELETE]),
   (req, res, next) => quizController.deleteOption(req, res, next)
 );
