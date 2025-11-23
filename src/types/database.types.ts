@@ -13,7 +13,7 @@ export interface User {
   userId: string;
   userName: string;
   password?: string; // Nên để optional vì thường không trả về FE
-  firebaseUid: string;
+  firebaseUid?: string;
   email: string;
   gender: Gender;
   avatarURL: string | null;

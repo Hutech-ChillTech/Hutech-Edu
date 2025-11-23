@@ -145,7 +145,7 @@ const UserHeader: React.FC = () => {
                 </button>
                 <ul className="dropdown-menu dropdown-menu-end">
                   <li>
-                    <Link className="dropdown-item" to="/user/profile">
+                    <Link className="dropdown-item" to="/profile">
                       Hồ sơ
                     </Link>
                   </li>

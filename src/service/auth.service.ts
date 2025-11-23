@@ -1,24 +1,17 @@
+// import {type User} from '../types/database.types';
+import { type LoginResponse } from '../types/login.types';
+import axiosClient from './axiosClient';
 
-import { getAuth, type User } from 'firebase/auth';
+export const authService = {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
+    const response = await axiosClient.post<LoginResponse>("/users/login", {
+      email,
+      password,
+    });
 
-export const getAccessToken = async (forceRefresh: boolean = false): Promise<string | null> => {
-  const auth = getAuth();
-  const currentUser = auth.currentUser;
-
-  if (!currentUser) return null;
-
-  try {
-    // forceRefresh = true sẽ ép Firebase lấy token mới (dùng khi token cũ hết hạn)
-    const token = await currentUser.getIdToken(forceRefresh);
-    return token;
-  } catch (error) {
-    console.error("Error getting token:", error);
-    return null;
-  }
-};
-
-
-export const getCurrentUser = (): User | null => {
-  const auth = getAuth();
-  return auth.currentUser;
+    return response.data;
+  },
+  logout: () => {
+    localStorage.clear();
+  },
 };

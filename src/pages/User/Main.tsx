@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import styles from "../../styles/UserMain.module.css";
+import { courseService } from "../../service/course.service";
+import {type Course} from "../../types/database.types";
 
-interface Course {
-  courseId: string;
-  courseName: string;
-  courseDescription?: string;
-  coursePrice: number;
-  avatarURL: string | null;
-  level: string;
-}
 
 const Main: React.FC = () => {
   const navigate = useNavigate();
@@ -24,33 +17,13 @@ const Main: React.FC = () => {
   const handleViewCourse = (courseId: string) => {
     navigate(`/course/${courseId}`);
   };
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  };
-  
-  const parseJSON = async (response: Response) => {
-    try {
-      return await response.json();
-    } catch {
-      return null;
-    }
-  };
-
   // === 1. Lấy toàn bộ khóa học ===
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/courses",{
-          method: "GET",
-          headers: getAuthHeaders(),
-        });
-        if (res.data.success) {
-          setApiCourses(res.data.data);
+        const res = await courseService.getAllCourses();
+        if (res) {
+          setApiCourses(res);
         } else {
           setError("Không thể tải danh sách khóa học.");
         }
@@ -69,12 +42,12 @@ const Main: React.FC = () => {
   useEffect(() => {
     const fetchPopular = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/courses/popular?limit=5", {
-          method: "GET",
-          headers: getAuthHeaders(),
-        });
-        if (res.data.success) {
-          setPopularCourses(res.data.data);
+
+        const res = await courseService.getPopularCourses(5);
+        
+        // Data từ service trả về đã là Course[]
+        if (res) {
+          setPopularCourses(res);
         }
       } catch (err) {
         console.error("Lỗi khi tải khóa học nổi bật:", err);

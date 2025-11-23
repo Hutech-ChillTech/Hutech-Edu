@@ -1,79 +1,166 @@
 import React, { useEffect, useState } from "react";
-import { Card, Button, List, Avatar, message } from "antd";
+import { useNavigate } from "react-router-dom";
+import { Card, Button, List, Avatar, message, Upload } from "antd";
 import {
+  SaveOutlined,
   UserOutlined,
   BookOutlined,
   HomeOutlined,
-  LogoutOutlined,
   MessageOutlined,
   SettingOutlined,
   TrophyOutlined,
+  LoadingOutlined
 } from "@ant-design/icons";
-import axios from "../../service/axiosClient";
-import styles from "../../styles/UserProfile.module.css";
 
-interface User {
-  userId: string;
-  userName: string;
-  email: string;
-  gender: string;
-  level: string;
-  created_at: string;
-}
+import styles from "../../styles/UserProfile.module.css";
+import { type User } from "../../types/database.types";
+import { userService } from "../../service/user.service";
+import { uploadAvatarToCloudinary } from "../../utils/cloudinaryHelper";
 
 const UserProfile: React.FC = () => {
+  const uid = localStorage.getItem("uid");
+  const navigate = useNavigate();
+  const [avatarFile, setAvatarFile] = useState<File | undefined>(undefined);
+  
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  // Giả sử userId đã lưu khi đăng nhập
-  const userId = localStorage.getItem("userId");
+  const handleChange = (info: any) => {
+    if (info.file.status === 'uploading') {
+      setLoading(true);
+      return;
+    }
+    
+    if (info.file.status === 'done' || info.file.originFileObj) {
+      const file = info.file.originFileObj;
+      
+     
+      setAvatarFile(file);
+
+      const previewUrl = URL.createObjectURL(file);
+      setImageUrl(previewUrl);
+      setLoading(false);
+    }
+  };
+
+  const beforeUpload = (file: File) => {
+    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+    if (!isJpgOrPng) {
+      message.error('Bạn chỉ có thể upload file JPG/PNG!');
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('Ảnh phải nhỏ hơn 2MB!');
+    }
+    return isJpgOrPng && isLt2M;
+  };
+
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        if (!userId) {
+        if (!uid) {
           message.warning("⚠️ Bạn chưa đăng nhập!");
           return;
         }
-        const res = await axios.get(`/users/${userId}`);
-        setUser(res.data.data);
+
+        const res = await userService.getUserByUid(uid);
+        setUser(res);
+
+        if (res.avatarURL) {
+            setImageUrl(res.avatarURL);
+        }
+
       } catch (err) {
         console.error("Lỗi khi lấy thông tin người dùng:", err);
         message.error("Không thể tải thông tin người dùng!");
       }
     };
     fetchUser();
-  }, [userId]);
+  }, [uid]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userId");
-    message.success("Đăng xuất thành công!");
-    window.location.href = "/login";
+  const handleSave = async (uid: string, values: User, fileToUpload?: File) => {
+    try {
+      let finalAvatarUrl = values.avatarURL;
+
+      if (fileToUpload) {
+        message.loading({ content: "Đang tải ảnh lên...", key: "uploading" });
+        finalAvatarUrl = await uploadAvatarToCloudinary(fileToUpload, uid);
+        message.success({ content: "Tải ảnh xong!", key: "uploading" });
+      }
+
+      const updateData: Partial<User> = {
+        ...values,          
+        avatarURL: finalAvatarUrl 
+      };
+
+      console.log("Dữ liệu chuẩn bị gửi về backend: ", updateData);
+
+      const res = await userService.updateUser(uid, updateData);
+
+      if (!res) {
+        message.error("Cập nhật thất bại.");
+        return;
+      }
+
+      message.success("Cập nhật thông tin thành công!");
+    
+      setUser(prev => prev ? ({...prev, avatarURL: finalAvatarUrl}) : null);
+
+    } catch (error) {
+      console.error("Lỗi cập nhật:", error);
+      message.error("Đã có lỗi xảy ra!");
+    }
   };
+
+  const handleBackHome = () => {
+    navigate("/");
+  }
 
   return (
     <div className={styles.profileContainer}>
-      {/* Cột trái */}
       <div className={styles.sidebar}>
         <Card className={styles.card}>
-          <Avatar
-            size={100}
-            icon={<UserOutlined />}
-            className={styles.avatar}
-          />
+          <Upload
+            name="avatar"
+            listType="picture-circle"
+            showUploadList={false}
+            beforeUpload={beforeUpload}
+            onChange={handleChange}
+            className={styles.uploadWrapper}
+            customRequest={({ onSuccess }) => setTimeout(() => onSuccess && onSuccess("ok"), 0)}
+          >
+            {imageUrl ? (
+              <Avatar size={100} src={imageUrl} className={styles.avatar} />
+            ) : (
+              <Avatar size={100} icon={loading ? <LoadingOutlined /> : <UserOutlined />} className={styles.avatar} />
+            )}
+          </Upload>
           <h3 className={styles.username}>{user?.userName || "Chưa đăng nhập"}</h3>
           <p className={styles.role}>HỌC VIÊN KHÓA HỌC ONLINE</p>
 
           <div className={styles.buttonGroup}>
-            <Button type="primary" icon={<HomeOutlined />} className={styles.homeBtn}>
+            <Button type="primary" icon={<HomeOutlined />} className={styles.homeBtn} onClick={handleBackHome}>
               Trang chủ
             </Button>
-            <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
-              Thoát ra
+
+            <Button
+              danger
+              icon={<SaveOutlined />}
+              onClick={() => {
+                if (uid && user) {
+                    handleSave(uid, user, avatarFile);
+                } else {
+                    message.error("Chưa có thông tin user để lưu!");
+                }
+              }}
+            >
+              Lưu thay đổi
             </Button>
           </div>
         </Card>
 
-        {/* Menu trái */}
         <Card className={styles.menu}>
           <List
             itemLayout="horizontal"
@@ -93,7 +180,6 @@ const UserProfile: React.FC = () => {
         </Card>
       </div>
 
-      {/* Cột phải */}
       <div className={styles.content}>
         <Card className={styles.infoCard}>
           <h3>🎓 Chào mừng bạn đến với hệ thống khóa học trực tuyến HutechEdu</h3>
@@ -103,10 +189,10 @@ const UserProfile: React.FC = () => {
               <li><strong>Email:</strong> {user.email}</li>
               <li><strong>Giới tính:</strong> {user.gender === "MALE" ? "Nam" : "Nữ"}</li>
               <li><strong>Trình độ học viên:</strong> {user.level}</li>
-              <li><strong>Ngày tham gia:</strong> {new Date(user.created_at).toLocaleDateString("vi-VN")}</li>
+              <li><strong>Ngày tham gia:</strong> {user.created_at ? new Date(user.created_at).toLocaleDateString("vi-VN") : "N/A"}</li>
             </ul>
           ) : (
-            <p>Vui lòng đăng nhập để xem thông tin cá nhân của bạn.</p>
+            <p>Đang tải thông tin...</p>
           )}
         </Card>
       </div>
