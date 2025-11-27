@@ -2,18 +2,21 @@ import { Request, Response, NextFunction } from "express";
 import { validate as isUUID } from "uuid";
 import createHttpError from "http-errors";
 import LessonService from "../services/lesson.service";
-import ChapterRepository from "../repositories/chapter.repository";
-import {uploadVideoToCloudinary} from "../services/upload.service"; 
+import ChapterService from "../services/chapter.service";
+import { uploadVideoToCloudinary } from "../services/upload.service";
 import { sendEmpty, sendNotFound, sendSuccess } from "../utils/responseHelper";
 import { create } from "axios";
+import TestCaseService from "../services/testCase.service";
 
 class LessonController {
   private readonly lessonService: LessonService;
-  private readonly chapterRepository: ChapterRepository;
+  private readonly chapterService: ChapterService;
+  private readonly testCaseService: TestCaseService;
 
-  constructor(lessonService: LessonService, chapterRepository: ChapterRepository) {
+  constructor(lessonService: LessonService, chapterService: ChapterService, testCaseService: TestCaseService) {
     this.lessonService = lessonService;
-    this.chapterRepository = chapterRepository;
+    this.chapterService = chapterService;
+    this.testCaseService = testCaseService;
   }
 
   async getAllLessons(req: Request, res: Response, next: NextFunction) {
@@ -47,13 +50,13 @@ class LessonController {
     }
   }
 
-  async getChapterById(req: Request, res: Response, next: NextFunction){
+  async getChapterById(req: Request, res: Response, next: NextFunction) {
     try {
-      const {chapterId} = req.params;
+      const { chapterId } = req.params;
       if (!isUUID(chapterId)) {
         return res.status(400).json({ message: "Invalid chapter ID" });
       }
-      const chapter = await this.chapterRepository.getById(chapterId);
+      const chapter = await this.chapterService.getChapterById(chapterId);
       if (!chapter) {
         sendNotFound(res, "Không tìm thấy chapter cần tìm");
         return;
@@ -64,19 +67,41 @@ class LessonController {
     }
   }
 
+  async getTestCaseByLessonId(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { lessonId } = req.params;
+      if (!lessonId) {
+        throw createHttpError(404, "Người dùng chưa chọn bài học");
+      }
+
+      const testCase = await this.testCaseService.getTestCaseByLessonId(lessonId);
+
+      if (!testCase) {
+        sendNotFound(res, 'Không tìm thấy TestCase cần tìm');
+        return;
+      }
+
+      return sendSuccess(res, testCase, "Lấy thành công các testcase theo khóa học");
+
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   async createLesson(req: Request, res: Response, next: NextFunction) {
     try {
       const fileVideo = req.file;
+      const { chapterId } = req.body;
       const data = req.body;
 
-      if(!fileVideo){
+      if (!fileVideo) {
         throw createHttpError(404, "Video chưa được tải lên");
       }
 
-      const cloudResult = await uploadVideoToCloudinary(data.lessonId, fileVideo.buffer, 'course-videos');
+      const cloudResult = await uploadVideoToCloudinary(chapterId, fileVideo.buffer, 'course-videos');
 
 
-       const payloadLesson = {
+      const payloadLesson = {
         ...data,
         videoUrl: cloudResult.url,
         publicIdVideo: cloudResult.public_id

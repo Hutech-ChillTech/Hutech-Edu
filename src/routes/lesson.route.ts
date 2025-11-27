@@ -1,7 +1,11 @@
 import { Router } from "express";
 import Prisma from "../configs/prismaClient";
 import LessonRepository from "../repositories/lesson.repository";
+import TestCaseRepository from "../repositories/testcase.repository";
 import ChapterRepository from "../repositories/chapter.repository";
+import CourseRepository from "../repositories/course.repository";
+import TestCaseService from "../services/testCase.service";
+import ChapterService from "../services/chapter.service";
 import LessonService from "../services/lesson.service";
 import LessonController from "../controllers/lesson.controller";
 import { validate } from "../middlewares/validate";
@@ -17,9 +21,13 @@ import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken";
 import { verifyRole } from "../middlewares/verifyRole";
 
 const lessonRepository = new LessonRepository(Prisma, "lessonId");
+const testCaseRepository = new TestCaseRepository(Prisma, "testCaseId");
 const chapterRepository = new ChapterRepository(Prisma, "chapterId");
+const courseRepository = new CourseRepository(Prisma, "courseId");
+const chapterService = new ChapterService(chapterRepository, courseRepository);
+const testCaseService = new TestCaseService(testCaseRepository);
 const lessonService = new LessonService(lessonRepository, chapterRepository);
-const lessonController = new LessonController(lessonService, chapterRepository);
+const lessonController = new LessonController(lessonService, chapterService, testCaseService);
 
 const router = Router();
 
@@ -39,12 +47,20 @@ router.get("/:lessonId",
     lessonController.getLessonById(req, res, next)
 );
 
-router.get("/chapter/:chapterId",
+router.get("/:lessonId",
+  verifyFirebaseToken,
+  verifyRole(["Admin", "User"]),
+  requirePermission([Permissions.LESSON_READ]),
+  (req, res, next) =>
+    lessonController.getLessonById(req, res, next)
+);
+
+router.get("/testcase/:lessonId",
   verifyFirebaseToken,
   verifyRole(["Admin", "User"]),
   requirePermission([Permissions.CHAPTER_READ]),
   (req, res, next) =>
-    lessonController.getChapterById(req, res, next)
+    lessonController.getTestCaseByLessonId(req, res, next)
 );
 
 router.post(

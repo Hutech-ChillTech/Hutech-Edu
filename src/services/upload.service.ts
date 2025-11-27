@@ -4,10 +4,10 @@ import { Readable } from 'stream';
 
 const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
 
-export const uploadVideoToCloudinary = async (lessonId: string, fileBuffer: Buffer, folder: string = 'course-videos') => {
+export const uploadVideoToCloudinary = async (chapterId: string, fileBuffer: Buffer, folder: string = 'course-videos') => {
     return new Promise<{ url: string, public_id: string }>((resole, reject) => {
 
-        const folderPath = `chapters/${lessonId}/videos`;
+        const folderPath = `chapters/${chapterId}/videos`;
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 resource_type: 'video',

@@ -25,6 +25,15 @@ class TestCaseService {
         }
     }
 
+    async getTestCaseByLessonId(lessonId: string) {
+        try {
+            const testCases = await this.testCaseRepository.getTestCaseByLessonId(lessonId);
+            return testCases;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async createTestCase(data: Prisma.TestCaseCreateInput) {
         try {
             return await this.testCaseRepository.create(data);

@@ -38,6 +38,20 @@ class TestCaseController {
         }
     }
 
+    async getTestCaseByLessonId(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { lessonId } = req.body;
+            const testCases = await this.testCaseService.getTestCaseByLessonId(lessonId);
+            if (!testCases) {
+                sendEmpty(res, 'Chưa có test case');
+                return;
+            }
+            sendSuccess(res, testCases, 'Lấy tất cả test cases thành công');
+        } catch (error) {
+            return next();
+        }
+    }
+
     async createTestCase(req: Request, res: Response, next: NextFunction) {
         try {
 

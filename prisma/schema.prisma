@@ -178,8 +178,14 @@ model Lesson {
 model TestCase {
   testCaseId     String @id @default(uuid()) @db.Uuid
   description    String?
+
+  // sử dụng cho 2 trường này cho các bài thuật toán
   input          String?
   expectedOutput String?
+
+  // Trường này chứa đoạn mã Javascript riêng cho HTML/CSS
+  testCode       String? @db.Text
+
   lessonId       String @db.Uuid
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
