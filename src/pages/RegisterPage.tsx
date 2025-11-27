@@ -1,26 +1,21 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import styles from "../styles/RegisterPage.module.css";
-
-interface RegisterForm {
-  userName: string;
-  password: string;
-  email: string;
-  level: string;
-  gender: string;
-}
+import { type Register } from "../types/login.types";
+import { authService } from "../service/auth.service";
 
 const RegisterPage: React.FC = () => {
-  const [form, setForm] = useState<RegisterForm>({
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+
+  const [form, setForm] = useState<Register>({
     userName: "",
     password: "",
     email: "",
-    level: "Basic",
+    level: "Basic", 
     gender: "MALE",
   });
-
-  const navigate = useNavigate();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -31,14 +26,20 @@ const RegisterPage: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
-      await axios.post("http://localhost:3000/api/users/register", form);
-      alert("Đăng ký thành công!");
+   
+      await authService.register(form);
+      
+      alert("✅ Đăng ký thành công! Vui lòng đăng nhập.");
       navigate("/login");
     } catch (err: any) {
-      console.error("❌ Lỗi BE:", err.response?.data || err.message);
-      alert("Đăng ký thất bại! Vui lòng thử lại.");
+      console.error("❌ Lỗi đăng ký:", err);
+     
+      alert(err.message || "Đăng ký thất bại! Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,7 +49,7 @@ const RegisterPage: React.FC = () => {
         <h2 className={styles["register-title"]}>Đăng ký tài khoản</h2>
 
         <form onSubmit={handleRegister}>
-          {/* Tên người dùng */}
+
           <input
             type="text"
             className={styles["register-input"]}
@@ -59,7 +60,6 @@ const RegisterPage: React.FC = () => {
             required
           />
 
-          {/* Email */}
           <input
             type="email"
             className={styles["register-input"]}
@@ -70,7 +70,6 @@ const RegisterPage: React.FC = () => {
             required
           />
 
-          {/* Mật khẩu */}
           <input
             type="password"
             className={styles["register-input"]}
@@ -81,7 +80,6 @@ const RegisterPage: React.FC = () => {
             required
           />
 
-          {/* 🎓 Level */}
           <select
             className={styles["register-select"]}
             name="level"
@@ -104,8 +102,12 @@ const RegisterPage: React.FC = () => {
             <option value="FEMALE">Nữ</option>
           </select>
 
-          <button type="submit" className={styles["register-button"]}>
-            Đăng ký
+          <button 
+            type="submit" 
+            className={styles["register-button"]}
+            disabled={loading} // Disable nút khi đang loading
+          >
+            {loading ? "Đang xử lý..." : "Đăng ký"}
           </button>
 
           <div className={styles["register-footer"]}>

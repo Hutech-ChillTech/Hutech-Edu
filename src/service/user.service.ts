@@ -50,6 +50,14 @@ export const userService = {
             throw error;
         }
     },
+    createUser: async (data: Partial<User>) => {
+        try {
+            const res = await fetch(`${API_URL}/users/create`)
+        } catch (error) {
+            console.error("Error fetching create user: ", error);
+            throw error;
+        }
+    },
     updateUser: async (uid: string, userData: Partial<User>): Promise<User> => {
         try {
             console.log("UID: ", uid);
@@ -70,6 +78,27 @@ export const userService = {
             return data.data || data as User;
         } catch (error) {
             console.error("Error fetching update user: ", error);
+            throw error;
+        }
+    },
+    deleteUser : async (userId: string) => {
+        try {
+            const res = await fetch(`${API_URL}/users/delete/${userId}`,{
+                method: "DELETE",
+                headers: getAuthHeaders(),
+            });
+
+            const data = await res.json();
+            
+            if (res.status === 401) {
+                throw new Error("Unauthorized");
+            }
+            if (!res.ok) {
+                throw new Error(data?.message || "Không thể lấy người dùng theo ID.");
+            }
+            return data.data || data as User;
+        } catch (error) {
+            console.error("Error fetching delete user: ", error);
             throw error;
         }
     }

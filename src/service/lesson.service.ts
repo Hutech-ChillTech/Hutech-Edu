@@ -69,7 +69,34 @@ export const lessonService = {
 
     },
 
+    getTestCaseByLessonId: async (lessonId: string): Promise<Lesson[]> => {
+        try {
+            const res = await fetch(`${API_URL}/lessons/testcase/${lessonId}`, {
+                method: "GET",
+                headers: getAuthHeaders(),
+            });
 
+            const data = await res.json();
+
+            console.log("Data: ", data);
+            
+            if (res.status === 401) {
+                throw new Error("Unauthorized");
+            }
+
+            if (res.status === 204) {
+                console.info('Tescase List: server returned 204 No Content');
+                return [];
+            }
+
+            const result = data.data || data;
+            return Array.isArray(result) ? result : [];
+        } catch (error) {
+            console.error("Error fetching lessons by chapter ID:", error);
+            throw error;
+        }
+
+    },
     createLesson: async (formData: FormData) => {
         try {
             const token = localStorage.getItem("token");    
@@ -86,6 +113,7 @@ export const lessonService = {
                 console.log(`${pair[0]}:`, pair[1]);
             }
             console.log("-----------------------");
+            
             const data = await res.json();
 
             if (res.status === 401) {

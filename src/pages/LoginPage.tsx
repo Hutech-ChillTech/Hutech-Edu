@@ -7,26 +7,34 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../configs/firebaseConfig";
 import { authService } from "../service/auth.service";
 import { type DecodedToken } from "../types/login.types";
+// Import Interface
+import { type Login } from "../types/login.types";
 
-
-//  Component LoginPage
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Đăng nhập thường qua backend
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      const res = await authService.login(email, password);
-      const token = res.data.token;
+      // 1. Tạo object dữ liệu theo interface Login
+      const loginData: Login = {
+        email: email,
+        password: password
+      };
 
+      // 2. Gọi service với object vừa tạo
+      const res = await authService.login(loginData);
+      
+      // ... Phần xử lý token bên dưới giữ nguyên ...
+      const token = res.data.token;
       const decoded = jwtDecode<DecodedToken>(token);
 
-      const role =  res.data.role || "user";
+      const role = res.data.role || "user";
       const normalizedRole = role.trim().toLowerCase();
       const userName = res.data.email?.split("@")[0] || "Người dùng";
 
@@ -46,25 +54,25 @@ const LoginPage: React.FC = () => {
 
       alert(`✅ Đăng nhập thành công! Xin chào ${userName}`);
       navigate(normalizedRole === "admin" ? "/admin/dashboard" : "/");
+
     } catch (error: any) {
       console.error("❌ Lỗi đăng nhập:", error);
       alert(
+        error.message || 
         error.response?.data?.message ||
-          "Email hoặc mật khẩu không đúng hoặc server không phản hồi!"
+        "Email hoặc mật khẩu không đúng hoặc server không phản hồi!"
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // Đăng nhập Google (Firebase)
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const idToken = await user.getIdToken();
 
-      // Lưu thông tin
       localStorage.setItem("token", idToken);
       localStorage.setItem("email", user.email || "");
       localStorage.setItem("username", user.displayName || "");

@@ -15,8 +15,4 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Nếu sau này bạn dùng thêm Storage hay Firestore thì export thêm ở đây:
-// import { getFirestore } from "firebase/firestore";
-// export const db = getFirestore(app);
-
 export default app;

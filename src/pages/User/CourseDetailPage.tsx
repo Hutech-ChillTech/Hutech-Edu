@@ -8,7 +8,7 @@ import {
   PlayCircleOutlined,
   BookOutlined,
 } from "@ant-design/icons";
-import styles from "../../styles/UserCourseDetail.module.css"; // 👈 import CSS Module
+import styles from "../../styles/UserCourseDetail.module.css"; 
 
 interface Lesson {
   lessonId: string;

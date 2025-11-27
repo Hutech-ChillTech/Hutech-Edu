@@ -13,7 +13,7 @@ import AdminUser from "../pages/Admin/UserAdmin";
 import CourseAdmin from "../pages/Admin/CourseAdmin";
 import ChapterList from "../pages/Admin/ChapterList";
 import UserMain from "../pages/User/Main";
-import PracticePage from "../pages/Practice/PracticePage";
+import PracticePage from "../pages/Lesson/LessonDetailPage";
 import NotFountPage from "../pages/Error/NotFoundPage";
 import FeaturedCourses from "../pages/User/FeaturedCourses";
 import AllCourses from "../pages/User/AllCourses";

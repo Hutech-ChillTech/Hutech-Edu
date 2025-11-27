@@ -1,3 +1,20 @@
+// Interface để định nghĩa kiểu dữ liệu gửi về BE
+
+export interface Login{
+  email: string;
+  password: string;
+}
+
+export interface Register {
+    email: string;
+    userName: string;
+    password: string;
+    gender: string;
+    level: string;
+}
+
+// Response sử dụng cho FE do BE trả về
+
 export interface LoginResponse {
   success: boolean;
   data: {
