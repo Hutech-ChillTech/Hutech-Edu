@@ -11,10 +11,10 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 // Interface cho payload
 interface CreateTestCasePayload {
-  lessonId: string,          // Bắt buộc: Để biết test case này của bài học nào
-  description?: string,    // Optional (?): Mô tả test case
-  input?: string,             // Optional: Dữ liệu đầu vào
-  expectedOutput?: string   // Optional: Kết quả mong đợi
+    lessonId: string,          // Bắt buộc: Để biết test case này của bài học nào
+    description?: string,    // Optional (?): Mô tả test case
+    input?: string,             // Optional: Dữ liệu đầu vào
+    expectedOutput?: string   // Optional: Kết quả mong đợi
 }
 
 export const testCaseService = {
@@ -49,6 +49,7 @@ export const testCaseService = {
             });
 
             const data = await res.json();
+            console.log("Data:  ", data);
 
             if (res.status === 401) {
                 throw new Error("Unauthorized");
