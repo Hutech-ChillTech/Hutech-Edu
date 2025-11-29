@@ -9,13 +9,6 @@ const getAuthHeaders = () => {
 
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
-// Interface cho payload
-interface CreateTestCasePayload {
-    lessonId: string,          // Bắt buộc: Để biết test case này của bài học nào
-    description?: string,    // Optional (?): Mô tả test case
-    input?: string,             // Optional: Dữ liệu đầu vào
-    expectedOutput?: string   // Optional: Kết quả mong đợi
-}
 
 export const testCaseService = {
 
@@ -40,7 +33,7 @@ export const testCaseService = {
         }
     },
 
-    createTestCase: async (payload: CreateTestCasePayload) => {
+    createTestCase: async (payload: Partial<TestCase>) => {
         try {
             const res = await fetch(`${API_URL}/testcases`, {
                 method: "POST",

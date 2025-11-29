@@ -8,13 +8,13 @@ import {
   Card,
   message,
   Typography,
-  InputNumber,
   Tabs,
   Switch,
   Upload,
   Checkbox
 } from "antd";
 import type { TabsProps } from "antd";
+import { Popconfirm, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   PlusOutlined,
@@ -22,14 +22,16 @@ import {
   FileTextOutlined,
   QuestionCircleOutlined,
   UploadOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
+  EditOutlined,
+  DeleteOutlined
 } from "@ant-design/icons";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 // Khai báo các service
 import { lessonService } from "../../service/lesson.service";
 import { testCaseService } from "../../service/testCase.service";
-import { type Lesson } from "../../types/database.types";
+import { type Lesson, type TestCase } from "../../types/database.types";
 
 const { Title } = Typography;
 
@@ -111,22 +113,79 @@ const LessonList: React.FC = () => {
     return false;
   };
 
+  // 1. Hàm xử lý khi bấm nút Sửa
+  const handleEdit = async (record: Lesson) => {
+    try {
+      const res = await lessonService.updateLesson(record.lessonId, record);
+      console.log("Edit lesson res:", res);
+      message.success("Sửa thành công!");
+    } catch (error) {
+      message.error("Sửa thất bại");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await lessonService.deleteLesson(id);
+      console.log("Delete lesson res:", res);
+      message.success("Xóa thành công!");
+    } catch (error) {
+      message.error("Xóa thất bại");
+    }
+  };
+
   const columns: ColumnsType<Lesson> = useMemo(
     () => [
-      { title: "#", render: (_record: unknown, _row: unknown, i: number) => i + 1 },
+      { title: "#", render: (_record, _row, i) => i + 1, width: 50 },
       { title: "Tên bài học", dataIndex: "lessonName" },
       {
         title: "Loại bài",
         dataIndex: "lessonType",
-        render: (val: LessonType) => {
+        width: 150,
+        render: (val: string) => { // Lưu ý type ở đây
           if (val === "testcode") return "💻 Test Code";
           if (val === "quiz") return "❓ Trắc nghiệm";
           return "📘 Bài học";
         },
       },
-      { title: "Thời lượng (phút)", dataIndex: "duration", align: "center" },
+      {
+        title: "Hành động",
+        key: "action",
+        align: "center",
+        width: 120,
+        render: (_, record) => (
+          <Space size="middle">
+            {/* Nút Sửa */}
+            <Tooltip title="Sửa">
+              <Button
+                type="primary"
+                ghost
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(record)}
+              />
+            </Tooltip>
+
+            {/* Nút Xóa (Có xác nhận) */}
+            <Popconfirm
+              title="Xóa bài học này?"
+              description="Hành động này không thể hoàn tác."
+              onConfirm={() => handleDelete(record.lessonId)}
+              okText="Xóa"
+              cancelText="Hủy"
+            >
+              <Tooltip title="Xóa">
+                <Button
+                  type="primary"
+                  danger
+                  icon={<DeleteOutlined />}
+                />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        ),
+      },
     ],
-    []
+    [] // Dependencies của useMemo
   );
 
   const renderFormFields = useCallback(() => {
@@ -309,10 +368,32 @@ const LessonList: React.FC = () => {
       if (!newLessonId) {
         message.warning("Lỗi ID bài học.");
         return;
-        // Logic tạo quiz...
-        message.success("Thêm câu hỏi trắc nghiệm thành công!");
       }
-      else if (activeTab === "normal" && !hasTestCase) {
+
+      if (activeTab === "testcode") {
+        const testCasePayload: Partial<TestCase> = {
+          lessonId: newLessonId,
+          description: values.description,
+          input: values.input,
+          expectedOutput: values.expectedOutput,
+          testCode: (values as any).testCode,
+        };
+
+        await testCaseService.createTestCase(testCasePayload);
+        message.success("Thêm Test Case thành công!");
+
+        form.resetFields();
+        setHasTestCase(false);
+        setTempLessonId(null);
+        setActiveTab("normal");
+
+        fetchLessons();
+        return;
+      }
+
+      if (activeTab === "quiz") {
+        message.success("Thêm câu hỏi trắc nghiệm thành công!");
+      } else if (activeTab === "normal" && !hasTestCase) {
         message.success("Thêm bài học video thành công!");
       }
 
@@ -320,6 +401,7 @@ const LessonList: React.FC = () => {
       setHasTestCase(false);
       setTempLessonId(null);
       setActiveTab("normal");
+      fetchLessons();
 
     } catch (err: any) {
       console.error(err);

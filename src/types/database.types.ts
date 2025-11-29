@@ -78,7 +78,7 @@ export interface Account {
 export interface Role {
   roleId: string;
   name: string;
-  
+
   userRoles?: UserRole[];
   roleClaims?: RoleClaim[];
 }
@@ -158,6 +158,8 @@ export interface TestCase {
   input: string | null;
   expectedOutput: string | null;
   lessonId: string;
+
+  testCode?: string;
   created_at: Date | string;
   updated_at: Date | string;
 

@@ -19,24 +19,13 @@ import {
   BookOutlined,
 } from "@ant-design/icons";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import { type Chapter } from '../../types/database.types'
+import { courseService } from '../../service/course.service'
+
 
 const { Title } = Typography;
 
-interface Chapter {
-  chapterId: string;
-  chapterName: string;
-  totalLesson: number;
-  courseId: string;
-  created_at?: string;
-  updated_at?: string;
-}
 
-interface DecodedToken {
-  id?: string;
-  userId?: string;
-  role?: string;
-}
 
 const ChapterList: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -52,15 +41,6 @@ const ChapterList: React.FC = () => {
   const [showForm, setShowForm] = useState<boolean>(false);
   const token = localStorage.getItem("token");
 
-  const decoded = useMemo(() => {
-    if (!token) return null;
-    try {
-      return jwtDecode<DecodedToken>(token);
-    } catch {
-      return null;
-    }
-  }, [token]);
-
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return {
@@ -73,15 +53,9 @@ const ChapterList: React.FC = () => {
   const fetchCourseName = useCallback(async () => {
     if (!courseId || courseName) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/courses/${courseId}`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-
-      console.log("data:", res)
-      const data = await res.json();
-      if (data.success && data.data?.courseName) {
-        setCourseName(data.data.courseName);
+      const res = await courseService.getCourseById(courseId);
+      if (res) {
+        setCourseName(res.courseName);
       }
     } catch (err) {
       console.error(err);
