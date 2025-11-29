@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Table,
   Button,
@@ -9,22 +9,36 @@ import {
   message,
   Typography,
   InputNumber,
-  Popconfirm,
   Tabs,
+  Switch,
+  Upload,
+  Checkbox,
+  Popconfirm,
   Radio,
 } from "antd";
+import type { TabsProps } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
+  CodeOutlined,
   FileTextOutlined,
   QuestionCircleOutlined,
-  CodeOutlined,
+  UploadOutlined,
+  ArrowRightOutlined,
+  EditOutlined,
+  DeleteOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 
+// Khai báo các service
+import { lessonService } from "../../service/lesson.service";
+import { testCaseService } from "../../service/testCase.service";
+import { type Lesson } from "../../types/database.types";
+
 const { Title } = Typography;
+
+type LessonType = "normal" | "testcode" | "quiz";
 
 interface QuizQuestion {
   id: string;
@@ -34,19 +48,54 @@ interface QuizQuestion {
   required: boolean;
 }
 
-interface Lesson {
-  lessonId: string;
-  lessonName: string;
-  lessonType: "normal" | "testcode" | "quiz";
-  duration?: number;
+const normFile = (e: any) => {
+  if (Array.isArray(e)) {
+    return e;
+  }
+  return e?.fileList;
+};
+
+interface LessonFormValues {
+  lessonName?: string;
+  isPreview?: boolean;
   content?: string;
-  chapterId: string;
-  quiz?: {
-    title: string;
-    description: string;
-    questions: QuizQuestion[];
-  };
+  duration?: number | string;
+  description?: string;
+  input?: string;
+  expectedOutput?: string;
+  question?: string;
+  options?: string | string[];
+  answer?: string;
+  videoFile?: unknown;
+  hasTestCase?: boolean;
 }
+
+const TAB_ITEMS: TabsProps["items"] = [
+  {
+    key: "normal",
+    label: (
+      <span>
+        <FileTextOutlined /> Bài học
+      </span>
+    ),
+  },
+  {
+    key: "testcode",
+    label: (
+      <span>
+        <CodeOutlined /> Test Code
+      </span>
+    ),
+  },
+  {
+    key: "quiz",
+    label: (
+      <span>
+        <QuestionCircleOutlined /> Trắc nghiệm
+      </span>
+    ),
+  },
+] as const;
 
 const LessonList: React.FC = () => {
   const { chapterId } = useParams<{ chapterId: string }>();
@@ -56,11 +105,129 @@ const LessonList: React.FC = () => {
   const [form] = Form.useForm();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"normal" | "testcode" | "quiz">("normal");
+  const [activeTab, setActiveTab] = useState<LessonType>("normal");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTableLoading, setIsTableLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const [hasTestCase, setHasTestCase] = useState(false);
+  const [tempLessonId, setTempLessonId] = useState<string | null>(null);
 
   const chapterName = location.state?.chapterName || "Chương học";
+
+  const beforeUpload = (file: File) => {
+    const isVideo = file.type.startsWith("video/");
+    if (!isVideo) {
+      message.error("Chỉ được tải lên file video!");
+      return Upload.LIST_IGNORE;
+    }
+    return false;
+  };
+
+  const renderFormFields = useCallback(() => {
+    if (activeTab === "normal") {
+      return (
+        <>
+          <Form.Item
+            label="Tên bài học"
+            name="lessonName"
+            rules={[{ required: true, message: "Nhập tên bài học" }]}
+          >
+            <Input placeholder="Nhập tiêu đề bài học..." />
+          </Form.Item>
+          <Form.Item label="Nội dung" name="content">
+            <Input.TextArea rows={4} placeholder="Nhập nội dung bài học" />
+          </Form.Item>
+
+          <Form.Item
+            label="Upload video"
+            name="videoFile"
+            valuePropName="fileList"
+            getValueFromEvent={normFile}
+          >
+            <Upload beforeUpload={beforeUpload} maxCount={1} listType="picture">
+              <Button icon={<UploadOutlined />}>Chọn file video</Button>
+            </Upload>
+          </Form.Item>
+          <Form.Item name="hasTestCase" valuePropName="checked">
+            <Checkbox
+              onChange={(e) => setHasTestCase(e.target.checked)}
+              style={{ fontWeight: 500 }}
+            >
+              Bài học này có bài tập thực hành code (Thêm Test Case)
+            </Checkbox>
+          </Form.Item>
+        </>
+      );
+    }
+
+    if (activeTab === "testcode") {
+      return (
+        <>
+          <Form.Item
+            label="Tên test code / Bài học"
+            name="lessonName"
+            rules={[{ required: !tempLessonId, message: "Nhập tên test code" }]}
+          >
+            <Input
+              placeholder="Tên bài kiểm tra code..."
+              disabled={!!tempLessonId}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Đề bài"
+            name="description"
+            rules={[{ required: true, message: "Nhập đề bài" }]}
+          >
+            <Input.TextArea rows={4} placeholder="Nhập đề bài code..." />
+          </Form.Item>
+          <Form.Item
+            label="Input"
+            name="input"
+            rules={[{ required: true, message: "Nhập dữ liệu vào" }]}
+          >
+            <Input.TextArea rows={4} placeholder="Nhập đầu vào..." />
+          </Form.Item>
+          <Form.Item label="Đáp án mẫu" name="expectedOutput">
+            <Input.TextArea rows={3} placeholder="Kết quả mong đợi..." />
+          </Form.Item>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Form.Item
+          label="Tên bài quiz"
+          name="lessonName"
+          rules={[{ required: true, message: "Nhập tên bài quiz" }]}
+        >
+          <Input placeholder="Nhập tiêu đề bài quiz..." />
+        </Form.Item>
+        <Form.Item
+          label="Câu hỏi"
+          name="question"
+          rules={[{ required: true, message: "Nhập câu hỏi" }]}
+        >
+          <Input.TextArea rows={3} placeholder="Nhập câu hỏi trắc nghiệm..." />
+        </Form.Item>
+        <Form.Item
+          label="Các lựa chọn"
+          name="options"
+          rules={[{ required: true, message: "Nhập các lựa chọn" }]}
+        >
+          <Input.TextArea
+            rows={3}
+            placeholder="Nhập đáp án cách nhau bằng dấu ;"
+          />
+        </Form.Item>
+        <Form.Item label="Đáp án đúng" name="answer">
+          <Input placeholder="Nhập đáp án đúng..." />
+        </Form.Item>
+      </>
+    );
+  }, [activeTab, tempLessonId]);
 
   // Dữ liệu cho bài quiz - giống Google Form
   const [quizData, setQuizData] = useState<{
@@ -81,25 +248,22 @@ const LessonList: React.FC = () => {
     ],
   });
 
-  // Lấy danh sách bài học theo chapter ID
   const fetchLessons = useCallback(async () => {
+    if (!chapterId) return;
     try {
-      const res = await fetch("http://localhost:3000/api/lessons");
-      const data = await res.json();
-
-      if (data.success && Array.isArray(data.data)) {
-        const filtered = data.data.filter((lesson: Lesson) => lesson.chapterId === chapterId);
-        setLessons(filtered);
-      }
-    } catch (err) {
-      console.error(err);
-      message.error("Không thể tải danh sách bài học");
+      setIsTableLoading(true);
+      const data = await lessonService.getLessonByChapterId(chapterId);
+      setLessons(data || []);
+    } catch (error) {
+      console.error("Error fetching lessons:", error);
+    } finally {
+      setIsTableLoading(false);
     }
   }, [chapterId]);
 
   useEffect(() => {
-    fetchLessons();
-  }, [fetchLessons]);
+    if (chapterId) fetchLessons();
+  }, [chapterId, fetchLessons]);
 
   // Thêm câu hỏi mới
   const addQuestion = () => {
@@ -117,7 +281,11 @@ const LessonList: React.FC = () => {
   };
 
   // Cập nhật câu hỏi
-  const updateQuestion = (questionId: string, field: keyof QuizQuestion, value: any) => {
+  const updateQuestion = (
+    questionId: string,
+    field: keyof QuizQuestion,
+    value: any
+  ) => {
     setQuizData({
       ...quizData,
       questions: quizData.questions.map((q) =>
@@ -138,7 +306,9 @@ const LessonList: React.FC = () => {
 
   // Sao chép câu hỏi
   const duplicateQuestion = (questionId: string) => {
-    const questionToDuplicate = quizData.questions.find((q) => q.id === questionId);
+    const questionToDuplicate = quizData.questions.find(
+      (q) => q.id === questionId
+    );
     if (questionToDuplicate) {
       const newQuestion = {
         ...questionToDuplicate,
@@ -171,7 +341,11 @@ const LessonList: React.FC = () => {
   };
 
   // Cập nhật tùy chọn
-  const updateOption = (questionId: string, optionIndex: number, value: string) => {
+  const updateOption = (
+    questionId: string,
+    optionIndex: number,
+    value: string
+  ) => {
     setQuizData({
       ...quizData,
       questions: quizData.questions.map((q) => {
@@ -194,7 +368,8 @@ const LessonList: React.FC = () => {
           return {
             ...q,
             options: q.options.filter((_, i) => i !== optionIndex),
-            correctAnswer: q.correctAnswer === optionIndex ? null : q.correctAnswer,
+            correctAnswer:
+              q.correctAnswer === optionIndex ? null : q.correctAnswer,
           };
         }
         return q;
@@ -202,77 +377,98 @@ const LessonList: React.FC = () => {
     });
   };
 
-  // Thêm hoặc cập nhật bài học
-  const handleFinish = async (values: any) => {
-    if (!chapterId) return message.error("Thiếu chapterId!");
-
-    const payload = {
-      ...values,
-      chapterId,
-      lessonType: activeTab,
-    };
-
-    if (activeTab === "quiz") {
-      // Kiểm tra quiz data
-      if (!quizData.title || quizData.questions.length === 0) {
-        return message.error("Vui lòng điền đầy đủ thông tin quiz!");
-      }
-      
-      // Kiểm tra từng câu hỏi có đáp án chưa
-      const hasInvalidQuestion = quizData.questions.some(
-        (q) => !q.question || q.options.length === 0 || q.correctAnswer === null
-      );
-      
-      if (hasInvalidQuestion) {
-        return message.error("Vui lòng điền đầy đủ câu hỏi và chọn đáp án đúng!");
-      }
-
-      payload.quiz = quizData;
-    }
-
-    const url = editingId
-      ? `http://localhost:3000/api/lessons/update/${editingId}`
-      : "http://localhost:3000/api/lessons/create";
-
-    const method = editingId ? "PUT" : "POST";
-
+  const handleFinish = async (values: LessonFormValues) => {
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      setIsSubmitting(true);
 
-      if (data.success) {
-        message.success(editingId ? "Đã cập nhật bài học!" : "Thêm bài học thành công!");
-        form.resetFields();
-        setEditingId(null);
-        setShowForm(false);
-        setQuizData({
-          title: "Mẫu không có tiêu đề",
-          description: "Mô tả biểu mẫu",
-          questions: [
-            {
-              id: Date.now().toString(),
-              question: "Câu hỏi không có tiêu đề",
-              options: ["Tùy chọn 1"],
-              correctAnswer: null,
-              required: false,
-            },
-          ],
-        });
-        fetchLessons();
-      } else {
-        message.error(data.message);
+      let newLessonId = tempLessonId;
+
+      if (!newLessonId) {
+        const lessonFormData = new FormData();
+        lessonFormData.append("lessonName", values.lessonName?.trim() || "");
+        lessonFormData.append("chapterId", chapterId || "");
+        lessonFormData.append("isPreview", values.isPreview ? "true" : "false");
+
+        if (activeTab === "normal") {
+          if (values.content) lessonFormData.append("content", values.content);
+
+          const fileList = values.videoFile as any[];
+          if (fileList && fileList.length > 0) {
+            const fileObj = fileList[0];
+            if (fileObj.originFileObj) {
+              lessonFormData.append("video", fileObj.originFileObj);
+            }
+          } else {
+            message.error("Vui lòng chọn video!");
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
+        const createdLesson = await lessonService.createLesson(lessonFormData);
+        if (!createdLesson) throw new Error("Không tạo được bài học");
+
+        newLessonId =
+          (createdLesson as any).lessonId || (createdLesson as any).id;
+
+        if (activeTab === "normal" && hasTestCase) {
+          message.success(
+            "Đã lưu bài học video. Vui lòng nhập thông tin Test Case."
+          );
+          setTempLessonId(newLessonId);
+          setActiveTab("testcode");
+          form.setFieldsValue({ lessonName: values.lessonName });
+          setIsSubmitting(false);
+          return;
+        }
       }
-    } catch (err) {
+
+      if (!newLessonId) {
+        message.warning("Lỗi ID bài học.");
+        return;
+      }
+
+      if (activeTab === "testcode") {
+        const testCasePayload = {
+          description: values.description,
+          input: values.input,
+          expectedOutput: values.expectedOutput,
+          lessonId: newLessonId,
+        };
+
+        await testCaseService.createTestCase(testCasePayload);
+        message.success("Thêm bài tập code thành công!");
+      } else if (activeTab === "quiz") {
+        message.success("Thêm câu hỏi trắc nghiệm thành công!");
+      } else if (activeTab === "normal" && !hasTestCase) {
+        message.success("Thêm bài học video thành công!");
+      }
+
+      form.resetFields();
+      setHasTestCase(false);
+      setTempLessonId(null);
+      setActiveTab("normal");
+      fetchLessons();
+    } catch (err: any) {
       console.error(err);
-      message.error("Lỗi xử lý bài học!");
+      message.error(err.message || "Lỗi hệ thống");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Sửa bài học
+  const getSubmitButtonText = () => {
+    if (isSubmitting) return "Đang xử lý...";
+
+    if (activeTab === "normal") {
+      return hasTestCase ? "Lưu & Thêm Test Case" : "Lưu bài học";
+    }
+    if (activeTab === "testcode") {
+      return tempLessonId ? "Hoàn tất & Lưu Test Case" : "Lưu Test Code";
+    }
+    return "Lưu câu hỏi";
+  };
+
   const handleEdit = (record: Lesson) => {
     setEditingId(record.lessonId);
     setActiveTab(record.lessonType);
@@ -286,9 +482,12 @@ const LessonList: React.FC = () => {
   // Xóa bài học
   const handleDelete = async (lessonId: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/lessons/delete/${lessonId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://localhost:3000/api/lessons/delete/${lessonId}`,
+        {
+          method: "DELETE",
+        }
+      );
       const data = await res.json();
 
       if (data.success) {
@@ -303,49 +502,62 @@ const LessonList: React.FC = () => {
     }
   };
 
-  const columns = [
-    { title: "#", render: (_: any, __: any, i: number) => i + 1, width: 60 },
-    { title: "Tên bài học", dataIndex: "lessonName" },
-    {
-      title: "Loại",
-      dataIndex: "lessonType",
-      render: (val: string) =>
-        val === "testcode"
-          ? "💻 Test Code"
-          : val === "quiz"
-          ? "❓ Trắc nghiệm"
-          : "📘 Bài học",
-    },
-    { title: "Thời lượng", dataIndex: "duration", align: "center" as const },
+  const columns: ColumnsType<Lesson> = useMemo(
+    () => [
+      {
+        title: "#",
+        render: (_record: unknown, _row: unknown, i: number) => i + 1,
+      },
+      { title: "Tên bài học", dataIndex: "lessonName" },
+      {
+        title: "Loại bài",
+        dataIndex: "lessonType",
+        render: (val: LessonType) => {
+          if (val === "testcode") return "💻 Test Code";
+          if (val === "quiz") return "❓ Trắc nghiệm";
+          return "📘 Bài học";
+        },
+      },
+      {
+        title: "Thời lượng (phút)",
+        dataIndex: "duration",
+        align: "center" as const,
+      },
 
-    {
-      title: "Thao tác",
-      render: (_: unknown, record: Lesson) => (
-        <Space>
-          <Button
-            onClick={() =>
-              navigate(`/admin/lesson/detail/${record.lessonId}`, {
-                state: { lessonName: record.lessonName },
-              })
-            }
-          >
-            Chi tiết
-          </Button>
+      {
+        title: "Thao tác",
+        render: (_: unknown, record: Lesson) => (
+          <Space>
+            <Button
+              onClick={() =>
+                navigate(`/admin/lesson/detail/${record.lessonId}`, {
+                  state: { lessonName: record.lessonName },
+                })
+              }
+            >
+              Chi tiết
+            </Button>
 
-          <Button icon={<EditOutlined />} type="primary" onClick={() => handleEdit(record)} />
+            <Button
+              icon={<EditOutlined />}
+              type="primary"
+              onClick={() => handleEdit(record)}
+            />
 
-          <Popconfirm
-            title="Xóa bài học này?"
-            okText="Xóa"
-            cancelText="Hủy"
-            onConfirm={() => handleDelete(record.lessonId)}
-          >
-            <Button danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+            <Popconfirm
+              title="Xóa bài học này?"
+              okText="Xóa"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(record.lessonId)}
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </Space>
+        ),
+      },
+    ],
+    []
+  );
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
@@ -384,82 +596,31 @@ const LessonList: React.FC = () => {
         >
           <Tabs
             activeKey={activeTab}
-            onChange={(key) => setActiveTab(key as any)}
-            items={[
-              {
-                key: "normal",
-                label: (
-                  <span>
-                    <FileTextOutlined /> Bài học
-                  </span>
-                ),
-              },
-              {
-                key: "testcode",
-                label: (
-                  <span>
-                    <CodeOutlined /> Test Code
-                  </span>
-                ),
-              },
-              {
-                key: "quiz",
-                label: (
-                  <span>
-                    <QuestionCircleOutlined /> Trắc nghiệm
-                  </span>
-                ),
-              },
-            ]}
+            onChange={(key) => {
+              if (tempLessonId) {
+                message.warning(
+                  "Vui lòng hoàn tất thêm Test Case trước khi chuyển tab."
+                );
+                return;
+              }
+              setActiveTab(key as LessonType);
+            }}
+            items={TAB_ITEMS}
           />
 
           <Form layout="vertical" form={form} onFinish={handleFinish}>
-            {/* NORMAL LESSON */}
+            {renderFormFields()}
+
             {activeTab === "normal" && (
-              <>
-                <Form.Item
-                  label="Tên bài học"
-                  name="lessonTitle"
-                  rules={[{ required: true }]}
-                >
-                  <Input placeholder="Nhập tiêu đề bài học..." />
-                </Form.Item>
-                <Form.Item label="Nội dung" name="content">
-                  <Input.TextArea rows={4} placeholder="Nhập nội dung bài học" />
-                </Form.Item>
-                <Form.Item label="Thời lượng (phút)" name="duration">
-                  <InputNumber min={1} style={{ width: "100%" }} />
-                </Form.Item>
-              </>
+              <Form.Item
+                label="Cho phép học thử?"
+                name="isPreview"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
             )}
 
-            {/* TESTCODE */}
-            {activeTab === "testcode" && (
-              <>
-                <Form.Item
-                  label="Tên test code"
-                  name="lessonTitle"
-                  rules={[{ required: true }]}
-                >
-                  <Input placeholder="Tên bài kiểm tra code..." />
-                </Form.Item>
-                <Form.Item label="Input" name="input" rules={[{ required: true }]}>
-                  <Input placeholder='VD: "2 3"' />
-                </Form.Item>
-                <Form.Item
-                  label="Đáp án mong đợi"
-                  name="expectedOutput"
-                  rules={[{ required: true }]}
-                >
-                  <Input placeholder='VD: "5"' />
-                </Form.Item>
-                <Form.Item label="Mô tả" name="description">
-                  <Input.TextArea rows={2} />
-                </Form.Item>
-              </>
-            )}
-
-            {/* QUIZ - GOOGLE FORM STYLE */}
             {activeTab === "quiz" && (
               <div style={{ marginTop: 20 }}>
                 {/* Header Form */}
@@ -513,7 +674,11 @@ const LessonList: React.FC = () => {
                       <Input
                         value={question.question}
                         onChange={(e) =>
-                          updateQuestion(question.id, "question", e.target.value)
+                          updateQuestion(
+                            question.id,
+                            "question",
+                            e.target.value
+                          )
                         }
                         placeholder={`Câu hỏi ${qIndex + 1}`}
                         style={{
@@ -530,7 +695,11 @@ const LessonList: React.FC = () => {
                       <Radio.Group
                         value={question.correctAnswer}
                         onChange={(e) =>
-                          updateQuestion(question.id, "correctAnswer", e.target.value)
+                          updateQuestion(
+                            question.id,
+                            "correctAnswer",
+                            e.target.value
+                          )
                         }
                         style={{ width: "100%" }}
                       >
@@ -548,7 +717,11 @@ const LessonList: React.FC = () => {
                               <Input
                                 value={option}
                                 onChange={(e) =>
-                                  updateOption(question.id, optIndex, e.target.value)
+                                  updateOption(
+                                    question.id,
+                                    optIndex,
+                                    e.target.value
+                                  )
                                 }
                                 placeholder={`Tùy chọn ${optIndex + 1}`}
                                 style={{ flex: 1 }}
@@ -558,7 +731,9 @@ const LessonList: React.FC = () => {
                                   type="text"
                                   danger
                                   icon={<CloseOutlined />}
-                                  onClick={() => deleteOption(question.id, optIndex)}
+                                  onClick={() =>
+                                    deleteOption(question.id, optIndex)
+                                  }
                                 />
                               )}
                             </div>
@@ -603,13 +778,25 @@ const LessonList: React.FC = () => {
                           Xóa
                         </Button>
                       </Space>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 14, color: "#666" }}>Bắt buộc</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ fontSize: 14, color: "#666" }}>
+                          Bắt buộc
+                        </span>
                         <Button
                           type={question.required ? "primary" : "default"}
                           size="small"
                           onClick={() =>
-                            updateQuestion(question.id, "required", !question.required)
+                            updateQuestion(
+                              question.id,
+                              "required",
+                              !question.required
+                            )
                           }
                         >
                           {question.required ? "Bật" : "Tắt"}
@@ -634,12 +821,20 @@ const LessonList: React.FC = () => {
             )}
 
             <div style={{ textAlign: "right", marginTop: 20 }}>
-              <Space>
-                <Button onClick={() => setShowForm(false)}>Hủy</Button>
-                <Button type="primary" htmlType="submit" loading={loading}>
-                  {editingId ? "Cập nhật" : "Lưu bài"}
-                </Button>
-              </Space>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={isSubmitting}
+                icon={
+                  activeTab === "normal" && hasTestCase ? (
+                    <ArrowRightOutlined />
+                  ) : (
+                    <PlusOutlined />
+                  )
+                }
+              >
+                {getSubmitButtonText()}
+              </Button>
             </div>
           </Form>
         </Card>
@@ -658,6 +853,7 @@ const LessonList: React.FC = () => {
           rowKey="lessonId"
           bordered
           pagination={false}
+          loading={isTableLoading}
           locale={{ emptyText: "Chưa có bài học nào" }}
         />
       </Card>

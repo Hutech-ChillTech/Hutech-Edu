@@ -1,16 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import styles from "../../styles/UserMain.module.css";
-
-interface Course {
-  courseId: string;
-  courseName: string;
-  courseDescription?: string;
-  coursePrice: number;
-  avatarURL: string | null;
-  level: string;
-}
+import { courseService } from "../../service/course.service";
+import { type Course } from "../../types/database.types";
 
 const Main: React.FC = () => {
   const navigate = useNavigate();
@@ -29,9 +21,9 @@ const Main: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/courses");
-        if (res.data.success) {
-          setApiCourses(res.data.data);
+        const res = await courseService.getAllCourses();
+        if (res) {
+          setApiCourses(res);
         } else {
           setError("Không thể tải danh sách khóa học.");
         }
@@ -50,9 +42,11 @@ const Main: React.FC = () => {
   useEffect(() => {
     const fetchPopular = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/courses/popular?limit=5");
-        if (res.data.success) {
-          setPopularCourses(res.data.data);
+        const res = await courseService.getPopularCourses(5);
+
+        // Data từ service trả về đã là Course[]
+        if (res) {
+          setPopularCourses(res);
         }
       } catch (err) {
         console.error("Lỗi khi tải khóa học nổi bật:", err);
@@ -130,7 +124,9 @@ const Main: React.FC = () => {
                   className={styles["course-img"]}
                 />
                 <div className={styles["course-info"]}>
-                  <h5 className={styles["course-title"]}>{course.courseName}</h5>
+                  <h5 className={styles["course-title"]}>
+                    {course.courseName}
+                  </h5>
                   <p className={styles["course-price"]}>
                     {course.coursePrice.toLocaleString("vi-VN")}đ
                   </p>
@@ -138,13 +134,13 @@ const Main: React.FC = () => {
                     Trình độ: {course.level}
                   </p>
                   <div className={styles["course-buttons"]}>
-                    <button 
+                    <button
                       className={styles["btn-view"]}
                       onClick={() => handleViewCourse(course.courseId)}
                     >
                       Xem
                     </button>
-                    <button 
+                    <button
                       className={styles["btn-buy"]}
                       onClick={() => handleViewCourse(course.courseId)}
                     >

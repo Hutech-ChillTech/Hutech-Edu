@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../../styles/UserHeader.module.css";
 import { FaUserCircle } from "react-icons/fa";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 // 🧩 Kiểu dữ liệu payload trong JWT
 interface JWTPayload {

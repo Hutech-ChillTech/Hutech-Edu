@@ -13,7 +13,7 @@ import AdminUser from "../pages/Admin/UserAdmin";
 import CourseAdmin from "../pages/Admin/CourseAdmin";
 import ChapterList from "../pages/Admin/ChapterList";
 import UserMain from "../pages/User/Main";
-import PracticePage from "../pages/Practice/PracticePage";
+// import PracticePage from "../pages/Practice/PracticePage";
 import NotFountPage from "../pages/Error/NotFoundPage";
 import FeaturedCourses from "../pages/User/FeaturedCourses";
 import AllCourses from "../pages/User/AllCourses";
@@ -43,15 +43,15 @@ const AppRoutes: React.FC = () => {
         {/* User routes */}
         <Route path="/" element={<UserLayout />}>
           <Route index element={<UserMain />} />
-          <Route path="practice" element={<PracticePage />} />
+          {/* <Route path="practice" element={<PracticePage />} /> */}
           <Route path="featured-courses" element={<FeaturedCourses></FeaturedCourses>}></Route>
           <Route path="all-courses" element={<AllCourses></AllCourses>}></Route>
           <Route path="profile" element={<UserProfile />} />
           <Route path="/course/:id" element={<CourseDetailPage />} />
           <Route path="/course/:courseId/lesson-video/:lessonId" element={<LessonVideoPage />} />
           <Route path="/lesson-video" element={<LessonVideoPage />} /> {/* test lesson-video page*/}
-          <Route path="/learningPathMap" element={<LearningPathMap/>} />
-          
+          <Route path="/learningPathMap" element={<LearningPathMap />} />
+
         </Route>
 
 

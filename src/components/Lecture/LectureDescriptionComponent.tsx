@@ -1,22 +1,30 @@
 import React from "react";
+import { type Lesson } from "../../types/database.types";
 
 interface LessonDescriptionProps {
-    lessonIndex: number;
+    lesson: Lesson | null;
 }
 
-const lessonDescriptions = [
-    "Giới thiệu cơ bản về khóa học.",
-    "Tìm hiểu biến và kiểu dữ liệu trong JS.",
-    "Học cấu trúc điều kiện if/else.",
-    "Vòng lặp for, while cơ bản.",
-    "Hàm và cách sử dụng hàm.",
-];
+const LessonDescriptionComponent: React.FC<LessonDescriptionProps> = ({ lesson }) => {
+    if (!lesson) {
+        return (
+            <div className="bg-light p-3 h-100 d-flex align-items-center justify-content-center">
+                <p className="text-muted">Vui lòng chọn bài học để xem chi tiết.</p>
+            </div>
+        );
+    }
 
-const LessonDescriptionComponent: React.FC<LessonDescriptionProps> = ({ lessonIndex }) => {
     return (
-        <div className="col-12 col-md-4 bg-light p-3">
-            <h5 className="mb-3 py-2">Mô tả bài học</h5>
-            <p>{lessonDescriptions[lessonIndex]}</p>
+        <div className="bg-light p-3 h-100" style={{ overflowY: "auto" }}>
+            <h5 className="mb-3 py-2 text-primary">{lesson.lessonName}</h5>
+
+            <div className="lesson-content">
+                {lesson.content ? (
+                    <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+                ) : (
+                    <p>Chưa có nội dung mô tả.</p>
+                )}
+            </div>
         </div>
     );
 };

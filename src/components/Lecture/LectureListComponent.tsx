@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { type Chapter } from '../../types/database.types';
 
 interface LectureListProps {
+    chapters: Chapter[];
     currentLesson: {
         chapterIndex: number;
         lessonIndex: number;
@@ -9,44 +11,22 @@ interface LectureListProps {
     className?: string;
 }
 
-const mockChapters = [
-    {
-        title: "Chương 1: Cơ bản",
-        lessons: [
-            "Bài 1: Giới thiệu",
-            "Bài 2: Biến và kiểu dữ liệu",
-            "Bài 3: Cấu trúc điều kiện",
-        ],
-    },
-    {
-        title: "Chương 2: Nâng cao",
-        lessons: [
-            "Bài 4: Vòng lặp",
-            "Bài 5: Hàm",
-            "Bài 6: Đệ quy",
-        ],
-    },
-    {
-        title: "Chương 3: Ứng dụng",
-        lessons: [
-            "Bài 7: Làm việc với mảng",
-            "Bài 8: Lập trình hướng đối tượng",
-        ],
-    },
-];
-
 const LectureListComponent: React.FC<LectureListProps> = ({
+    chapters,
     currentLesson,
     onSelectLesson,
     className = "",
 }) => {
-    const [expandedChapters, setExpandedChapters] = useState<number[]>([0]); // mở chương đầu mặc định
+    // Nếu chapters bị undefined từ cha truyền xuống, mặc định là mảng rỗng
+    const safeChapters = chapters || [];
+
+    const [expandedChapters, setExpandedChapters] = useState<number[]>([0]);
 
     const toggleChapter = (index: number) => {
         setExpandedChapters((prev) =>
             prev.includes(index)
-                ? prev.filter((i) => i !== index) // nếu có → ẩn
-                : [...prev, index] // nếu chưa có → mở
+                ? prev.filter((i) => i !== index)
+                : [...prev, index]
         );
     };
 
@@ -54,43 +34,40 @@ const LectureListComponent: React.FC<LectureListProps> = ({
         <div className={`col-12 col-md-2 bg-white p-3 overflow-auto ${className}`}>
             <h5 className="mb-3 py-2">Nội dung khóa học</h5>
 
-            {mockChapters.map((chapter, cIdx) => {
+            {safeChapters.map((chapter, cIdx) => {
                 const isExpanded = expandedChapters.includes(cIdx);
 
                 return (
-                    <div key={cIdx} className="mb-2">
-                        {/* Header chương */}
+                    <div key={chapter.chapterId} className="mb-2">
+                        
                         <div
                             className="d-flex justify-content-between align-items-center mb-1 py-1"
                             style={{ cursor: "pointer" }}
                             onClick={() => toggleChapter(cIdx)}
                         >
-                            <h6 className="fw-bold mb-0">{chapter.title}</h6>
+                            <h6 className="fw-bold mb-0">{chapter.chapterName}</h6>
                             <i
-                                className={`bi ${
-                                    isExpanded ? "bi-chevron-up" : "bi-chevron-down"
-                                }`}
+                                className={`bi ${isExpanded ? "bi-chevron-up" : "bi-chevron-down"}`}
                             ></i>
                         </div>
 
-                        {/* Danh sách bài học */}
+                       
                         {isExpanded && (
                             <ul className="list-group">
-                                {chapter.lessons.map((lesson, lIdx) => {
+                                {(chapter.lessons || []).map((lesson, lIdx) => {
                                     const isActive =
                                         currentLesson.chapterIndex === cIdx &&
                                         currentLesson.lessonIndex === lIdx;
 
                                     return (
                                         <li
-                                            key={lIdx}
-                                            className={`list-group-item list-group-item-action  ${
-                                                isActive ? "active" : ""
-                                            }`}
+                                            key={lesson.lessonId}
+                                            className={`list-group-item list-group-item-action ${isActive ? "active" : ""
+                                                }`}
                                             onClick={() => onSelectLesson(cIdx, lIdx)}
                                             style={{ cursor: "pointer" }}
                                         >
-                                            {lesson}
+                                            {lesson.lessonName}
                                         </li>
                                     );
                                 })}

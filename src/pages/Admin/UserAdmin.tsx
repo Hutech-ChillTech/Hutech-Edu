@@ -11,68 +11,69 @@ import {
   Card,
 } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined, UpOutlined } from "@ant-design/icons";
-import axios from "../../service/axiosClient";
 
 const { Title } = Typography;
 const { Option } = Select;
-
-interface User {
-  userId: string;
-  userName: string;
-  email: string;
-  gender: string;
-  level: string;
-  created_at: string;
-}
+import { type User } from '../../types/database.types';
+import { userService } from '../../service/user.service';
+import { authService } from "../../service/auth.service";
 
 const UserAdmin: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState<boolean>(false);
-
-  // Lấy danh sách user
-  const fetchUsers = async () => {
+ 
+  const fetchUsers = useCallback(async () => {
     try {
-      const res = await axios.get("/users");
-      setUsers(res.data.data || []);
+      const res = await userService.getAllUsers();
+      setUsers(res || []);
     } catch (err) {
       console.error("❌ Lỗi khi lấy danh sách người dùng:", err);
     }
-  };
+  }, []);
 
+  // 2. Gọi hàm trong useEffect
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   // Thêm mới / Cập nhật user
   const handleFinish = async (values: any) => {
     console.log("🔥 Payload gửi lên:", values, "editingId:", editingId);
     try {
-      // Payload đầy đủ cho cả thêm mới và cập nhật
-      const payload = {
+      // Payload cập nhật
+      const payloadUpdate = {
         userName: values.userName,
         email: values.email,
         gender: values.gender,
         level: values.level,
-        // password chỉ gửi khi thêm mới
-        ...(editingId ? {} : { password: values.password }),
+        // Không gửi password khi update nếu không đổi
       };
 
+      // Payload tạo mới
+      const payloadRegister = {
+        userName: values.userName, // Sửa lại lấy userName thay vì email
+        email: values.email,
+        password: values.password,
+        gender: values.gender,
+        level: values.level
+      }
+
       if (editingId) {
-        // Cập nhật user → đường dẫn tĩnh
-        await axios.put(`http://localhost:3000/api/users/${editingId}`, payload);
+        await userService.updateUser(editingId, payloadUpdate);
         message.success("✅ Cập nhật người dùng thành công!");
       } else {
-        // Thêm mới → đường dẫn tĩnh
-        await axios.post("http://localhost:3000/api/users/register", payload);
+        await authService.createUser(payloadRegister);
         message.success("✅ Thêm người dùng mới thành công!");
       }
 
       form.resetFields();
       setEditingId(null);
       setShowForm(false);
-      fetchUsers();
+      
+      // Gọi lại hàm fetchUsers để cập nhật bảng
+      fetchUsers(); 
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.message) {
@@ -82,7 +83,6 @@ const UserAdmin: React.FC = () => {
       }
     }
   };
-
 
   // Sửa user
   const handleEdit = useCallback(
@@ -94,23 +94,26 @@ const UserAdmin: React.FC = () => {
         gender: user.gender,
         level: user.level,
       });
-      setEditingId(user.userId);
+      // Lưu ID của người đang được chọn để sửa
+      setEditingId(user.userId); // Hoặc user.id tùy database của bạn
     },
     [form]
   );
 
   // Xóa user
-  const handleDelete = useCallback(async (userId: string) => {
+  const handleDelete = useCallback(async (userIdToDelete: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
     try {
-      await axios.delete(`/users/${userId}`);
-      fetchUsers();
+      // ⚠️ SỬA LỖI LOGIC: Dùng ID truyền vào, KHÔNG dùng uid của admin
+      await userService.deleteUser(userIdToDelete); 
+      
+      fetchUsers(); // Load lại bảng
       message.success("🗑️ Xóa người dùng thành công!");
     } catch (err) {
       message.error("❌ Không thể xóa người dùng!");
       console.error(err);
     }
-  }, []);
+  }, [fetchUsers]);
 
   // Columns bảng
   const columns = useMemo(
@@ -124,13 +127,14 @@ const UserAdmin: React.FC = () => {
         title: "Ngày tạo",
         dataIndex: "created_at",
         render: (val: string) =>
-          new Date(val).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }),
+          val ? new Date(val).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "N/A",
       },
       {
         title: "Thao tác",
         render: (_: unknown, user: User) => (
           <Space>
             <Button type="primary" icon={<EditOutlined />} size="small" onClick={() => handleEdit(user)} />
+            {/* Truyền đúng userId vào hàm xóa */}
             <Button danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(user.userId)} />
           </Space>
         ),
@@ -143,18 +147,22 @@ const UserAdmin: React.FC = () => {
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
       <Title level={3} style={{ marginBottom: 24 }}>👤 Quản lý Người dùng</Title>
 
-      {/* Nút toggle ẩn/hiện form */}
       <div style={{ textAlign: "right", marginBottom: 12 }}>
         <Button
           type="primary"
           icon={showForm ? <UpOutlined /> : <PlusOutlined />}
-          onClick={() => setShowForm(prev => !prev)}
+          onClick={() => {
+             setShowForm(prev => !prev);
+             if (!showForm) {
+                 setEditingId(null);
+                 form.resetFields();
+             }
+          }}
         >
           {showForm ? "Ẩn form" : "Thêm người dùng mới"}
         </Button>
       </div>
 
-      {/* Form thêm/sửa */}
       {showForm && (
         <Card
           title={editingId ? "✏️ Chỉnh sửa người dùng" : "➕ Thêm người dùng mới"}
@@ -220,7 +228,7 @@ const UserAdmin: React.FC = () => {
               <Space>
                 <Button type="primary" htmlType="submit">{editingId ? "Cập nhật" : "Thêm mới"}</Button>
                 {editingId && (
-                  <Button onClick={() => { setEditingId(null); form.resetFields(); }}>Hủy</Button>
+                  <Button onClick={() => { setEditingId(null); form.resetFields(); setShowForm(false); }}>Hủy</Button>
                 )}
               </Space>
             </div>
@@ -228,7 +236,6 @@ const UserAdmin: React.FC = () => {
         </Card>
       )}
 
-      {/* Bảng danh sách user */}
       <Card style={{ borderRadius: "1rem", boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }} bordered={false}>
         <Table columns={columns} dataSource={users} rowKey="userId" scroll={{ x: true }} bordered />
       </Card>

@@ -61,13 +61,28 @@ const ChapterList: React.FC = () => {
     }
   }, [token]);
 
+  //update
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   //Lấy tên khóa học nếu chưa có
   const fetchCourseName = useCallback(async () => {
     if (!courseId || courseName) return;
     try {
       const res = await fetch(`http://localhost:3000/api/courses/${courseId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        // headers: { Authorization: `Bearer ${token}` },
+        //update
+        method: "GET",
+        headers: getAuthHeaders(),
+
       });
+
+      console.log("data:", res)
       const data = await res.json();
       if (data.success && data.data?.courseName) {
         setCourseName(data.data.courseName);
@@ -82,7 +97,9 @@ const ChapterList: React.FC = () => {
     if (!courseId) return;
     try {
       const res = await fetch("http://localhost:3000/api/chapters", {
-        headers: { Authorization: `Bearer ${token}` },
+        // headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
 
