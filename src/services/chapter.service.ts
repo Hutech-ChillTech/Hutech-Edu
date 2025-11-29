@@ -19,6 +19,15 @@ class ChapterService {
         }
     }
 
+    async getLessonInChapterId(id: string) {
+        try {
+            return await this.chapterRepository.getByChapterId(id);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+
     async getChapterById(id: string) {
         try {
             return await this.chapterRepository.getById(id);

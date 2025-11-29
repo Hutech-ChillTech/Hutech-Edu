@@ -56,6 +56,7 @@ class TestCaseController {
         try {
 
             const data = req.body;
+            console.log("data", data);
             const testCase = await this.testCaseService.createTestCase(data);
             sendSuccess(res, testCase, 'Thêm mới thành công test case');
         } catch (error) {

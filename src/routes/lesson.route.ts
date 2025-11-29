@@ -47,12 +47,12 @@ router.get("/:lessonId",
     lessonController.getLessonById(req, res, next)
 );
 
-router.get("/:lessonId",
+router.get("/chapter/:chapterId",
   verifyFirebaseToken,
   verifyRole(["Admin", "User"]),
-  requirePermission([Permissions.LESSON_READ]),
+  requirePermission([Permissions.CHAPTER_READ]),
   (req, res, next) =>
-    lessonController.getLessonById(req, res, next)
+    lessonController.getChapterById(req, res, next)
 );
 
 router.get("/testcase/:lessonId",

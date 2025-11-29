@@ -10,13 +10,14 @@ class ChapterRepository extends BaseRepository<"chapter",
         super(prisma, "chapter", primaryKey);
     }
 
+    // Trong Service
     async getByChapterId(chapterId: string) {
-        return await this.prisma.chapter.findUnique({
+        const chapter = await this.prisma.chapter.findUnique({
             where: { chapterId },
-            include: {
-                lessons: true, 
-            }
+            include: { lessons: true }
         });
+
+        return chapter ? chapter.lessons : [];
     }
 }
 

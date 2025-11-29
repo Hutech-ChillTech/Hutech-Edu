@@ -56,7 +56,7 @@ class LessonController {
       if (!isUUID(chapterId)) {
         return res.status(400).json({ message: "Invalid chapter ID" });
       }
-      const chapter = await this.chapterService.getChapterById(chapterId);
+      const chapter = await this.chapterService.getLessonInChapterId(chapterId);
       if (!chapter) {
         sendNotFound(res, "Không tìm thấy chapter cần tìm");
         return;
