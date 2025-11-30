@@ -91,21 +91,34 @@ class LessonController {
   async createLesson(req: Request, res: Response, next: NextFunction) {
     try {
       const fileVideo = req.file;
-      const { chapterId } = req.body;
+      const { chapterId, lessonType, videoUrl, publicId } = req.body;
       const data = req.body;
 
-      if (!fileVideo) {
-        throw createHttpError(404, "Video chưa được tải lên");
+
+      const isVideoLesson = !lessonType || lessonType === 'normal' || lessonType === 'Lesson';
+
+
+      if (isVideoLesson && !fileVideo && !videoUrl) {
+        throw createHttpError(400, "Bài học video yêu cầu tải lên file video hoặc đường dẫn video hợp lệ");
       }
 
-      const cloudResult = await uploadVideoToCloudinary(chapterId, fileVideo.buffer, 'course-videos');
+      let finalVideoUrl = videoUrl;
+      let finalPublicId = publicId;
 
 
-      const payloadLesson = {
+      if (isVideoLesson && fileVideo) {
+        const cloudResult = await uploadVideoToCloudinary(chapterId, fileVideo.buffer, 'course-videos');
+        finalVideoUrl = cloudResult.url;
+        finalPublicId = cloudResult.public_id;
+      }
+
+
+      let payloadLesson = {
         ...data,
-        videoUrl: cloudResult.url,
-        publicIdVideo: cloudResult.public_id
-      }
+        lessonType: lessonType || 'normal',
+        videoUrl: isVideoLesson ? finalVideoUrl : null,
+        publicId: isVideoLesson ? finalPublicId : null,
+      };
 
       const lesson = await this.lessonService.createLesson(payloadLesson);
 

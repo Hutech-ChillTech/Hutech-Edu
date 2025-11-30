@@ -37,27 +37,7 @@ class MediaController {
         }
     }
 
-    async uploadCourseVideo(req: Request, res: Response, next: NextFunction) {
-        try {
-            const file = req.file;
-            const { chapterId } = req.params;
-            if (!file) {
-                throw createHttpError(404, "Video chưa được tải lên");
-            }
-            const cloudData = await uploadVideoToCloudinary(chapterId, file.buffer, 'course-videos');
 
-            const payload = {
-                videoUrl: cloudData.url,
-                publicId: cloudData.public_id
-            }
-            await this.lessonService.updateLesson(chapterId, payload);
-
-            return sendSuccess(res, { videoUrl: cloudData.url }, "Tải video khóa học lên thành công");
-        } catch (error) {
-            console.error('Error uploading course video:', error);
-            return next(error);
-        }
-    }
 }
 
 export default MediaController;

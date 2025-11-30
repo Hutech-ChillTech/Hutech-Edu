@@ -164,7 +164,8 @@ model Lesson {
   videoUrl       String?
   content        String?
   isPreview      Boolean  @default(false)
-  publicIdVideo  String?
+  publicId  String?
+  lessonType     String @default("normal")
   chapterId      String @db.Uuid
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
