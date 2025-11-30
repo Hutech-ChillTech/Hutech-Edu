@@ -11,13 +11,13 @@ export const createTestCaseSchema = Joi.object({
       "any.required": "lessonId là bắt buộc",
     }),
 
-  description: Joi.string().required().max(255).messages({
+  description: Joi.string().required().max(5000).messages({
     "string.empty": "Mô tả không được để trống",
     "any.required": "Mô tả là bắt buộc",
   }),
 
-  input: Joi.string().optional().allow(null, "").max(2000),
-  expectedOutput: Joi.string().optional().allow(null, "").max(2000),
+  input: Joi.string().optional().allow(null, "").max(5000),
+  expectedOutput: Joi.string().optional().allow(null, "").max(5000),
 
   testCode: Joi.string().optional().allow(null, ""),
 })
@@ -30,8 +30,8 @@ export const createTestCaseSchema = Joi.object({
 
 export const updateTestCaseSchema = Joi.object({
   testCaseId: Joi.string().pattern(uuidPattern).required(),
-  description: Joi.string().max(255).optional().allow(null, ""),
-  input: Joi.string().max(2000).optional().allow(null, ""),
-  expectedOutput: Joi.string().max(2000).optional().allow(null, ""),
+  description: Joi.string().max(5000).optional().allow(null, ""),
+  input: Joi.string().max(5000).optional().allow(null, ""),
+  expectedOutput: Joi.string().max(5000).optional().allow(null, ""),
   testCode: Joi.string().optional().allow(null, ""),
 }).unknown(true);
