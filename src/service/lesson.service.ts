@@ -112,22 +112,20 @@ export const lessonService = {
                 body: formData,
             });
 
-            console.log("--- DEBUG FORM DATA ---");
-            for (const pair of formData.entries()) {
-                console.log(`${pair[0]}:`, pair[1]);
-            }
-            console.log("-----------------------");
-
-            const data = await res.json();
-
-            if (res.status === 401) {
-                throw new Error("Unauthorized");
-            }
             if (!res.ok) {
-                throw new Error(data?.message || "Không thể thêm bài học.");
+                const errorText = await res.text();
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    throw new Error(errorJson.message || "Không thể thêm bài học.");
+                } catch (e) {
+                    throw new Error(errorText || `Lỗi Server (${res.status})`);
+                }
             }
 
+            // 2. Nếu OK thì mới parse JSON data
+            const data = await res.json();
             return data.data || data;
+
         } catch (error) {
             console.error("Error uploading lesson:", error);
             throw error;

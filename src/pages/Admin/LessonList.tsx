@@ -31,6 +31,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 // Khai báo các service
 import { lessonService } from "../../service/lesson.service";
 import { testCaseService } from "../../service/testCase.service";
+import { uploadService } from "../../service/upload.service";
 import { type Lesson, type TestCase } from "../../types/database.types";
 
 const { Title } = Typography;
@@ -113,14 +114,31 @@ const LessonList: React.FC = () => {
     return false;
   };
 
-  // 1. Hàm xử lý khi bấm nút Sửa
   const handleEdit = async (record: Lesson) => {
     try {
-      const res = await lessonService.updateLesson(record.lessonId, record);
-      console.log("Edit lesson res:", res);
-      message.success("Sửa thành công!");
+      setShowForm(true);
+      setTempLessonId(record.lessonId);
+
+      const type = (record.lessonType as LessonType) || "normal";
+      setActiveTab(type);
+
+      form.setFieldsValue({
+        lessonName: record.lessonName,
+        content: record.content,
+        isPreview: record.isPreview,
+        videoFile: [], // Reset file list khi edit
+      });
+
+      if (type === 'testcode') {
+        setHasTestCase(true);
+      } else {
+        setHasTestCase(false);
+      }
+
+      message.success("Đang sửa bài học: " + record.lessonName);
     } catch (error) {
-      message.error("Sửa thất bại");
+      console.error(error);
+      message.error("Lỗi khi chuẩn bị sửa");
     }
   };
 
@@ -129,6 +147,7 @@ const LessonList: React.FC = () => {
       const res = await lessonService.deleteLesson(id);
       console.log("Delete lesson res:", res);
       message.success("Xóa thành công!");
+      fetchLessons();
     } catch (error) {
       message.error("Xóa thất bại");
     }
@@ -142,7 +161,7 @@ const LessonList: React.FC = () => {
         title: "Loại bài",
         dataIndex: "lessonType",
         width: 150,
-        render: (val: string) => { // Lưu ý type ở đây
+        render: (val: string) => {
           if (val === "testcode") return "💻 Test Code";
           if (val === "quiz") return "❓ Trắc nghiệm";
           return "📘 Bài học";
@@ -155,7 +174,6 @@ const LessonList: React.FC = () => {
         width: 120,
         render: (_, record) => (
           <Space size="middle">
-            {/* Nút Sửa */}
             <Tooltip title="Sửa">
               <Button
                 type="primary"
@@ -165,7 +183,6 @@ const LessonList: React.FC = () => {
               />
             </Tooltip>
 
-            {/* Nút Xóa (Có xác nhận) */}
             <Popconfirm
               title="Xóa bài học này?"
               description="Hành động này không thể hoàn tác."
@@ -185,13 +202,22 @@ const LessonList: React.FC = () => {
         ),
       },
     ],
-    [] // Dependencies của useMemo
+    []
   );
 
   const renderFormFields = useCallback(() => {
     if (activeTab === "normal") {
       return (
         <>
+          <Form.Item name="hasTestCase" valuePropName="checked">
+            <Checkbox
+              onChange={(e) => setHasTestCase(e.target.checked)}
+              style={{ fontWeight: 500 }}
+            >
+              Bài học này có bài tập thực hành code (Thêm Test Case)
+            </Checkbox>
+          </Form.Item>
+
           <Form.Item
             label="Tên bài học"
             name="lessonName"
@@ -203,19 +229,13 @@ const LessonList: React.FC = () => {
             <Input.TextArea rows={4} placeholder="Nhập nội dung bài học" />
           </Form.Item>
 
-          <Form.Item label="Upload video" name="videoFile" valuePropName="fileList" getValueFromEvent={normFile}>
-            <Upload beforeUpload={beforeUpload} maxCount={1} listType="picture">
-              <Button icon={<UploadOutlined />}>Chọn file video</Button>
-            </Upload>
-          </Form.Item>
-          <Form.Item name="hasTestCase" valuePropName="checked">
-            <Checkbox
-              onChange={(e) => setHasTestCase(e.target.checked)}
-              style={{ fontWeight: 500 }}
-            >
-              Bài học này có bài tập thực hành code (Thêm Test Case)
-            </Checkbox>
-          </Form.Item>
+          {!hasTestCase && (
+            <Form.Item label="Upload video" name="videoFile" valuePropName="fileList" getValueFromEvent={normFile}>
+              <Upload beforeUpload={beforeUpload} maxCount={1} listType="picture">
+                <Button icon={<UploadOutlined />}>Chọn file video</Button>
+              </Upload>
+            </Form.Item>
+          )}
         </>
       );
     }
@@ -292,7 +312,7 @@ const LessonList: React.FC = () => {
         </Form.Item>
       </>
     );
-  }, [activeTab, tempLessonId]);
+  }, [activeTab, tempLessonId, hasTestCase]);
 
 
   const fetchLessons = useCallback(async () => {
@@ -323,27 +343,41 @@ const LessonList: React.FC = () => {
 
       let newLessonId = tempLessonId;
 
-
       if (!newLessonId) {
         const lessonFormData = new FormData();
         lessonFormData.append("lessonName", values.lessonName?.trim() || "");
         lessonFormData.append("chapterId", chapterId || "");
         lessonFormData.append("isPreview", values.isPreview ? "true" : "false");
+        lessonFormData.append("lessonType", activeTab);
 
         if (activeTab === "normal") {
           if (values.content) lessonFormData.append("content", values.content);
 
+          if (!hasTestCase) {
+            const fileList = values.videoFile as any[];
 
-          const fileList = values.videoFile as any[];
-          if (fileList && fileList.length > 0) {
-            const fileObj = fileList[0];
-            if (fileObj.originFileObj) {
-              lessonFormData.append("video", fileObj.originFileObj);
+            if (fileList && fileList.length > 0) {
+              const fileObj = fileList[0];
+              if (fileObj.originFileObj) {
+                try {
+                  message.loading({ content: "Đang upload video lên Cloud... Vui lòng đợi!", key: 'uplo', duration: 0 });
+
+                  const cloudData = await uploadService.uploadVideo(fileObj.originFileObj);
+
+                  const { secure_url, public_id } = cloudData;
+
+                  lessonFormData.append("videoUrl", secure_url);
+                  lessonFormData.append("publicId", public_id);
+
+                  message.success({ content: "Upload video thành công!", key: 'uplo' });
+                } catch (uErr) {
+                  console.error(uErr);
+                  message.error({ content: "Upload video thất bại! Vui lòng thử lại.", key: 'uplo' });
+                  setIsSubmitting(false);
+                  return;
+                }
+              }
             }
-          } else {
-            message.error("Vui lòng chọn video!");
-            setIsSubmitting(false);
-            return;
           }
         }
 
@@ -352,19 +386,18 @@ const LessonList: React.FC = () => {
 
         newLessonId = (createdLesson as any).lessonId || (createdLesson as any).id;
 
+        // Nếu có Test Case, chuyển tab để nhập tiếp
         if (activeTab === "normal" && hasTestCase) {
           message.success("Đã lưu bài học video. Vui lòng nhập thông tin Test Case.");
           setTempLessonId(newLessonId);
           setActiveTab("testcode");
-
-
-          form.setFieldsValue({ lessonName: values.lessonName });
-
+          form.setFieldsValue({ lessonName: values.lessonName }); // Copy tên qua tab mới
           setIsSubmitting(false);
           return;
         }
       }
 
+      // Kiểm tra lại ID lần nữa cho chắc
       if (!newLessonId) {
         message.warning("Lỗi ID bài học.");
         return;
@@ -386,110 +419,115 @@ const LessonList: React.FC = () => {
         setHasTestCase(false);
         setTempLessonId(null);
         setActiveTab("normal");
-
-        fetchLessons();
+        fetchLessons(); // Load lại bảng
         return;
       }
 
-      if (activeTab === "quiz") {
-        message.success("Thêm câu hỏi trắc nghiệm thành công!");
-      } else if (activeTab === "normal" && !hasTestCase) {
-        message.success("Thêm bài học video thành công!");
-      }
-
+      message.success("Lưu bài học thành công!");
+      setShowForm(false);
       form.resetFields();
-      setHasTestCase(false);
       setTempLessonId(null);
-      setActiveTab("normal");
       fetchLessons();
 
-    } catch (err: any) {
-      console.error(err);
-      message.error(err.message || "Lỗi hệ thống");
+    } catch (error) {
+      console.error(error);
+      message.error("Có lỗi xảy ra khi lưu bài học");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const getSubmitButtonText = () => {
-    if (isSubmitting) return "Đang xử lý...";
-
     if (activeTab === "normal") {
-      return hasTestCase ? "Lưu & Thêm Test Case" : "Lưu bài học";
+      return hasTestCase ? "Lưu video & Tiếp tục thêm Test Code" : "Lưu bài học";
     }
-    if (activeTab === "testcode") {
-      return tempLessonId ? "Hoàn tất & Lưu Test Case" : "Lưu Test Code";
-    }
-    return "Lưu câu hỏi";
+    if (activeTab === "testcode") return "Lưu Test Code";
+    return "Lưu Quiz";
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
-      <Space style={{ marginBottom: 16 }}>
-        <Button onClick={() => navigate(-1)}>⬅️ Quay lại</Button>
-        <Title level={3}>📘 {chapterName}</Title>
-      </Space>
+    <div style={{ padding: 24 }}>
+      <Card
+        title={
+          <Space>
+            <Button
+              icon={<ArrowRightOutlined style={{ transform: "rotate(180deg)" }} />}
+              onClick={() => navigate(-1)}
+            />
+            <Title level={4} style={{ margin: 0 }}>
+              Quản lý bài học - {chapterName}
+            </Title>
+          </Space>
+        }
+        extra={
+          !showForm && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setShowForm(true);
+                setTempLessonId(null);
+                form.resetFields();
+                setActiveTab("normal");
+              }}
+            >
+              Thêm bài học mới
+            </Button>
+          )
+        }
+      >
+        {showForm ? (
+          <div>
+            <Tabs
+              activeKey={activeTab}
+              items={TAB_ITEMS}
+              onChange={(key) => setActiveTab(key as LessonType)}
+              type="card"
+              style={{ marginBottom: 24 }}
+            />
 
-      <div style={{ textAlign: "right", marginBottom: 12 }}>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setShowForm((prev) => !prev)}
-        >
-          {showForm ? "Ẩn form" : "Thêm bài học"}
-        </Button>
-      </div>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleFinish}
+              initialValues={{ isPreview: false }}
+            >
+              {renderFormFields()}
 
-      {showForm && (
-        <Card bordered={false} style={{ borderRadius: "1rem", marginBottom: 20 }}>
-          <Tabs
-            activeKey={activeTab}
-            onChange={(key) => {
-              if (tempLessonId) {
-                message.warning("Vui lòng hoàn tất thêm Test Case trước khi chuyển tab.");
-                return;
-              }
-              setActiveTab(key as LessonType);
-            }}
-            items={TAB_ITEMS}
-          />
-
-          <Form layout="vertical" form={form} onFinish={handleFinish}>
-            {renderFormFields()}
-
-            {activeTab === 'normal' && (
-              <Form.Item
-                label="Cho phép học thử?"
-                name="isPreview"
-                valuePropName="checked"
-              >
-                <Switch />
+              <Form.Item name="isPreview" valuePropName="checked">
+                <Switch checkedChildren="Xem trước" unCheckedChildren="Khóa" />
               </Form.Item>
-            )}
 
-            <div style={{ textAlign: "right", marginTop: 20 }}>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={isSubmitting}
-                icon={activeTab === 'normal' && hasTestCase ? <ArrowRightOutlined /> : <PlusOutlined />}
-              >
-                {getSubmitButtonText()}
-              </Button>
-            </div>
-          </Form>
-        </Card>
-      )}
-
-      <Card bordered={false} style={{ borderRadius: "1rem" }}>
-        <Table
-          columns={columns}
-          dataSource={lessons}
-          rowKey="lessonId"
-          bordered
-          pagination={false}
-          loading={isTableLoading}
-        />
+              <Form.Item>
+                <Space>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isSubmitting}
+                  >
+                    {getSubmitButtonText()}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowForm(false);
+                      setTempLessonId(null);
+                    }}
+                  >
+                    Hủy
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </div>
+        ) : (
+          <Table
+            rowKey="lessonId"
+            columns={columns}
+            dataSource={lessons}
+            loading={isTableLoading}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
       </Card>
     </div>
   );

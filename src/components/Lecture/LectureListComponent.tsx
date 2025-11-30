@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { type Chapter } from '../../types/database.types';
+import './LectureListComponent.css'; // Ensure CSS is imported
 
 interface LectureListProps {
     chapters: Chapter[];
@@ -31,29 +32,27 @@ const LectureListComponent: React.FC<LectureListProps> = ({
     };
 
     return (
-        <div className={`col-12 col-md-2 bg-white p-3 overflow-auto ${className}`}>
-            <h5 className="mb-3 py-2">Nội dung khóa học</h5>
+        <div className={`col-12 col-md-2 lecture-sidebar p-3 overflow-auto ${className}`}>
+            <h5 className="mb-4 py-2 lecture-title">Nội dung khóa học</h5>
 
             {safeChapters.map((chapter, cIdx) => {
                 const isExpanded = expandedChapters.includes(cIdx);
 
                 return (
-                    <div key={chapter.chapterId} className="mb-2">
-                        
+                    <div key={chapter.chapterId} className="chapter-item">
+
                         <div
-                            className="d-flex justify-content-between align-items-center mb-1 py-1"
-                            style={{ cursor: "pointer" }}
+                            className="chapter-header d-flex justify-content-between align-items-center"
                             onClick={() => toggleChapter(cIdx)}
                         >
-                            <h6 className="fw-bold mb-0">{chapter.chapterName}</h6>
+                            <h6 className="chapter-title mb-0">{chapter.chapterName}</h6>
                             <i
-                                className={`bi ${isExpanded ? "bi-chevron-up" : "bi-chevron-down"}`}
+                                className={`bi bi-chevron-down transition-arrow ${isExpanded ? "rotate" : ""}`}
                             ></i>
                         </div>
 
-                       
-                        {isExpanded && (
-                            <ul className="list-group">
+                        <div className={`collapse-container ${isExpanded ? "open" : ""}`}>
+                            <ul className="list-group lesson-list">
                                 {(chapter.lessons || []).map((lesson, lIdx) => {
                                     const isActive =
                                         currentLesson.chapterIndex === cIdx &&
@@ -62,8 +61,7 @@ const LectureListComponent: React.FC<LectureListProps> = ({
                                     return (
                                         <li
                                             key={lesson.lessonId}
-                                            className={`list-group-item list-group-item-action ${isActive ? "active" : ""
-                                                }`}
+                                            className={`lesson-item ${isActive ? "active" : ""}`}
                                             onClick={() => onSelectLesson(cIdx, lIdx)}
                                             style={{ cursor: "pointer" }}
                                         >
@@ -72,7 +70,7 @@ const LectureListComponent: React.FC<LectureListProps> = ({
                                     );
                                 })}
                             </ul>
-                        )}
+                        </div>
                     </div>
                 );
             })}

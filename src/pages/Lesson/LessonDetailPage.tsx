@@ -74,25 +74,17 @@ const PracticePage: React.FC = () => {
         fetchTestCases();
     }, [activeLesson]);
 
-    useEffect(() => {
-        if (activeLesson) {
-            const defaultCode = (activeLesson as any).starterCode || "";
-            setCode(defaultCode);
-            setOutput("Kết quả sẽ hiển thị ở đây");
-        }
-    }, [activeLesson]);
-
     const isCodingLesson = useMemo(() => {
-        // Ưu tiên: Nếu có test case -> Là bài coding
+        if (activeLesson?.lessonType === 'testcode') return true;
         if (lessonTestCases.length > 0) return true;
         return false;
-    }, [lessonTestCases]);
+    }, [activeLesson, lessonTestCases]);
 
-    if (loading) return <div className="p-4 text-center">Đang tải khóa học...</div>;
-    if (!course) return <div className="p-4 text-center text-danger">Không tìm thấy khóa học</div>;
+    if (loading) return <div>Loading...</div>;
+    if (!course) return <div>Course not found</div>;
 
     return (
-        <div style={{ height: "100vh", overflow: "hidden", backgroundColor: "#f0f2f5" }}>
+        <div className="container-fluid p-0" style={{ height: '100vh' }}>
             <div className="row gx-0 h-100">
 
                 <LectureListComponent
@@ -129,13 +121,13 @@ const PracticePage: React.FC = () => {
                     </div>
                 )}
 
-                <div className="col-md-4 h-100 border-end bg-white" style={{ overflowY: 'auto' }}>
+                <div className="col-md-4 h-100 p-0 border-end" style={{ overflowY: 'auto' }}>
                     <LessonDescriptionComponent
                         lesson={activeLesson}
                     />
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

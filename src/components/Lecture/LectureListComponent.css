@@ -1,29 +1,199 @@
-/* Animation mượt mà khi mở rộng */
+/* Light Mode & Glass Morphism Theme */
+.lecture-sidebar {
+  background: rgba(255, 255, 255, 0.98);
+  /* Slightly more opaque */
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  color: #222;
+  /* Darker text */
+  height: 100%;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.06);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Ensure modern font */
+}
+
+.lecture-title {
+  background: linear-gradient(to right, #6a6ad0, #4db6ac);
+  /* Slightly deeper gradient */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  font-size: 1.35rem;
+  /* Larger title */
+  text-shadow: 0 2px 10px rgba(127, 127, 213, 0.15);
+  /* Subtle glow */
+}
+
+/* Chapter Item */
+.chapter-item {
+  background: #fff;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+.chapter-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.chapter-header {
+  padding: 14px 16px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.chapter-header:hover {
+  background: #f1f3f5;
+}
+
+.chapter-title {
+  color: #1a1a1a;
+  /* Almost black */
+  font-weight: 700;
+  /* Bolder */
+  font-size: 1rem;
+  letter-spacing: 0.2px;
+}
+
+/* Lesson List */
+.lesson-list {
+  background: transparent;
+  padding: 5px 12px 15px 12px;
+}
+
+.lesson-item {
+  background: transparent;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  /* Larger font */
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.lesson-item:hover {
+  background: rgba(127, 127, 213, 0.08);
+  color: #222;
+  padding-left: 22px;
+  font-weight: 600;
+}
+
+.lesson-item.active {
+  background: linear-gradient(90deg, rgba(106, 106, 208, 0.15), rgba(77, 182, 172, 0.15));
+  color: #4a4a9c;
+  /* Deep purple-blue */
+  border-left: 4px solid #6a6ad0;
+  font-weight: 700;
+  /* Boldest for active */
+  box-shadow: 0 2px 8px rgba(106, 106, 208, 0.1);
+}
+
+/* Animation */
 .collapse-container {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.35s ease-in-out;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  opacity: 0;
 }
 
 .collapse-container.open {
-  max-height: 500px; /* đủ lớn để chứa nội dung — có thể tăng nếu cần */
+  max-height: 1000px;
+  opacity: 1;
 }
 
-/* Mũi tên xoay mượt */
 .transition-arrow {
   transition: transform 0.3s ease;
+  color: #6a6ad0;
+  font-weight: bold;
 }
 
 .transition-arrow.rotate {
   transform: rotate(180deg);
 }
 
-/* Tăng khoảng cách giữa các chương */
-.mb-3 {
-  margin-bottom: 1rem !important;
+/* Scrollbar */
+.lecture-sidebar::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* Tùy chọn: hover hiệu ứng header chương */
-.d-flex:hover {
-  background-color: #e9ecef;
+.lecture-sidebar::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.lecture-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.lecture-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+.lesson-item:hover {
+  background: rgba(127, 127, 213, 0.08);
+  color: #222;
+  padding-left: 22px;
+  font-weight: 600;
+}
+
+.lesson-item.active {
+  background: linear-gradient(90deg, rgba(106, 106, 208, 0.15), rgba(77, 182, 172, 0.15));
+  color: #4a4a9c;
+  /* Deep purple-blue */
+  border-left: 4px solid #6a6ad0;
+  font-weight: 700;
+  /* Boldest for active */
+  box-shadow: 0 2px 8px rgba(106, 106, 208, 0.1);
+}
+
+/* Animation */
+.collapse-container {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  opacity: 0;
+}
+
+.collapse-container.open {
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.transition-arrow {
+  transition: transform 0.3s ease;
+  color: #6a6ad0;
+  font-weight: bold;
+}
+
+.transition-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+/* Scrollbar */
+.lecture-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lecture-sidebar::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.lecture-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.lecture-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }

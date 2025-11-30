@@ -142,6 +142,7 @@ export interface Lesson {
   content: string | null;
   isPreview: boolean;
   publicIdVideo: string | null;
+  lessonType?: 'normal' | 'testcode' | 'quiz' | string;
   chapterId: string;
   created_at: Date | string;
   updated_at: Date | string;
