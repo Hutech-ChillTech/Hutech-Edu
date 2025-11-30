@@ -62,7 +62,17 @@ const PracticePage: React.FC = () => {
                 console.log("LessonDetailPage: Test cases response:", res);
 
                 if (res && res.length > 0) {
-                    setLessonTestCases(res as any as TestCase[]);
+                    // Normalize test cases if needed (though database types should match)
+                    // Ensuring input/expectedOutput are correctly mapped if backend returns snake_case or different fields
+                    const normalizedTestCases = (res as any[]).map(tc => ({
+                        testCaseId: tc.testCaseId || tc.id,
+                        description: tc.description,
+                        input: tc.testCode || tc.test_code || tc.input, // Prioritize testCode as it's likely the script, while input might be dummy data
+                        expectedOutput: tc.expectedOutput || tc.expected_output || tc.expected,
+                        lessonId: tc.lessonId
+                    })) as TestCase[];
+
+                    setLessonTestCases(normalizedTestCases);
                 } else {
                     console.log("LessonDetailPage: No test cases found (empty array)");
                 }
@@ -126,6 +136,7 @@ const PracticePage: React.FC = () => {
                         output={output}
                         setOutput={setOutput}
                         testCases={lessonTestCases}
+                        lessonId={activeLesson?.lessonId}
                     />
                 ) : (
                     <div className="col-12 col-md-6 p-3 h-100 bg-dark d-flex flex-column justify-content-center">

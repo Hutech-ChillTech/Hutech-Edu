@@ -57,26 +57,43 @@ export const useHtmlGrader = () => {
           // Script ví dụ: "const el = iframe.contentDocument.querySelector('h1'); return el ? true : 'Thiếu thẻ h1';"
           const checkFunc = new Function('iframe', validationScript);
 
+          // ========== ADDED LOGS ==========
+          console.log(`--- Test Case ${tc.testCaseId} ---`);
+          console.log("Script nhận được:", validationScript);
+          // ================================
+
           // Chạy hàm kiểm tra
           const result = checkFunc(iframe);
 
-          // Logic: Nếu return true -> Pass. Nếu return string -> Fail + Message
-          if (result === true || result === 'Pass') {
+          // ========== ADDED LOGS ==========
+          console.log("Result trả về:", result);
+          console.log("Type of result:", typeof result);
+          // ================================
+
+          // Logic xử lý result MỚI
+          // 1. Xử lý case PASS
+          if (result === true) {
             return { testCaseId: tc.testCaseId, pass: true, message: "Chính xác!" };
-          } else {
-            return {
-              testCaseId: tc.testCaseId,
-              pass: false,
-              message: typeof result === 'string' && result !== 'Fail' ? result : "Chưa thỏa mãn yêu cầu"
-            };
           }
 
-        } catch (err: any) {
-          console.error("Lỗi kịch bản test:", err);
+          // 2. Xử lý case FAIL với lỗi cụ thể (string)
+          if (typeof result === 'string') {
+            return { testCaseId: tc.testCaseId, pass: false, message: result };
+          }
+
+          // 3. Xử lý case FAIL chung chung (false, undefined, null)
           return {
             testCaseId: tc.testCaseId,
             pass: false,
-            message: `Lỗi cú pháp trong bài kiểm tra: ${err.message}`
+            message: "Chưa thỏa mãn yêu cầu (Script không trả về lý do cụ thể)."
+          };
+
+        } catch (err: any) {
+          console.error("Lỗi chạy script:", err);
+          return {
+            testCaseId: tc.testCaseId,
+            pass: false,
+            message: `❌ Lỗi kịch bản kiểm tra: ${err.message}`
           };
         }
       });

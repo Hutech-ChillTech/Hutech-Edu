@@ -198,6 +198,37 @@ export const lessonService = {
             console.error("Error deleting lesson:", error);
             throw error;
         }
+    },
+
+    saveUserProgress: async (lessonId: string, status: string = 'completed', score: number = 100) => {
+        try {
+            const res = await fetch(`${API_URL}/user-progress`, {
+                method: "POST",
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    lessonId,
+                    status,
+                    score
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.status === 401) {
+                throw new Error("Unauthorized");
+            }
+            if (!res.ok) {
+                // Log warning but don't block user flow if progress save fails
+                console.warn("Failed to save progress:", data?.message);
+                return null;
+            }
+
+            return data.data || data;
+        } catch (error) {
+            console.error("Error saving user progress:", error);
+            // Return null instead of throwing to avoid breaking the UI flow
+            return null;
+        }
     }
 }
 

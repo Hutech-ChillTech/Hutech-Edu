@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { useHtmlGrader } from "../../hooks/useHtmlGrader";
 import { type TestCase } from "../../types/database.types";
+import { message, notification } from 'antd';
+import { lessonService } from "../../service/lesson.service";
 
 interface CompilerProps {
     code: string;
@@ -9,6 +11,7 @@ interface CompilerProps {
     output: string;
     setOutput: (value: string) => void;
     testCases?: TestCase[];
+    lessonId?: string; // Add lessonId prop
 }
 
 const CompilerComponent: React.FC<CompilerProps> = ({
@@ -16,13 +19,44 @@ const CompilerComponent: React.FC<CompilerProps> = ({
     setCode,
     output,
     setOutput,
-    testCases = []
+    testCases = [],
+    lessonId
 }) => {
     const [language, setLanguage] = useState("html");
     const [activeTab, setActiveTab] = useState<'html' | 'css'>('html');
     const [cssCode, setCssCode] = useState("");
 
     const { results, isAllPassed, runCodeCheck, resetGrader } = useHtmlGrader();
+
+    // 2. Lắng nghe kết quả chấm điểm
+    useEffect(() => {
+        if (isAllPassed === true) {
+            notification.success({
+                message: '🎉 Chúc mừng!',
+                description: 'Bạn đã hoàn thành bài tập thành công!',
+                duration: 3,
+            });
+
+            // Lưu tiến độ nếu có lessonId
+            if (lessonId) {
+                lessonService.saveUserProgress(lessonId, 'completed', 100)
+                    .then(() => console.log("Progress saved"))
+                    .catch(err => console.error("Failed to save progress", err));
+            }
+
+        } else if (isAllPassed === false && results.length > 0) {
+            // Chỉ hiện thông báo lỗi khi đã có kết quả (results.length > 0)
+            // để tránh hiện khi vừa reset
+            const failedCases = results.filter(r => !r.pass).length;
+            if (failedCases > 0) {
+                notification.error({
+                    message: '❌ Chưa đúng',
+                    description: `Bạn còn ${failedCases} lỗi cần sửa. Vui lòng kiểm tra lại!`,
+                    duration: 3,
+                });
+            }
+        }
+    }, [isAllPassed, results, lessonId]);
 
     useEffect(() => {
         resetGrader();
@@ -32,6 +66,10 @@ const CompilerComponent: React.FC<CompilerProps> = ({
 
     const runCode = () => {
         if (language === "html") {
+            if (!code.trim()) {
+                message.warning('Vui lòng nhập code HTML');
+                return;
+            }
             runCodeCheck(code, cssCode, testCases);
             setOutput("Đang kiểm tra code HTML của bạn...");
         } else {
