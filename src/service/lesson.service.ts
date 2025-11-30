@@ -101,6 +101,28 @@ export const lessonService = {
         }
 
     },
+
+    getLessonById: async (lessonId: string): Promise<Lesson> => {
+        try {
+            const res = await fetch(`${API_URL}/lessons/${lessonId}`, {
+                method: "GET",
+                headers: getAuthHeaders(),
+            });
+            const data = await res.json();
+
+            if (res.status === 401) {
+                throw new Error("Unauthorized");
+            }
+            if (!res.ok) {
+                throw new Error(data?.message || "Không thể lấy chi tiết bài học.");
+            }
+
+            return data.data || data as Lesson;
+        } catch (error) {
+            console.error("Error fetching lesson by ID:", error);
+            throw error;
+        }
+    },
     createLesson: async (formData: FormData) => {
         try {
             const token = localStorage.getItem("token");

@@ -49,7 +49,6 @@ const CompilerComponent: React.FC<CompilerProps> = ({
     const goPrevious = () => console.log("Previous clicked");
     const goNext = () => console.log("Next clicked");
 
-    // --- STYLE CHO GIAO DIỆN TỐI ---
     const darkTheme = {
         containerBg: '#1e1e1e', // Màu nền chính (giống VS Code)
         toolbarBg: '#252526',   // Màu nền thanh công cụ

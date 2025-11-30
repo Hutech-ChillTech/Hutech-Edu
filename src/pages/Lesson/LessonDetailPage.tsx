@@ -80,6 +80,29 @@ const PracticePage: React.FC = () => {
         return false;
     }, [activeLesson, lessonTestCases]);
 
+    // --- NEW: Fetch full lesson details (including content) ---
+    const [fullActiveLesson, setFullActiveLesson] = useState<Lesson | null>(null);
+
+    useEffect(() => {
+        const fetchFullLesson = async () => {
+            if (!activeLesson) {
+                setFullActiveLesson(null);
+                return;
+            }
+            try {
+                // Call the new service method to get full details
+                const res = await lessonService.getLessonById(activeLesson.lessonId);
+                setFullActiveLesson(res);
+            } catch (error) {
+                console.error("Error fetching full lesson details:", error);
+                // Fallback to the partial lesson data if fetch fails
+                setFullActiveLesson(activeLesson);
+            }
+        };
+        fetchFullLesson();
+    }, [activeLesson]);
+    // --------------------------------------------------------
+
     if (loading) return <div>Loading...</div>;
     if (!course) return <div>Course not found</div>;
 
@@ -97,7 +120,7 @@ const PracticePage: React.FC = () => {
 
                 {isCodingLesson ? (
                     <CompilerComponent
-                        key={activeLesson?.lessonId} // Force re-mount when lesson changes
+                        key={activeLesson?.lessonId}
                         code={code}
                         setCode={setCode}
                         output={output}
@@ -121,9 +144,10 @@ const PracticePage: React.FC = () => {
                     </div>
                 )}
 
-                <div className="col-md-4 h-100 p-0 border-end" style={{ overflowY: 'auto' }}>
+                <div className="col-md-4 h-100 p-0" style={{ overflowY: 'auto' }}>
                     <LessonDescriptionComponent
-                        lesson={activeLesson}
+                        key={fullActiveLesson?.lessonId || activeLesson?.lessonId}
+                        lesson={fullActiveLesson || activeLesson}
                     />
                 </div>
             </div>

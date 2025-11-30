@@ -7,6 +7,8 @@ interface LessonDescriptionProps {
 }
 
 const LessonDescriptionComponent: React.FC<LessonDescriptionProps> = ({ lesson }) => {
+    console.log("LectureDescriptionComponent received lesson:", lesson);
+
     if (!lesson) {
         return (
             <div className="description-container p-4 align-items-center justify-content-center">
