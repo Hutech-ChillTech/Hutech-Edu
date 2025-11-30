@@ -38,7 +38,6 @@ const getAuthHeaders = () => {
     };
 };
 
-
 const PracticePage: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
 
@@ -64,7 +63,6 @@ const PracticePage: React.FC = () => {
                 if (res.data.success) {
                     setCourse(res.data.data);
                 }
-
             } catch (error) {
                 console.error("Lỗi fetch dữ liệu practice: ", error);
             } finally {
@@ -83,7 +81,7 @@ const PracticePage: React.FC = () => {
         <div className="" style={{ height: "100vh" }}>
             <div className="row gx-3 h-100">
                 <LectureListComponent
-                    chapters={course.chapters}
+                    chapters={course.chapters as any}
                     currentLesson={currentLesson}
                     onSelectLesson={(cIdx, lIdx) => {
                         setCurrentLesson({ chapterIndex: cIdx, lessonIndex: lIdx });
@@ -99,13 +97,10 @@ const PracticePage: React.FC = () => {
                     setOutput={setOutput}
                 />
 
-                <LessonDescriptionComponent
-                    lessonIndex={currentLesson.lessonIndex}
-                />
+                <LessonDescriptionComponent lesson={null} />
             </div>
         </div>
     );
 };
-
 
 export default PracticePage;

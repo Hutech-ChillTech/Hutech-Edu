@@ -8,7 +8,7 @@ import {
   PlayCircleOutlined,
   BookOutlined,
 } from "@ant-design/icons";
-import styles from "../../styles/UserCourseDetail.module.css"; 
+import styles from "../../styles/UserCourseDetail.module.css";
 
 interface Lesson {
   lessonId: string;
@@ -36,33 +36,17 @@ interface Course {
 }
 
 const CourseDetailPage: React.FC = () => {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
 
-  const handleCourse = (courseId: string) => {
-      navigate(`/practice/${courseId}`);
-  }
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  };
-
   useEffect(() => {
     const fetchCourseDetail = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/api/courses/${id}/content`, {
-          method: "GET",
-          headers: getAuthHeaders(),
-        });
+        const res = await axios.get(`http://localhost:3000/api/courses/${id}/content`);
         if (res.data.success) setCourse(res.data.data);
-
       } catch (err) {
         console.error("Lỗi khi tải chi tiết khóa học:", err);
       } finally {
@@ -74,6 +58,18 @@ const CourseDetailPage: React.FC = () => {
 
   const toggleChapter = (chapterId: string) => {
     setExpandedChapter(prev => (prev === chapterId ? null : chapterId));
+  };
+
+  const handleTryLesson = () => {
+    if (course?.courseId) {
+      navigate(`/practice/${course.courseId}`);
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (course?.courseId) {
+      navigate(`/payment?courseId=${course.courseId}`);
+    }
   };
 
   if (loading)
@@ -119,8 +115,8 @@ const CourseDetailPage: React.FC = () => {
             </div>
 
             <div className={styles.buttonGroup}>
-              <button className={styles.tryButton} onClick={() => handleCourse(course.courseId)}>Học thử</button>
-              <button className={styles.buyButton}>Mua ngay</button>
+              <button className={styles.tryButton} onClick={handleTryLesson}>Học thử</button>
+              <button className={styles.buyButton} onClick={handleBuyNow}>Mua ngay</button>
             </div>
           </div>
         </div>

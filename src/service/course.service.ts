@@ -52,6 +52,26 @@ export const courseService = {
     }
   },
 
+  getCourseByIdContent: async (courseId: string): Promise<Course> => {
+    try {
+      const res = await fetch(`${API_URL}/courses/${courseId}/content`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        throw new Error("Unauthorized");
+      }
+      if (!res.ok) {
+        throw new Error(data?.message || "Không thể lấy nội dung khóa học.");
+      }
+      return data.data || (data as Course);
+    } catch (error) {
+      console.error("Error fetching course content:", error);
+      throw error;
+    }
+  },
+
   getPopularCourses: async (limit: number): Promise<Course[]> => {
     try {
       const res = await fetch(`${API_URL}/courses/popular?limit=${limit}`, {

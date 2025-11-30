@@ -43,7 +43,7 @@ const LoginPage: React.FC = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("role", normalizedRole);
       localStorage.setItem("username", userName);
-      localStorage.setItem("uid", decoded.userId);
+      localStorage.setItem("userId", decoded.userId); // ✅ Đổi từ "uid" thành "userId"
       localStorage.setItem(
         "user",
         JSON.stringify({

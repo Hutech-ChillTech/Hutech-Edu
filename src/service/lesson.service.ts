@@ -37,45 +37,51 @@ export const lessonService = {
     },
 
     getLessonByChapterId: async (chapterId: string): Promise<Lesson[]> => {
-
         try {
             if (!chapterId) {
                 console.warn('LessonList: missing chapterId, skipping fetchLessons');
                 return [];
             }
-            const res = await fetch(`${API_URL}/lessons/chapter/${chapterId}`, {
+
+            // TẠM THỜI: Gọi API lấy tất cả lesson và filter client-side
+            // Do backend chưa có endpoint /lessons/chapter/:chapterId
+            const res = await fetch(`${API_URL}/lessons`, {
                 method: "GET",
                 headers: getAuthHeaders(),
             });
 
             const data = await res.json();
-            
+
             if (res.status === 401) {
                 throw new Error("Unauthorized");
             }
 
-            if (res.status === 204) {
-                console.info('LessonList: server returned 204 No Content');
-                return [];
+            if (!res.ok) {
+                throw new Error(data?.message || "Không thể lấy danh sách bài học.");
             }
 
-            const result = data.data || data;
-            return Array.isArray(result) ? result : [];
+            const allLessons = data.data || data as Lesson[];
+
+            // Filter lessons by chapterId
+            if (Array.isArray(allLessons)) {
+                return allLessons.filter((lesson: Lesson) => lesson.chapterId === chapterId);
+            }
+
+            return [];
         } catch (error) {
             console.error("Error fetching lessons by chapter ID:", error);
             throw error;
         }
-
     },
 
 
     createLesson: async (formData: FormData) => {
         try {
-            const token = localStorage.getItem("token");    
-            const res = await fetch(`${API_URL}/lessons`, {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_URL}/lessons/create`, {
                 method: "POST",
                 headers: {
-                   ...(token ? { "Authorization": `Bearer ${token}` } : {}), 
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
                 },
                 body: formData,
             });
@@ -97,6 +103,60 @@ export const lessonService = {
             return data.data || data;
         } catch (error) {
             console.error("Error uploading lesson:", error);
+            throw error;
+        }
+    },
+
+    updateLesson: async (lessonId: string, formData: FormData) => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_URL}/lessons/update/${lessonId}`, {
+                method: "PUT",
+                headers: {
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+                },
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (res.status === 401) {
+                throw new Error("Unauthorized");
+            }
+            if (!res.ok) {
+                throw new Error(data?.message || "Không thể cập nhật bài học.");
+            }
+
+            return data.data || data;
+        } catch (error) {
+            console.error("Error updating lesson:", error);
+            throw error;
+        }
+    },
+
+    deleteLesson: async (lessonId: string) => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_URL}/lessons/delete/${lessonId}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+                },
+            });
+
+            const data = await res.json();
+
+            if (res.status === 401) {
+                throw new Error("Unauthorized");
+            }
+            if (!res.ok) {
+                throw new Error(data?.message || "Không thể xóa bài học.");
+            }
+
+            return data.data || data;
+        } catch (error) {
+            console.error("Error deleting lesson:", error);
             throw error;
         }
     }

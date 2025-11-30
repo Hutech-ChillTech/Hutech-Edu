@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import styles from "../../styles/ChatBox.module.css";
 
-
 interface Message {
   sender: "user" | "ai";
   text: string;
@@ -11,25 +10,48 @@ const ChatBox: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const toggleChat = () => setOpen(!open);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
-
-    // Giả lập phản hồi AI
-    const aiMessage: Message = {
-      sender: "ai",
-      text: `AI trả lời: "${input}" (ví dụ phản hồi)` 
-    };
-    setTimeout(() => {
-      setMessages((prev) => [...prev, aiMessage]);
-    }, 500);
-
     setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:3001/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: input,
+          language: "vi", // hoặc "en" nếu muốn
+        }),
+      });
+
+      const data = await res.json();
+
+      const aiMessage: Message = {
+        sender: "ai",
+        text: data.success ? data.answer : "Có lỗi xảy ra khi gọi API",
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (err) {
+      console.error(err);
+      const errorMessage: Message = {
+        sender: "ai",
+        text: "Không thể kết nối tới server.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -40,30 +62,31 @@ const ChatBox: React.FC = () => {
     <>
       {/* Nút bật/tắt chat */}
       <div className={styles.chatIcon} onClick={toggleChat}>
-        <img 
-          src="/images/ChatBox_Logo.png" 
-          alt="AI Chat" 
-        />
+        <img src="/images/ChatBox_Logo.png" alt="AI Chat" />
       </div>
 
       {/* Chatbox */}
       {open && (
         <div className={styles.chatBox}>
           <div className={styles.chatHeader}>AI Tutor</div>
+
           <div className={styles.chatMessages}>
             {messages.map((msg, idx) => (
               <div
                 key={idx}
                 className={
-                  msg.sender === "user"
-                    ? styles.userMessage
-                    : styles.aiMessage
+                  msg.sender === "user" ? styles.userMessage : styles.aiMessage
                 }
               >
                 {msg.text}
               </div>
             ))}
+
+            {loading && (
+              <div className={styles.aiMessage}>Đang trả lời AI...</div>
+            )}
           </div>
+
           <div className={styles.chatInputArea}>
             <input
               type="text"
@@ -71,8 +94,11 @@ const ChatBox: React.FC = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
+              disabled={loading}
             />
-            <button onClick={handleSend}>Gửi</button>
+            <button onClick={handleSend} disabled={loading}>
+              Gửi
+            </button>
           </div>
         </div>
       )}

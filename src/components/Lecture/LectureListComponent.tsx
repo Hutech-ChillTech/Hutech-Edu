@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { type Chapter } from '../../types/database.types';
+import styles from '../../styles/LectureList.module.css';
 
 interface LectureListProps {
     chapters: Chapter[];
@@ -9,6 +10,8 @@ interface LectureListProps {
     };
     onSelectLesson: (chapterIndex: number, lessonIndex: number) => void;
     className?: string;
+    onToggle?: () => void;
+    isCollapsed?: boolean;
 }
 
 const LectureListComponent: React.FC<LectureListProps> = ({
@@ -16,10 +19,10 @@ const LectureListComponent: React.FC<LectureListProps> = ({
     currentLesson,
     onSelectLesson,
     className = "",
+    onToggle,
+    isCollapsed = false,
 }) => {
-    // Nếu chapters bị undefined từ cha truyền xuống, mặc định là mảng rỗng
     const safeChapters = chapters || [];
-
     const [expandedChapters, setExpandedChapters] = useState<number[]>([0]);
 
     const toggleChapter = (index: number) => {
@@ -31,51 +34,70 @@ const LectureListComponent: React.FC<LectureListProps> = ({
     };
 
     return (
-        <div className={`col-12 col-md-2 bg-white p-3 overflow-auto ${className}`}>
-            <h5 className="mb-3 py-2">Nội dung khóa học</h5>
+        <div className={`${styles.lectureList} ${className}`}>
+            <div className={styles.header}>
+                <h5 className={styles.title}>📚 Nội dung khóa học</h5>
+                {onToggle && (
+                    <button
+                        className={styles.toggleButton}
+                        onClick={onToggle}
+                        title={isCollapsed ? "Mở menu" : "Đóng menu"}
+                    >
+                        {isCollapsed ? '☰' : '✕'}
+                    </button>
+                )}
+            </div>
 
-            {safeChapters.map((chapter, cIdx) => {
-                const isExpanded = expandedChapters.includes(cIdx);
+            {safeChapters.length === 0 ? (
+                <div className={styles.emptyState}>
+                    Chưa có nội dung khóa học
+                </div>
+            ) : (
+                safeChapters.map((chapter, cIdx) => {
+                    const isExpanded = expandedChapters.includes(cIdx);
 
-                return (
-                    <div key={chapter.chapterId} className="mb-2">
-                        
-                        <div
-                            className="d-flex justify-content-between align-items-center mb-1 py-1"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => toggleChapter(cIdx)}
-                        >
-                            <h6 className="fw-bold mb-0">{chapter.chapterName}</h6>
-                            <i
-                                className={`bi ${isExpanded ? "bi-chevron-up" : "bi-chevron-down"}`}
-                            ></i>
+                    return (
+                        <div key={chapter.chapterId} className={styles.chapterCard}>
+                            <div
+                                className={styles.chapterHeader}
+                                onClick={() => toggleChapter(cIdx)}
+                            >
+                                <h6 className={styles.chapterTitle}>
+                                    <span>📖</span>
+                                    <span>{chapter.chapterName}</span>
+                                </h6>
+                                <i className={`bi bi-chevron-down ${styles.chapterIcon} ${isExpanded ? styles.expanded : ''}`}></i>
+                            </div>
+
+                            {isExpanded && (
+                                <ul className={styles.lessonList}>
+                                    {(chapter.lessons || []).map((lesson, lIdx) => {
+                                        const isActive =
+                                            currentLesson.chapterIndex === cIdx &&
+                                            currentLesson.lessonIndex === lIdx;
+
+                                        return (
+                                            <li
+                                                key={lesson.lessonId}
+                                                className={`${styles.lessonItem} ${isActive ? styles.active : ''}`}
+                                                onClick={() => onSelectLesson(cIdx, lIdx)}
+                                            >
+                                                <span className={styles.lessonIcon}>▸</span>
+                                                <span className={styles.lessonName}>{lesson.lessonName}</span>
+                                                {(lesson as any).lessonDuration && (
+                                                    <span className={styles.lessonDuration}>
+                                                        ⏱ {(lesson as any).lessonDuration}
+                                                    </span>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
                         </div>
-
-                       
-                        {isExpanded && (
-                            <ul className="list-group">
-                                {(chapter.lessons || []).map((lesson, lIdx) => {
-                                    const isActive =
-                                        currentLesson.chapterIndex === cIdx &&
-                                        currentLesson.lessonIndex === lIdx;
-
-                                    return (
-                                        <li
-                                            key={lesson.lessonId}
-                                            className={`list-group-item list-group-item-action ${isActive ? "active" : ""
-                                                }`}
-                                            onClick={() => onSelectLesson(cIdx, lIdx)}
-                                            style={{ cursor: "pointer" }}
-                                        >
-                                            {lesson.lessonName}
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        )}
-                    </div>
-                );
-            })}
+                    );
+                })
+            )}
         </div>
     );
 };

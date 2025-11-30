@@ -1,81 +1,267 @@
+/* ========== CONTAINER ========== */
 .profileContainer {
   display: flex;
-  gap: 20px;
-  padding: 20px;
-  background: #f5f7fa;
+  gap: 24px;
+  padding: 32px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
 }
 
+/* ========== SIDEBAR ========== */
 .sidebar {
-  width: 300px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.userCard {
+  text-align: center;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 32px 24px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.userCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.avatar {
+  margin-bottom: 16px;
+  border: 4px solid #f0f0f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.username {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 12px 0 8px 0;
+}
+
+.role {
+  color: #718096;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.buttonGroup button {
+  border-radius: 8px;
+  font-weight: 600;
+  height: 42px;
+  transition: all 0.3s ease;
+}
+
+.buttonGroup button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== MENU CARD ========== */
+.menuCard {
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.menuItem {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 16px 20px;
+  border-left: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menuItem:hover {
+  background: linear-gradient(90deg, #f7fafc 0%, #edf2f7 100%);
+  border-left-color: #667eea;
+}
+
+.menuItem.active {
+  background: linear-gradient(90deg, #e6f2ff 0%, #d6e9ff 100%);
+  border-left-color: #667eea;
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 1.25rem;
+  color: #667eea;
+}
+
+/* ========== MAIN CONTENT ========== */
+.content {
+  flex: 1;
+}
+
+.mainCard {
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.tabHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tabHeader h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+.tabHeader button {
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.tabHeader button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+}
+
+/* ========== INFO LIST ========== */
+.infoList {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.card {
-  text-align: center;
-  border-radius: 10px;
+.infoList p {
+  font-size: 1rem;
+  color: #4a5568;
+  margin: 0;
+  padding: 12px 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
 }
 
-.avatar {
-  margin-bottom: 12px;
+.infoList p strong {
+  color: #1a202c;
+  margin-right: 8px;
 }
 
-.username {
-  font-weight: bold;
-  color: #007bff;
+/* ========== COURSE CARDS ========== */
+.courseCard {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.role {
-  color: gray;
-  margin-bottom: 16px;
+.courseCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
 }
 
-.buttonGroup {
+.courseCover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 160px;
   display: flex;
-  justify-content: space-around;
+  align-items: center;
+  justify-content: center;
 }
 
-.homeBtn {
-  background-color: #28a745 !important;
-  border: none;
+/* ========== EMPTY STATE ========== */
+.emptyText {
+  text-align: center;
+  color: #718096;
+  font-size: 1.1rem;
+  padding: 48px 24px;
+  background: #f7fafc;
+  border-radius: 12px;
+  margin-top: 24px;
 }
 
-.menu {
-  border-radius: 10px;
+/* ========== LOADING CONTAINER ========== */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
-.menuItem {
-  cursor: pointer;
-  transition: all 0.2s;
+.loadingContainer p {
+  margin-top: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
-.menuItem:hover {
-  background-color: #e6f7ff;
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+  .profileContainer {
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .tabHeader {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .tabHeader div {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .tabHeader button {
+    flex: 1;
+  }
 }
 
-.icon {
-  margin-right: 10px;
-  color: #1890ff;
-}
+@media (max-width: 768px) {
+  .profileContainer {
+    padding: 16px;
+  }
 
-.content {
-  flex: 1;
-}
+  .userCard {
+    padding: 24px 16px;
+  }
 
-.infoCard {
-  border-radius: 10px;
-  background: #fff;
-  padding: 20px;
-}
+  .username {
+    font-size: 1.25rem;
+  }
 
-.infoList {
-  list-style: none;
-  padding: 0;
-}
+  .tabHeader h2 {
+    font-size: 1.5rem;
+  }
 
-.infoList li {
-  margin-bottom: 8px;
-  font-size: 15px;
+  .infoList p {
+    font-size: 0.95rem;
+  }
 }
