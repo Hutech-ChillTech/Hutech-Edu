@@ -17,6 +17,10 @@ const Main: React.FC = () => {
     navigate(`/course/${courseId}`);
   };
 
+  const handleBuyCourse = (courseId: string) => {
+    navigate(`/payment?courseId=${courseId}`);
+  };
+
   // === 1. Lấy toàn bộ khóa học ===
   useEffect(() => {
     const fetchCourses = async () => {
@@ -101,7 +105,7 @@ const Main: React.FC = () => {
       <div className={`container ${styles["course-section"]}`}>
         <div className={styles["section-header"]}>
           <h2>Khóa học Nổi bật</h2>
-          <Link to="/user/featured-courses" className={styles["view-more-btn"]}>
+          <Link to="/featured-courses" className={styles["view-more-btn"]}>
             Xem thêm →
           </Link>
         </div>
@@ -142,7 +146,7 @@ const Main: React.FC = () => {
                     </button>
                     <button
                       className={styles["btn-buy"]}
-                      onClick={() => handleViewCourse(course.courseId)}
+                      onClick={() => handleBuyCourse(course.courseId)}
                     >
                       Mua ngay
                     </button>
@@ -195,8 +199,18 @@ const Main: React.FC = () => {
                     Trình độ: {course.level}
                   </p>
                   <div className={styles["course-buttons"]}>
-                    <button className={styles["btn-view"]}>Xem</button>
-                    <button className={styles["btn-buy"]}>Mua ngay</button>
+                    <button
+                      className={styles["btn-view"]}
+                      onClick={() => handleViewCourse(course.courseId)}
+                    >
+                      Xem
+                    </button>
+                    <button
+                      className={styles["btn-buy"]}
+                      onClick={() => handleBuyCourse(course.courseId)}
+                    >
+                      Mua ngay
+                    </button>
                   </div>
                 </div>
               </div>

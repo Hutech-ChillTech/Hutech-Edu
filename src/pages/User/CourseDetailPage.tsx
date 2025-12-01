@@ -7,8 +7,10 @@ import {
   ClockCircleOutlined,
   PlayCircleOutlined,
   BookOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 import styles from "../../styles/UserCourseDetail.module.css";
+import { quizService } from "../../service/quiz.service";
 
 interface Lesson {
   lessonId: string;
@@ -41,12 +43,27 @@ const CourseDetailPage: React.FC = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
+  const [chapterQuizzes, setChapterQuizzes] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
       try {
         const res = await axios.get(`http://localhost:3000/api/courses/${id}/content`);
-        if (res.data.success) setCourse(res.data.data);
+        if (res.data.success) {
+          setCourse(res.data.data);
+
+          // Fetch quizzes for each chapter
+          const quizMap: { [key: string]: boolean } = {};
+          for (const chapter of res.data.data.chapters || []) {
+            try {
+              const quizzes = await quizService.getQuizzesByChapter(chapter.chapterId);
+              quizMap[chapter.chapterId] = quizzes && quizzes.length > 0;
+            } catch {
+              quizMap[chapter.chapterId] = false;
+            }
+          }
+          setChapterQuizzes(quizMap);
+        }
       } catch (err) {
         console.error("Lỗi khi tải chi tiết khóa học:", err);
       } finally {
@@ -135,64 +152,83 @@ const CourseDetailPage: React.FC = () => {
         <h2 className={styles.sectionTitle}>Chương trình học</h2>
 
         {course.chapters && course.chapters.length > 0 ? (
-          course.chapters.map((chapter, index) => (
-            <div key={chapter.chapterId} className={styles.chapterCard}>
-              <div
-                className={styles.chapterHeader}
-                onClick={() => toggleChapter(chapter.chapterId)}
-              >
-                <div className={styles.chapterHeaderLeft}>
-                  <div className={styles.chapterNumber}>{index + 1}</div>
-                  <h4 className={styles.chapterTitle}>{chapter.chapterName}</h4>
+          course.chapters.map((chapter, index) => {
+            const hasQuiz = chapterQuizzes[chapter.chapterId];
+            const totalItems = chapter.totalLesson + (hasQuiz ? 1 : 0);
+
+            return (
+              <div key={chapter.chapterId} className={styles.chapterCard}>
+                <div
+                  className={styles.chapterHeader}
+                  onClick={() => toggleChapter(chapter.chapterId)}
+                >
+                  <div className={styles.chapterHeaderLeft}>
+                    <div className={styles.chapterNumber}>{index + 1}</div>
+                    <h4 className={styles.chapterTitle}>{chapter.chapterName}</h4>
+                  </div>
+
+                  <div className={styles.chapterHeaderRight}>
+                    <span>{totalItems} bài học</span>
+                    {expandedChapter === chapter.chapterId ? (
+                      <UpOutlined className={styles.icon} />
+                    ) : (
+                      <DownOutlined className={styles.icon} />
+                    )}
+                  </div>
                 </div>
 
-                <div className={styles.chapterHeaderRight}>
-                  <span>{chapter.totalLesson} bài học</span>
-                  {expandedChapter === chapter.chapterId ? (
-                    <UpOutlined className={styles.icon} />
-                  ) : (
-                    <DownOutlined className={styles.icon} />
-                  )}
-                </div>
-              </div>
+                {expandedChapter === chapter.chapterId && (
+                  <div className={styles.lessonList}>
+                    {chapter.lessons && chapter.lessons.length > 0 ? (
+                      chapter.lessons.map((lesson) => (
+                        <div key={lesson.lessonId} className={styles.lessonItem}>
+                          <div className={styles.lessonLeft}>
+                            <PlayCircleOutlined />
+                            <span>{lesson.lessonName}</span>
+                          </div>
+                          <div className={styles.lessonRight}>
+                            {lesson.lessonDuration && (
+                              <span className={styles.duration}>
+                                <ClockCircleOutlined /> {lesson.lessonDuration}
+                              </span>
+                            )}
+                            {lesson.previewURL && (
+                              <a
+                                href={lesson.previewURL}
+                                className={styles.previewButton}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Xem trước
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : null}
 
-              {expandedChapter === chapter.chapterId && (
-                <div className={styles.lessonList}>
-                  {chapter.lessons && chapter.lessons.length > 0 ? (
-                    chapter.lessons.map((lesson) => (
-                      <div key={lesson.lessonId} className={styles.lessonItem}>
+                    {hasQuiz && (
+                      <div className={`${styles.lessonItem} ${styles.quizItem}`}>
                         <div className={styles.lessonLeft}>
-                          <PlayCircleOutlined />
-                          <span>{lesson.lessonName}</span>
+                          <QuestionCircleOutlined />
+                          <span>Bài trắc nghiệm</span>
                         </div>
                         <div className={styles.lessonRight}>
-                          {lesson.lessonDuration && (
-                            <span className={styles.duration}>
-                              <ClockCircleOutlined /> {lesson.lessonDuration}
-                            </span>
-                          )}
-                          {lesson.previewURL && (
-                            <a
-                              href={lesson.previewURL}
-                              className={styles.previewButton}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Xem trước
-                            </a>
-                          )}
+                          <span className={styles.quizBadge}>Quiz</span>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className={styles.noLesson}>
-                      Chương này đang được cập nhật bài học
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))
+                    )}
+
+                    {!chapter.lessons?.length && !hasQuiz && (
+                      <div className={styles.noLesson}>
+                        Chương này đang được cập nhật bài học
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
         ) : (
           <div className={styles.noChapter}>
             <BookOutlined /> Hiện chưa có chương trình học.

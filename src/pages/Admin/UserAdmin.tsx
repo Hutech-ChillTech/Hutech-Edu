@@ -23,7 +23,7 @@ const UserAdmin: React.FC = () => {
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState<boolean>(false);
- 
+
   const fetchUsers = useCallback(async () => {
     try {
       const res = await userService.getAllUsers();
@@ -71,9 +71,9 @@ const UserAdmin: React.FC = () => {
       form.resetFields();
       setEditingId(null);
       setShowForm(false);
-      
+
       // Gọi lại hàm fetchUsers để cập nhật bảng
-      fetchUsers(); 
+      fetchUsers();
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.message) {
@@ -105,8 +105,8 @@ const UserAdmin: React.FC = () => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
     try {
       // ⚠️ SỬA LỖI LOGIC: Dùng ID truyền vào, KHÔNG dùng uid của admin
-      await userService.deleteUser(userIdToDelete); 
-      
+      await userService.deleteUser(userIdToDelete);
+
       fetchUsers(); // Load lại bảng
       message.success("🗑️ Xóa người dùng thành công!");
     } catch (err) {
@@ -152,11 +152,11 @@ const UserAdmin: React.FC = () => {
           type="primary"
           icon={showForm ? <UpOutlined /> : <PlusOutlined />}
           onClick={() => {
-             setShowForm(prev => !prev);
-             if (!showForm) {
-                 setEditingId(null);
-                 form.resetFields();
-             }
+            setShowForm(prev => !prev);
+            if (!showForm) {
+              setEditingId(null);
+              form.resetFields();
+            }
           }}
         >
           {showForm ? "Ẩn form" : "Thêm người dùng mới"}

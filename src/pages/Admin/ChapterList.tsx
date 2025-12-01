@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Table,
   Button,
@@ -11,6 +11,7 @@ import {
   Popconfirm,
   InputNumber,
 } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -19,7 +20,6 @@ import {
   BookOutlined,
 } from "@ant-design/icons";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 const { Title } = Typography;
 
@@ -30,12 +30,6 @@ interface Chapter {
   courseId: string;
   created_at?: string;
   updated_at?: string;
-}
-
-interface DecodedToken {
-  id?: string;
-  userId?: string;
-  role?: string;
 }
 
 const ChapterList: React.FC = () => {
@@ -51,15 +45,6 @@ const ChapterList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState<boolean>(false);
   const token = localStorage.getItem("token");
-
-  const decoded = useMemo(() => {
-    if (!token) return null;
-    try {
-      return jwtDecode<DecodedToken>(token);
-    } catch {
-      return null;
-    }
-  }, [token]);
 
   //update
   const getAuthHeaders = () => {
@@ -79,10 +64,9 @@ const ChapterList: React.FC = () => {
         //update
         method: "GET",
         headers: getAuthHeaders(),
-
       });
 
-      console.log("data:", res)
+      console.log("data:", res);
       const data = await res.json();
       if (data.success && data.data?.courseName) {
         setCourseName(data.data.courseName);
@@ -248,7 +232,7 @@ const ChapterList: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ] as ColumnsType<Chapter>;
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>

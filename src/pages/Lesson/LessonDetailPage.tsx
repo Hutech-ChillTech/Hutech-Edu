@@ -10,6 +10,7 @@ import styles from "../../styles/LessonDetailPage.module.css";
 import { type Course, type Lesson, type TestCase } from '../../types/database.types';
 import { courseService } from "../../service/course.service";
 import { lessonService } from "../../service/lesson.service";
+import QuizComponent from "../../components/Quiz/QuizComponent";
 
 const PracticePage: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
@@ -27,6 +28,28 @@ const PracticePage: React.FC = () => {
     const [code, setCode] = useState("");
     const [output, setOutput] = useState("Kết quả sẽ hiển thị ở đây");
     const [lessonTestCases, setLessonTestCases] = useState<TestCase[]>([]);
+    const [hasQuiz, setHasQuiz] = useState(false);
+
+    useEffect(() => {
+        const checkChapterQuiz = async () => {
+            if (!course?.chapters || currentLessonPos.chapterIndex < 0) return;
+
+            const currentChapter = course.chapters[currentLessonPos.chapterIndex];
+            if (!currentChapter?.chapterId) return;
+
+            try {
+                // Dynamically import quizService to avoid circular dependency
+                const { quizService } = await import('../../service/quiz.service');
+                const quizzes = await quizService.getQuizzesByChapter(currentChapter.chapterId);
+                setHasQuiz(quizzes && quizzes.length > 0);
+            } catch (error) {
+                console.log('No quiz for this chapter or error:', error);
+                setHasQuiz(false);
+            }
+        };
+
+        checkChapterQuiz();
+    }, [course, currentLessonPos.chapterIndex]);
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -113,6 +136,18 @@ const PracticePage: React.FC = () => {
         if (lessonTestCases.length > 0) return true;
         return false;
     }, [lessonTestCases]);
+
+    const isQuizLesson = useMemo(() => {
+        // Chỉ hiển thị quiz khi:
+        // 1. Chapter có quiz
+        // 2. Lesson hiện tại KHÔNG có video
+        // 3. Lesson hiện tại KHÔNG có test case
+        if (!hasQuiz) return false;
+        if (lessonTestCases.length > 0) return false; // Có test case -> là coding lesson
+        if (activeLesson?.videoUrl) return false; // Có video -> là video lesson
+
+        return true; // Không có video, không có test case, nhưng chapter có quiz -> hiển thị quiz
+    }, [hasQuiz, activeLesson, lessonTestCases]);
 
     // Navigation functions
     const goToPreviousLesson = () => {
@@ -216,6 +251,11 @@ const PracticePage: React.FC = () => {
                             output={output}
                             setOutput={setOutput}
                             testCases={lessonTestCases}
+                        />
+                    ) : isQuizLesson ? (
+                        <QuizComponent
+                            chapterId={course.chapters?.[currentLessonPos.chapterIndex]?.chapterId || ''}
+                            lessonName={activeLesson?.lessonName || ''}
                         />
                     ) : (
                         <div className={styles.videoMainSection}>

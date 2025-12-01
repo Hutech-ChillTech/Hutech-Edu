@@ -51,6 +51,7 @@
   flex-direction: column;
   gap: 12px;
 }
+
 .levelBadge {
   display: inline-block;
   font-size: 14px;
@@ -65,13 +66,15 @@
 .courseTitle {
   font-size: 26px;
   font-weight: 700;
-  color: #222; /* đậm */
+  color: #222;
+  /* đậm */
   margin: 10px 0;
 }
 
 .courseDescription {
   font-size: 15px;
-  color: #444; /* đậm nhẹ hơn */
+  color: #444;
+  /* đậm nhẹ hơn */
   margin-bottom: 15px;
   line-height: 1.6;
 }
@@ -327,4 +330,24 @@
   background: #f9fafb;
   border-radius: 12px;
   margin-top: 24px;
+}
+
+/* === QUIZ STYLES === */
+.quizItem {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+}
+
+.quizItem:hover {
+  background: linear-gradient(135deg, #e8f0fe 0%, #dce7fe 100%);
+}
+
+.quizBadge {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }

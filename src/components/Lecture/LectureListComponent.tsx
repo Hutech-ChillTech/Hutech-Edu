@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { type Chapter } from '../../types/database.types';
 import styles from '../../styles/LectureList.module.css';
+import { quizService } from '../../service/quiz.service';
 
 interface LectureListProps {
     chapters: Chapter[];
@@ -24,6 +25,26 @@ const LectureListComponent: React.FC<LectureListProps> = ({
 }) => {
     const safeChapters = chapters || [];
     const [expandedChapters, setExpandedChapters] = useState<number[]>([0]);
+    const [chapterQuizzes, setChapterQuizzes] = useState<{ [key: string]: boolean }>({});
+
+    useEffect(() => {
+        const checkQuizzes = async () => {
+            const quizMap: { [key: string]: boolean } = {};
+            for (const chapter of safeChapters) {
+                try {
+                    const quizzes = await quizService.getQuizzesByChapter(chapter.chapterId);
+                    quizMap[chapter.chapterId] = quizzes && quizzes.length > 0;
+                } catch {
+                    quizMap[chapter.chapterId] = false;
+                }
+            }
+            setChapterQuizzes(quizMap);
+        };
+
+        if (safeChapters.length > 0) {
+            checkQuizzes();
+        }
+    }, [safeChapters]);
 
     const toggleChapter = (index: number) => {
         setExpandedChapters((prev) =>
@@ -55,6 +76,9 @@ const LectureListComponent: React.FC<LectureListProps> = ({
             ) : (
                 safeChapters.map((chapter, cIdx) => {
                     const isExpanded = expandedChapters.includes(cIdx);
+                    const hasQuiz = chapterQuizzes[chapter.chapterId];
+                    const lessons = chapter.lessons || [];
+                    const totalItems = lessons.length + (hasQuiz ? 1 : 0);
 
                     return (
                         <div key={chapter.chapterId} className={styles.chapterCard}>
@@ -66,12 +90,13 @@ const LectureListComponent: React.FC<LectureListProps> = ({
                                     <span>📖</span>
                                     <span>{chapter.chapterName}</span>
                                 </h6>
+                                <span className={styles.lessonCount}>{totalItems} bài học</span>
                                 <i className={`bi bi-chevron-down ${styles.chapterIcon} ${isExpanded ? styles.expanded : ''}`}></i>
                             </div>
 
                             {isExpanded && (
                                 <ul className={styles.lessonList}>
-                                    {(chapter.lessons || []).map((lesson, lIdx) => {
+                                    {lessons.map((lesson, lIdx) => {
                                         const isActive =
                                             currentLesson.chapterIndex === cIdx &&
                                             currentLesson.lessonIndex === lIdx;
@@ -92,6 +117,17 @@ const LectureListComponent: React.FC<LectureListProps> = ({
                                             </li>
                                         );
                                     })}
+
+                                    {hasQuiz && (
+                                        <li
+                                            className={`${styles.lessonItem} ${styles.quizItem}`}
+                                            onClick={() => onSelectLesson(cIdx, lessons.length)}
+                                        >
+                                            <span className={styles.lessonIcon}>📝</span>
+                                            <span className={styles.lessonName}>Bài trắc nghiệm</span>
+                                            <span className={styles.quizBadge}>Quiz</span>
+                                        </li>
+                                    )}
                                 </ul>
                             )}
                         </div>

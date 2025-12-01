@@ -167,3 +167,36 @@
   font-style: italic;
   color: #a0aec0;
 }
+
+/* Quiz specific styles */
+.quizItem {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+  border-left-color: #4f46e5 !important;
+}
+
+.quizItem:hover {
+  background: linear-gradient(135deg, #e8f0fe 0%, #dce7fe 100%);
+}
+
+.quizItem .lessonIcon {
+  font-size: 1rem;
+  opacity: 1;
+}
+
+.quizBadge {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lessonCount {
+  font-size: 0.8rem;
+  color: #718096;
+  font-weight: 500;
+  margin-right: 8px;
+}
