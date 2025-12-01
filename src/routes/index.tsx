@@ -25,6 +25,7 @@ import LearningPathMap from "../pages/LearningPathMap/LearningPathMap";
 import PaymentPage from "../pages/Payment/PaymentPage";
 import PaymentSuccessPage from "../pages/Payment/PaymentSuccessPage";
 import PaymentFailedPage from "../pages/Payment/PaymentFailedPage";
+import ContactPage from "../pages/User/ContactPage";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -50,15 +51,16 @@ const AppRoutes: React.FC = () => {
           <Route path="featured-courses" element={<FeaturedCourses></FeaturedCourses>}></Route>
           <Route path="all-courses" element={<AllCourses></AllCourses>}></Route>
           <Route path="profile" element={<UserProfile />} />
-          <Route path="/course/:id" element={<CourseDetailPage />} />
-          <Route path="/course/:courseId/lesson-video/:lessonId" element={<LessonVideoPage />} />
-          <Route path="/lesson-video" element={<LessonVideoPage />} /> {/* test lesson-video page*/}
-          <Route path="/learningPathMap" element={<LearningPathMap />} />
+          <Route path="course/:id" element={<CourseDetailPage />} />
+          <Route path="course/:courseId/lesson-video/:lessonId" element={<LessonVideoPage />} />
+          <Route path="lesson-video" element={<LessonVideoPage />} /> {/* test lesson-video page*/}
+          <Route path="learningPathMap" element={<LearningPathMap />} />
+          <Route path="contact" element={<ContactPage />} />
 
           {/* Payment routes */}
-          <Route path="/payment" element={<PaymentPage />} />
-          <Route path="/payment/success" element={<PaymentSuccessPage />} />
-          <Route path="/payment/failed" element={<PaymentFailedPage />} />
+          <Route path="payment" element={<PaymentPage />} />
+          <Route path="payment/success" element={<PaymentSuccessPage />} />
+          <Route path="payment/failed" element={<PaymentFailedPage />} />
 
         </Route>
 
