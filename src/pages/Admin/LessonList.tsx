@@ -15,6 +15,7 @@ import {
   Popconfirm,
   Radio,
   Tag,
+  Tooltip
 } from "antd";
 import type { TabsProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -36,7 +37,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { lessonService } from "../../service/lesson.service";
 import { testCaseService } from "../../service/testCase.service";
 import { quizService } from "../../service/quiz.service";
-import { type Lesson } from "../../types/database.types";
+import { uploadService } from "../../service/upload.service";
+import { type Lesson, type TestCase } from "../../types/database.types";
 
 const { Title } = Typography;
 
@@ -70,6 +72,7 @@ interface LessonFormValues {
   description?: string;
   input?: string;
   expectedOutput?: string;
+  testCode?: string;
   question?: string;
   options?: string | string[];
   answer?: string;
@@ -103,6 +106,7 @@ const TAB_ITEMS: TabsProps["items"] = [
     ),
   },
 ] as const;
+
 
 const LessonList: React.FC = () => {
   const { chapterId } = useParams<{ chapterId: string }>();
@@ -290,255 +294,6 @@ const LessonList: React.FC = () => {
     });
   };
 
-  // Handle form submit
-  const handleFinish = async (values: LessonFormValues) => {
-    try {
-      setIsSubmitting(true);
-
-      // ========== QUIZ TAB ==========
-      if (activeTab === "quiz") {
-        if (!quizData.title || quizData.title === "Mẫu không có tiêu đề") {
-          message.error("Vui lòng nhập tiêu đề bài trắc nghiệm!");
-          setIsSubmitting(false);
-          return;
-        }
-
-        // Validate questions
-        const hasInvalidQuestion = quizData.questions.some(
-          (q) => !q.question || q.question === "Câu hỏi không có tiêu đề"
-        );
-        if (hasInvalidQuestion) {
-          message.error("Vui lòng nhập nội dung cho tất cả câu hỏi!");
-          setIsSubmitting(false);
-          return;
-        }
-
-        // Validate correct answers
-        const hasNoCorrectAnswer = quizData.questions.some(
-          (q) => q.correctAnswer === null
-        );
-        if (hasNoCorrectAnswer) {
-          message.error("Vui lòng chọn đáp án đúng cho tất cả câu hỏi!");
-          setIsSubmitting(false);
-          return;
-        }
-
-        if (editingId && editingType === "quiz") {
-          // 1. Update thông tin cơ bản của Quiz
-          await quizService.updateQuiz(editingId, {
-            title: quizData.title,
-            description: quizData.description,
-          });
-
-          // 2. Xóa tất cả câu hỏi cũ để tạo lại (Cách đơn giản nhất để đồng bộ)
-          try {
-            const oldQuestions = await quizService.getQuestionsByQuiz(editingId);
-            if (Array.isArray(oldQuestions)) {
-              for (const q of oldQuestions) {
-                await quizService.deleteQuestion(q.quizQuestionId);
-              }
-            }
-          } catch (e) {
-            console.warn("Không thể xóa câu hỏi cũ hoặc không có câu hỏi cũ", e);
-          }
-
-          // 3. Tạo lại câu hỏi và đáp án từ Form
-          for (const question of quizData.questions) {
-            const createdQuestion = await quizService.createQuestion({
-              chapterQuizId: editingId,
-              questionText: question.question,
-              questionType: "multiple_choice",
-              required: question.required,
-            });
-
-            const questionId =
-              (createdQuestion as any).quizQuestionId ||
-              (createdQuestion as any).id;
-
-            // Create options
-            for (let i = 0; i < question.options.length; i++) {
-              await quizService.createOption({
-                quizQuestionId: questionId,
-                optionText: question.options[i],
-                isCorrect: question.correctAnswer === i,
-              });
-            }
-          }
-
-          message.success("Cập nhật bài trắc nghiệm thành công!");
-        } else {
-          // Create new quiz
-          const createdQuiz = await quizService.createQuiz({
-            title: quizData.title,
-            chapterId: chapterId!,
-            description: quizData.description,
-          });
-
-          const quizId =
-            (createdQuiz as any).chapterQuizId || (createdQuiz as any).id;
-
-          // Create questions
-          for (const question of quizData.questions) {
-            const createdQuestion = await quizService.createQuestion({
-              chapterQuizId: quizId,
-              questionText: question.question,
-              questionType: "multiple_choice",
-              required: question.required,
-            });
-
-            const questionId =
-              (createdQuestion as any).quizQuestionId ||
-              (createdQuestion as any).id;
-
-            // Create options
-            for (let i = 0; i < question.options.length; i++) {
-              await quizService.createOption({
-                quizQuestionId: questionId,
-                optionText: question.options[i],
-                isCorrect: question.correctAnswer === i,
-              });
-            }
-          }
-
-          message.success("Thêm bài trắc nghiệm thành công!");
-        }
-
-        // Reset form
-        form.resetFields();
-        setQuizData({
-          title: "Mẫu không có tiêu đề",
-          description: "Mô tả biểu mẫu",
-          questions: [
-            {
-              id: Date.now().toString(),
-              question: "Câu hỏi không có tiêu đề",
-              options: ["Tùy chọn 1"],
-              correctAnswer: null,
-              required: false,
-            },
-          ],
-        });
-        setEditingId(null);
-        setEditingType(null);
-        setActiveTab("normal");
-        setShowForm(false);
-        fetchQuizzes();
-        return;
-      }
-
-      // ========== NORMAL & TESTCODE TABS ==========
-      let newLessonId = tempLessonId;
-
-      if (!newLessonId) {
-        const lessonFormData = new FormData();
-        lessonFormData.append("lessonName", values.lessonName?.trim() || "");
-        lessonFormData.append("chapterId", chapterId || "");
-        lessonFormData.append("isPreview", values.isPreview ? "true" : "false");
-
-        if (activeTab === "normal") {
-          if (values.content) lessonFormData.append("content", values.content);
-
-          const fileList = values.videoFile as any[];
-          if (fileList && fileList.length > 0) {
-            const fileObj = fileList[0];
-            if (fileObj.originFileObj) {
-              lessonFormData.append("video", fileObj.originFileObj);
-            }
-          } else {
-            // Nếu đang edit và không chọn video mới thì bỏ qua
-            if (!editingId) {
-              message.error("Vui lòng chọn video!");
-              setIsSubmitting(false);
-              return;
-            }
-          }
-        }
-
-        if (editingId && editingType === "normal") {
-          // Update lesson
-          await lessonService.updateLesson(
-            editingId,
-            lessonFormData
-          );
-          message.success("Cập nhật bài học thành công!");
-          newLessonId = editingId;
-        } else {
-          // Create lesson
-          const createdLesson = await lessonService.createLesson(
-            lessonFormData
-          );
-          if (!createdLesson) throw new Error("Không tạo được bài học");
-
-          newLessonId =
-            (createdLesson as any).lessonId || (createdLesson as any).id;
-
-          if (activeTab === "normal" && hasTestCase) {
-            message.success(
-              "Đã lưu bài học video. Vui lòng nhập thông tin Test Case."
-            );
-            setTempLessonId(newLessonId);
-            setActiveTab("testcode");
-            form.setFieldsValue({ lessonName: values.lessonName });
-            setIsSubmitting(false);
-            return;
-          }
-        }
-      }
-
-      if (!newLessonId) {
-        message.warning("Lỗi ID bài học.");
-        return;
-      }
-
-      if (activeTab === "testcode") {
-        const testCasePayload = {
-          description: values.description,
-          input: values.input,
-          expectedOutput: values.expectedOutput,
-          lessonId: newLessonId,
-        };
-
-        await testCaseService.createTestCase(testCasePayload);
-        message.success("Thêm bài tập code thành công!");
-      } else if (activeTab === "normal" && !hasTestCase) {
-        message.success(
-          editingId ? "Cập nhật bài học thành công!" : "Thêm bài học video thành công!"
-        );
-      }
-
-      form.resetFields();
-      setHasTestCase(false);
-      setTempLessonId(null);
-      setEditingId(null);
-      setEditingType(null);
-      setActiveTab("normal");
-      setShowForm(false);
-      fetchLessons();
-    } catch (err: any) {
-      console.error(err);
-      message.error(err.message || "Lỗi hệ thống");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getSubmitButtonText = () => {
-    if (isSubmitting) return "Đang xử lý...";
-
-    if (editingId) {
-      if (activeTab === "quiz") return "Cập nhật trắc nghiệm";
-      return "Cập nhật bài học";
-    }
-
-    if (activeTab === "normal") {
-      return hasTestCase ? "Lưu & Thêm Test Case" : "Lưu bài học";
-    }
-    if (activeTab === "testcode") {
-      return tempLessonId ? "Hoàn tất & Lưu Test Case" : "Lưu Test Code";
-    }
-    return "Lưu câu hỏi";
-  };
-
   const handleEdit = async (record: any, type: LessonType) => {
     setEditingId(type === "quiz" ? record.chapterQuizId : record.lessonId);
     setEditingType(type);
@@ -564,7 +319,7 @@ const LessonList: React.FC = () => {
               question: q.questionText,
               options: optsText.length > 0 ? optsText : ["Tùy chọn 1"],
               correctAnswer: correctIndex !== -1 ? correctIndex : null,
-              required: q.required || false // Backend có thể chưa trả về field này
+              required: q.required || false
             };
           }));
           formattedQuestions = questionsWithOpts;
@@ -600,16 +355,15 @@ const LessonList: React.FC = () => {
     try {
       if (type === "quiz") {
         await quizService.deleteQuiz(id);
-        message.success("Đã xóa bài trắc nghiệm!");
+        message.success("Xóa thành công!");
         fetchQuizzes();
       } else {
         await lessonService.deleteLesson(id);
-        message.success("Đã xóa bài học!");
+        message.success("Xóa thành công!");
         fetchLessons();
       }
-    } catch (err: any) {
-      console.error(err);
-      message.error(err.message || "Lỗi khi xóa");
+    } catch (error) {
+      message.error("Xóa thất bại");
     }
   };
 
@@ -633,83 +387,71 @@ const LessonList: React.FC = () => {
 
   const columns: ColumnsType<any> = useMemo(
     () => [
-      {
-        title: "#",
-        render: (_record: unknown, _row: unknown, i: number) => i + 1,
-      },
+      { title: "#", render: (_record, _row, i) => i + 1, width: 50 },
       { title: "Tên bài học", dataIndex: "lessonName" },
       {
         title: "Loại bài",
         dataIndex: "type",
+        width: 150,
         render: (type: string) => {
-          if (type === "quiz") return <Tag color="blue">Trắc nghiệm</Tag>;
-          return <Tag color="green">Bài học</Tag>;
+          if (type === "quiz") return "❓ Trắc nghiệm";
+          return "📘 Bài học";
         },
       },
       {
-        title: "Thời lượng (phút)",
-        dataIndex: "duration",
-        align: "center" as const,
-        render: (val: any, record: any) => {
-          if (record.type === "quiz") return "-";
-          return val || "-";
-        },
-      },
-
-      {
-        title: "Thao tác",
-        render: (_: unknown, record: any) => (
-          <Space>
-            {record.type === "lesson" && (
+        title: "Hành động",
+        key: "action",
+        align: "center",
+        width: 120,
+        render: (_, record) => (
+          <Space size="middle">
+            <Tooltip title="Sửa">
               <Button
-                onClick={() =>
-                  navigate(`/admin/lesson/detail/${record.lessonId}`, {
-                    state: { lessonName: record.lessonName },
-                  })
-                }
-              >
-                Chi tiết
-              </Button>
-            )}
-
-            <Button
-              icon={<EditOutlined />}
-              type="primary"
-              onClick={() =>
-                handleEdit(
-                  record,
-                  record.type === "quiz" ? "quiz" : "normal"
-                )
-              }
-            />
+                type="primary"
+                ghost
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(record, record.type === "quiz" ? "quiz" : "normal")}
+              />
+            </Tooltip>
 
             <Popconfirm
               title={`Xóa ${record.type === "quiz" ? "bài trắc nghiệm" : "bài học"} này?`}
+              description="Hành động này không thể hoàn tác."
+              onConfirm={() => handleDelete(
+                record.type === "quiz" ? record.chapterQuizId : record.lessonId,
+                record.type === "quiz" ? "quiz" : "normal"
+              )}
               okText="Xóa"
               cancelText="Hủy"
-              onConfirm={() =>
-                handleDelete(
-                  record.type === "quiz"
-                    ? record.chapterQuizId
-                    : record.lessonId,
-                  record.type === "quiz" ? "quiz" : "normal"
-                )
-              }
             >
-              <Button danger icon={<DeleteOutlined />} />
+              <Tooltip title="Xóa">
+                <Button
+                  type="primary"
+                  danger
+                  icon={<DeleteOutlined />}
+                />
+              </Tooltip>
             </Popconfirm>
           </Space>
         ),
       },
     ],
-    [navigate]
+    []
   );
 
-  // Render form fields based on active tab
   const renderFormFields = useCallback(() => {
     if (activeTab === "normal") {
       return (
         <>
+          <Form.Item name="hasTestCase" valuePropName="checked">
+            <Checkbox
+              onChange={(e) => setHasTestCase(e.target.checked)}
+              style={{ fontWeight: 500 }}
+            >
+              Bài học này có bài tập thực hành code (Thêm Test Case)
+            </Checkbox>
+          </Form.Item>
+
           <Form.Item
             label="Tên bài học"
             name="lessonName"
@@ -721,29 +463,11 @@ const LessonList: React.FC = () => {
             <Input.TextArea rows={4} placeholder="Nhập nội dung bài học" />
           </Form.Item>
 
-          <Form.Item
-            label="Upload video"
-            name="videoFile"
-            valuePropName="fileList"
-            getValueFromEvent={normFile}
-            rules={
-              !editingId
-                ? [{ required: true, message: "Vui lòng chọn video!" }]
-                : []
-            }
-          >
-            <Upload beforeUpload={beforeUpload} maxCount={1} listType="picture">
-              <Button icon={<UploadOutlined />}>Chọn file video</Button>
-            </Upload>
-          </Form.Item>
-          {!editingId && (
-            <Form.Item name="hasTestCase" valuePropName="checked">
-              <Checkbox
-                onChange={(e) => setHasTestCase(e.target.checked)}
-                style={{ fontWeight: 500 }}
-              >
-                Bài học này có bài tập thực hành code (Thêm Test Case)
-              </Checkbox>
+          {!hasTestCase && (
+            <Form.Item label="Upload video" name="videoFile" valuePropName="fileList" getValueFromEvent={normFile}>
+              <Upload beforeUpload={beforeUpload} maxCount={1} listType="picture">
+                <Button icon={<UploadOutlined />}>Chọn file video</Button>
+              </Upload>
             </Form.Item>
           )}
         </>
@@ -780,6 +504,10 @@ const LessonList: React.FC = () => {
           </Form.Item>
           <Form.Item label="Đáp án mẫu" name="expectedOutput">
             <Input.TextArea rows={3} placeholder="Kết quả mong đợi..." />
+          </Form.Item>
+
+          <Form.Item label="Đoạn mã kiểm tra (Chỉ dành cho dạng bài HTML/CSS)" name="testCode">
+            <Input.TextArea rows={3} placeholder="Đoạn mã kiểm tra HTML/CSS.." />
           </Form.Item>
         </>
       );
@@ -975,117 +703,343 @@ const LessonList: React.FC = () => {
     }
 
     return null;
-  }, [activeTab, tempLessonId, hasTestCase, quizData, editingId]);
+  }, [activeTab, tempLessonId, hasTestCase, quizData]);
+
+  const handleFinish = async (values: LessonFormValues) => {
+    try {
+      if (!chapterId || chapterId === "undefined") {
+        message.error("Lỗi: Không tìm thấy ID chương! Vui lòng quay lại và chọn chương đúng.");
+        return;
+      }
+      setIsSubmitting(true);
+
+      // ========== QUIZ TAB ==========
+      if (activeTab === "quiz") {
+        if (!quizData.title || quizData.title === "Mẫu không có tiêu đề") {
+          message.error("Vui lòng nhập tiêu đề bài trắc nghiệm!");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Validate questions
+        const hasInvalidQuestion = quizData.questions.some(
+          (q) => !q.question || q.question === "Câu hỏi không có tiêu đề"
+        );
+        if (hasInvalidQuestion) {
+          message.error("Vui lòng nhập nội dung cho tất cả câu hỏi!");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Validate correct answers
+        const hasNoCorrectAnswer = quizData.questions.some(
+          (q) => q.correctAnswer === null
+        );
+        if (hasNoCorrectAnswer) {
+          message.error("Vui lòng chọn đáp án đúng cho tất cả câu hỏi!");
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (editingId && editingType === "quiz") {
+          // 1. Update thông tin cơ bản của Quiz
+          await quizService.updateQuiz(editingId, {
+            title: quizData.title,
+            description: quizData.description,
+          });
+
+          // 2. Xóa tất cả câu hỏi cũ để tạo lại
+          try {
+            const oldQuestions = await quizService.getQuestionsByQuiz(editingId);
+            if (Array.isArray(oldQuestions)) {
+              for (const q of oldQuestions) {
+                await quizService.deleteQuestion(q.quizQuestionId);
+              }
+            }
+          } catch (e) {
+            console.warn("Không thể xóa câu hỏi cũ hoặc không có câu hỏi cũ", e);
+          }
+
+          // 3. Tạo lại câu hỏi và đáp án từ Form
+          for (const question of quizData.questions) {
+            const createdQuestion = await quizService.createQuestion({
+              chapterQuizId: editingId,
+              questionText: question.question,
+              questionType: "multiple_choice",
+              required: question.required,
+            });
+
+            const questionId =
+              (createdQuestion as any).quizQuestionId ||
+              (createdQuestion as any).id;
+
+            // Create options
+            for (let i = 0; i < question.options.length; i++) {
+              await quizService.createOption({
+                quizQuestionId: questionId,
+                optionText: question.options[i],
+                isCorrect: question.correctAnswer === i,
+              });
+            }
+          }
+
+          message.success("Cập nhật bài trắc nghiệm thành công!");
+        } else {
+          // Create new quiz
+          const createdQuiz = await quizService.createQuiz({
+            title: quizData.title,
+            chapterId: chapterId!,
+            description: quizData.description,
+          });
+
+          const quizId =
+            (createdQuiz as any).chapterQuizId || (createdQuiz as any).id;
+
+          // Create questions
+          for (const question of quizData.questions) {
+            const createdQuestion = await quizService.createQuestion({
+              chapterQuizId: quizId,
+              questionText: question.question,
+              questionType: "multiple_choice",
+              required: question.required,
+            });
+
+            const questionId =
+              (createdQuestion as any).quizQuestionId ||
+              (createdQuestion as any).id;
+
+            // Create options
+            for (let i = 0; i < question.options.length; i++) {
+              await quizService.createOption({
+                quizQuestionId: questionId,
+                optionText: question.options[i],
+                isCorrect: question.correctAnswer === i,
+              });
+            }
+          }
+
+          message.success("Thêm bài trắc nghiệm thành công!");
+        }
+
+        // Reset form
+        form.resetFields();
+        setQuizData({
+          title: "Mẫu không có tiêu đề",
+          description: "Mô tả biểu mẫu",
+          questions: [
+            {
+              id: Date.now().toString(),
+              question: "Câu hỏi không có tiêu đề",
+              options: ["Tùy chọn 1"],
+              correctAnswer: null,
+              required: false,
+            },
+          ],
+        });
+        setEditingId(null);
+        setEditingType(null);
+        setActiveTab("normal");
+        setShowForm(false);
+        fetchQuizzes();
+        return;
+      }
+
+      // ========== NORMAL & TESTCODE TABS ==========
+      let newLessonId = tempLessonId;
+
+      if (!newLessonId) {
+        const lessonFormData = new FormData();
+        lessonFormData.append("lessonName", values.lessonName?.trim() || "");
+        lessonFormData.append("chapterId", chapterId || "");
+        lessonFormData.append("isPreview", values.isPreview ? "true" : "false");
+        lessonFormData.append("lessonType", activeTab);
+
+        if (activeTab === "normal") {
+          if (values.content) lessonFormData.append("content", values.content);
+
+          if (!hasTestCase) {
+            const fileList = values.videoFile as any[];
+
+            if (fileList && fileList.length > 0) {
+              const fileObj = fileList[0];
+              if (fileObj.originFileObj) {
+                try {
+                  message.loading({ content: "Đang upload video lên Cloud... Vui lòng đợi!", key: 'uplo', duration: 0 });
+
+                  const cloudData = await uploadService.uploadVideo(fileObj.originFileObj);
+
+                  const { secure_url, public_id } = cloudData;
+
+                  lessonFormData.append("videoUrl", secure_url);
+                  lessonFormData.append("publicId", public_id);
+
+                  message.success({ content: "Upload video thành công!", key: 'uplo' });
+                } catch (uErr) {
+                  console.error(uErr);
+                  message.error({ content: "Upload video thất bại! Vui lòng thử lại.", key: 'uplo' });
+                  setIsSubmitting(false);
+                  return;
+                }
+              }
+            }
+          }
+        }
+
+        const createdLesson = await lessonService.createLesson(lessonFormData);
+        if (!createdLesson) throw new Error("Không tạo được bài học");
+
+        newLessonId = (createdLesson as any).lessonId || (createdLesson as any).id;
+
+        // Nếu có Test Case, chuyển tab để nhập tiếp
+        if (activeTab === "normal" && hasTestCase) {
+          message.success("Đã lưu bài học video. Vui lòng nhập thông tin Test Case.");
+          setTempLessonId(newLessonId);
+          setActiveTab("testcode");
+          form.setFieldsValue({ lessonName: values.lessonName });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Kiểm tra lại ID lần nữa cho chắc
+      if (!newLessonId) {
+        message.warning("Lỗi ID bài học.");
+        return;
+      }
+
+      if (activeTab === "testcode") {
+        const testCasePayload: Partial<TestCase> = {
+          lessonId: newLessonId,
+          description: values.description,
+          input: values.input,
+          expectedOutput: values.expectedOutput,
+          testCode: values.testCode,
+        };
+
+        await testCaseService.createTestCase(testCasePayload);
+        message.success("Thêm Test Case thành công!");
+
+        form.resetFields();
+        setHasTestCase(false);
+        setTempLessonId(null);
+        setActiveTab("normal");
+        fetchLessons();
+        return;
+      }
+
+      message.success("Lưu bài học thành công!");
+      setShowForm(false);
+      form.resetFields();
+      setTempLessonId(null);
+      setEditingId(null);
+      setEditingType(null);
+      fetchLessons();
+
+    } catch (error) {
+      console.error(error);
+      message.error("Có lỗi xảy ra khi lưu bài học");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getSubmitButtonText = () => {
+    if (activeTab === "normal") {
+      return hasTestCase ? "Lưu video & Tiếp tục thêm Test Code" : "Lưu bài học";
+    }
+    if (activeTab === "testcode") return "Lưu Test Code";
+    return "Lưu Quiz";
+  };
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
-      {/* Header */}
-      <Space style={{ marginBottom: 16 }}>
-        <Button onClick={() => navigate(-1)}>⬅️ Quay lại</Button>
-        <Title level={3}>📘 {chapterName}</Title>
-      </Space>
-
-      {/* Nút Thêm bài học */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: 16,
-        }}
-      >
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            setShowForm((p) => !p);
-            if (!showForm) {
-              setEditingId(null);
-              setEditingType(null);
-              form.resetFields();
-            }
-          }}
-        >
-          {showForm ? "Ẩn form" : "Thêm bài học / Trắc nghiệm"}
-        </Button>
-      </div>
-
-      {/* FORM */}
-      {showForm && (
-        <Card
-          title={
-            editingId
-              ? `✏️ Sửa ${editingType === "quiz" ? "trắc nghiệm" : "bài học"}`
-              : "➕ Thêm bài học mới"
-          }
-          style={{
-            borderRadius: "1rem",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-            marginBottom: 20,
-          }}
-        >
-          <Tabs
-            activeKey={activeTab}
-            onChange={(key) => {
-              if (tempLessonId) {
-                message.warning(
-                  "Vui lòng hoàn tất thêm Test Case trước khi chuyển tab."
-                );
-                return;
-              }
-              setActiveTab(key as LessonType);
-            }}
-            items={TAB_ITEMS}
-          />
-
-          <Form layout="vertical" form={form} onFinish={handleFinish}>
-            {renderFormFields()}
-
-            {activeTab === "normal" && (
-              <Form.Item
-                label="Cho phép học thử?"
-                name="isPreview"
-                valuePropName="checked"
-              >
-                <Switch />
-              </Form.Item>
-            )}
-
-            <div style={{ textAlign: "right", marginTop: 20 }}>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={isSubmitting}
-                icon={
-                  activeTab === "normal" && hasTestCase ? (
-                    <ArrowRightOutlined />
-                  ) : (
-                    <PlusOutlined />
-                  )
-                }
-              >
-                {getSubmitButtonText()}
-              </Button>
-            </div>
-          </Form>
-        </Card>
-      )}
-
-      {/* Bảng danh sách bài học & quiz */}
+    <div style={{ padding: 24 }}>
       <Card
-        style={{
-          borderRadius: "1rem",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-        }}
+        title={
+          <Space>
+            <Button
+              icon={<ArrowRightOutlined style={{ transform: "rotate(180deg)" }} />}
+              onClick={() => navigate(-1)}
+            />
+            <Title level={4} style={{ margin: 0 }}>
+              Quản lý bài học - {chapterName}
+            </Title>
+          </Space>
+        }
+        extra={
+          !showForm && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setShowForm(true);
+                setTempLessonId(null);
+                setEditingId(null);
+                setEditingType(null);
+                form.resetFields();
+                setActiveTab("normal");
+              }}
+            >
+              Thêm bài học mới
+            </Button>
+          )
+        }
       >
-        <Table
-          columns={columns}
-          dataSource={combinedData}
-          rowKey="key"
-          bordered
-          pagination={false}
-          loading={isTableLoading}
-          locale={{ emptyText: "Chưa có bài học hoặc trắc nghiệm nào" }}
-        />
+        {showForm ? (
+          <div>
+            <Tabs
+              activeKey={activeTab}
+              items={TAB_ITEMS}
+              onChange={(key) => setActiveTab(key as LessonType)}
+              type="card"
+              style={{ marginBottom: 24 }}
+            />
+
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleFinish}
+              initialValues={{ isPreview: false }}
+            >
+              {renderFormFields()}
+
+              {activeTab !== "quiz" && (
+                <Form.Item name="isPreview" valuePropName="checked">
+                  <Switch checkedChildren="Xem trước" unCheckedChildren="Khóa" />
+                </Form.Item>
+              )}
+
+              <Form.Item>
+                <Space>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isSubmitting}
+                  >
+                    {getSubmitButtonText()}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowForm(false);
+                      setTempLessonId(null);
+                      setEditingId(null);
+                      setEditingType(null);
+                    }}
+                  >
+                    Hủy
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </div>
+        ) : (
+          <Table
+            rowKey="key"
+            columns={columns}
+            dataSource={combinedData}
+            loading={isTableLoading}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
       </Card>
     </div>
   );

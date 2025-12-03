@@ -159,6 +159,18 @@ export const lessonService = {
             console.error("Error deleting lesson:", error);
             throw error;
         }
+    },
+
+    // Delegate to testCaseService to avoid circular dependency
+    getTestCaseByLessonId: async (lessonId: string) => {
+        try {
+            // Dynamically import to avoid circular dependency
+            const { testCaseService } = await import('./testCase.service');
+            return await testCaseService.getTestCaseByLessonId(lessonId);
+        } catch (error) {
+            console.error("Error fetching test cases for lesson:", error);
+            throw error;
+        }
     }
 }
 

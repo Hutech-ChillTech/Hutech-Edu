@@ -164,6 +164,9 @@
   font-weight: 700;
   color: var(--primary-dark);
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .sectionDesc {
@@ -290,17 +293,41 @@
   font-style: italic;
 }
 
-/* === COMMENTS === */
+/* === COMMENTS SECTION === */
+.ratingBadge {
+  font-size: 1rem;
+  color: #fadb14;
+  font-weight: 600;
+  margin-left: 12px;
+}
+
+.commentForm {
+  background: #f9fafb;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+}
+
+.ratingInput {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-weight: 500;
+  color: #374151;
+}
+
 .commentBox {
   width: 100%;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   padding: 14px;
   min-height: 120px;
-  resize: none;
+  resize: vertical;
   margin-bottom: 16px;
   font-size: 1rem;
   transition: border 0.2s;
+  font-family: inherit;
 }
 
 .commentBox:focus {
@@ -323,13 +350,140 @@
   opacity: 0.9;
 }
 
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.commentItem {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px;
+  transition: box-shadow 0.3s;
+}
+
+.commentItem:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.commentUser {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+}
+
+.userName {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+.commentDate {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.commentActions {
+  display: flex;
+  gap: 8px;
+}
+
+.commentActions button {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.commentActions button:hover {
+  background: #f3f4f6;
+  border-color: var(--accent-blue1);
+  color: var(--accent-blue1);
+}
+
+.commentRating {
+  margin-bottom: 12px;
+}
+
+.commentContent {
+  color: #374151;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+}
+
+.saveButton,
+.cancelButton {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+  border: none;
+}
+
+.saveButton {
+  background: linear-gradient(90deg, var(--accent-blue1), var(--accent-blue2));
+  color: #fff;
+}
+
+.saveButton:hover {
+  opacity: 0.9;
+}
+
+.cancelButton {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.cancelButton:hover {
+  background: #e5e7eb;
+}
+
 .noComment {
   text-align: center;
   color: #9ca3af;
-  padding: 40px;
+  padding: 60px 40px;
   background: #f9fafb;
   border-radius: 12px;
-  margin-top: 24px;
+  font-style: italic;
+  font-size: 1rem;
 }
 
 /* === QUIZ STYLES === */
