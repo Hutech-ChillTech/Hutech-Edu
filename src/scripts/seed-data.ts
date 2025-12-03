@@ -174,7 +174,7 @@ async function seedData() {
       },
     ];
 
-    const courses = [];
+    const courses: any[] = [];
     for (let i = 0; i < courseData.length; i++) {
       const course = courseData[i];
       const created = await Prisma.course.create({
@@ -195,165 +195,7 @@ async function seedData() {
     }
     console.log(`✅ Đã tạo ${courses.length} courses\n`);
 
-    // ==================== 2. LEARNING PATHS (15) ====================
-    console.log("🛤️ Seeding 15 Learning Paths...");
-
-    const learningPathData = [
-      {
-        title: "Lộ trình Front-end Developer",
-        desc: "Từ zero đến hero Front-end",
-        level: Level.Basic,
-        hours: 200,
-      },
-      {
-        title: "Lộ trình Back-end Developer",
-        desc: "Xây dựng API và Database",
-        level: Level.Basic,
-        hours: 220,
-      },
-      {
-        title: "Lộ trình Full-stack JavaScript",
-        desc: "MERN Stack từ A-Z",
-        level: Level.Intermediate,
-        hours: 320,
-      },
-      {
-        title: "Lộ trình DevOps Engineer",
-        desc: "CI/CD, Cloud, Container",
-        level: Level.Advanced,
-        hours: 280,
-      },
-      {
-        title: "Lộ trình Data Science",
-        desc: "Python, ML, Data Analysis",
-        level: Level.Intermediate,
-        hours: 300,
-      },
-      {
-        title: "Lộ trình Mobile Developer",
-        desc: "React Native từ cơ bản",
-        level: Level.Intermediate,
-        hours: 250,
-      },
-      {
-        title: "Lộ trình Web3 Developer",
-        desc: "Blockchain và Smart Contract",
-        level: Level.Advanced,
-        hours: 350,
-      },
-      {
-        title: "Lộ trình Cloud Architect",
-        desc: "AWS, Azure, GCP",
-        level: Level.Advanced,
-        hours: 400,
-      },
-      {
-        title: "Lộ trình UI/UX Designer",
-        desc: "Thiết kế giao diện người dùng",
-        level: Level.Basic,
-        hours: 180,
-      },
-      {
-        title: "Lộ trình QA/Test Engineer",
-        desc: "Testing và Quality Assurance",
-        level: Level.Intermediate,
-        hours: 200,
-      },
-      {
-        title: "Lộ trình Security Engineer",
-        desc: "Bảo mật ứng dụng web",
-        level: Level.Advanced,
-        hours: 320,
-      },
-      {
-        title: "Lộ trình AI/ML Engineer",
-        desc: "Machine Learning nâng cao",
-        level: Level.Advanced,
-        hours: 450,
-      },
-      {
-        title: "Lộ trình Game Developer",
-        desc: "Phát triển game với Unity",
-        level: Level.Intermediate,
-        hours: 280,
-      },
-      {
-        title: "Lộ trình Product Manager",
-        desc: "Quản lý sản phẩm công nghệ",
-        level: Level.Basic,
-        hours: 150,
-      },
-      {
-        title: "Lộ trình Technical Writer",
-        desc: "Viết tài liệu kỹ thuật",
-        level: Level.Basic,
-        hours: 120,
-      },
-    ];
-
-    const learningPaths = [];
-    for (const path of learningPathData) {
-      const created = await Prisma.learningPath.create({
-        data: {
-          title: path.title,
-          description: path.desc,
-          level: path.level,
-          estimatedHours: path.hours,
-          isPublished: true,
-          createdBy: firstUser.userId,
-        },
-      });
-      learningPaths.push(created);
-    }
-    console.log(`✅ Đã tạo ${learningPaths.length} learning paths\n`);
-
-    // ==================== 3. LEARNING PATH COURSES (15) ====================
-    console.log("🔗 Seeding 15 Learning Path Courses (liên kết)...");
-
-    const pathCourseLinks = [];
-
-    // Lộ trình Front-end (5 courses)
-    for (let i = 0; i < 5; i++) {
-      const link = await Prisma.learningPathCourse.create({
-        data: {
-          learningPathId: learningPaths[0].learningPathId,
-          courseId: courses[i].courseId,
-          orderIndex: i + 1,
-          isRequired: i < 3, // 3 courses đầu bắt buộc
-        },
-      });
-      pathCourseLinks.push(link);
-    }
-
-    // Lộ trình Full-stack (5 courses)
-    for (let i = 0; i < 5; i++) {
-      const link = await Prisma.learningPathCourse.create({
-        data: {
-          learningPathId: learningPaths[2].learningPathId,
-          courseId: courses[i + 5].courseId,
-          orderIndex: i + 1,
-          isRequired: true,
-        },
-      });
-      pathCourseLinks.push(link);
-    }
-
-    // Lộ trình DevOps (5 courses)
-    for (let i = 0; i < 5; i++) {
-      const link = await Prisma.learningPathCourse.create({
-        data: {
-          learningPathId: learningPaths[3].learningPathId,
-          courseId: courses[i + 10].courseId,
-          orderIndex: i + 1,
-          isRequired: i < 4,
-        },
-      });
-      pathCourseLinks.push(link);
-    }
-
-    console.log(`✅ Đã tạo ${pathCourseLinks.length} learning path courses\n`);
-
-    // ==================== 4. CHAPTERS (15) ====================
+    // ==================== 2. CHAPTERS (15) ====================
     console.log("📖 Seeding 15 Chapters...");
 
     const chapters = [];
@@ -469,8 +311,6 @@ async function seedData() {
     console.log("\n🎉 Seeding data hoàn tất!");
     console.log("\n📊 Tóm tắt:");
     console.log(`   ✅ Courses: ${courses.length}`);
-    console.log(`   ✅ Learning Paths: ${learningPaths.length}`);
-    console.log(`   ✅ Learning Path Courses: ${pathCourseLinks.length}`);
     console.log(`   ✅ Chapters: ${chapters.length}`);
     console.log(`   ✅ Lessons: ${lessons.length}`);
     console.log(`   ✅ Chapter Quizzes: ${chapterQuizzes.length}`);
@@ -479,14 +319,15 @@ async function seedData() {
     console.log(
       `\n💡 Tổng cộng: ${
         courses.length +
-        learningPaths.length +
-        pathCourseLinks.length +
         chapters.length +
         lessons.length +
         chapterQuizzes.length +
         quizQuestions.length +
         optionCount
       } records\n`
+    );
+    console.log(
+      `\n💡 Chạy 'npx ts-node src/scripts/seed-learning-paths.ts' để tạo lộ trình học\n`
     );
   } catch (error) {
     console.error("❌ Lỗi khi seed data:", error);

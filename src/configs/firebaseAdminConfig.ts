@@ -46,4 +46,17 @@ export const initializeFirebaseAdmin = (): void => {
   }
 };
 
+/**
+ * Get Firebase Storage bucket instance
+ * Phải gọi sau khi initializeFirebaseAdmin() đã chạy
+ */
+export const getBucket = () => {
+  if (admin.apps.length === 0) {
+    throw new Error(
+      "Firebase Admin SDK chưa được khởi tạo. Vui lòng gọi initializeFirebaseAdmin() trước."
+    );
+  }
+  return admin.storage().bucket();
+};
+
 export default admin;

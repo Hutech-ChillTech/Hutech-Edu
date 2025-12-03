@@ -3,6 +3,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
 
+dotenv.config();
+
+// Firebase Admin SDK - PHẢI khởi tạo đầu tiên trước khi import các service khác
+import { initializeFirebaseAdmin } from "./configs/firebaseAdminConfig";
+initializeFirebaseAdmin();
+
 // Tất cả endpoint sẽ được khai báo ở đây
 import routes from "./routes/site.route";
 
@@ -13,11 +19,6 @@ import { errorHandler } from "./middlewares/errorHandler.middleware";
 
 // Rate limiting
 import { generalLimiter } from "./middlewares/rateLimiter.middleware";
-
-// Firebase Admin SDK
-import { initializeFirebaseAdmin } from "./configs/firebaseAdminConfig";
-
-dotenv.config();
 
 const app = express();
 
@@ -42,8 +43,5 @@ app.use(errorHandler);
 
 // Kiểm tra kết nối đến database
 connectPostgresDB();
-
-// Khởi tạo Firebase Admin SDK (optional)
-initializeFirebaseAdmin();
 
 export default app;

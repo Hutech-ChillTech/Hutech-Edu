@@ -71,6 +71,7 @@ model User {
   notifications         Notification[]
   userCoursePreviews    UserCoursePreview[]
   submissions           Submission[]
+  codeSubmissions       CodeSubmission[]
   lessonsProgress       UserLessonProgress[]
   enrollments           Enrollment[]
   learningPathsCreated  LearningPath[]           // Lộ trình đã tạo
@@ -198,7 +199,31 @@ model TestCode {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  lesson Lesson @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+  lesson           Lesson             @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+  codeSubmissions  CodeSubmission[]
+}
+
+model CodeSubmission {
+  submissionId     String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  testCodeId       String    @db.Uuid
+  source_code      String?   
+  language_id      Int?      
+  stdin            String?   
+  expected_output  String?   
+  stdout           String?   
+  stderr           String?  
+  compile_output   String?   
+  time             String?   
+  token            String?   
+  memory           Int?      
+  status           Json?     
+  message          String?   
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  testCode         TestCode  @relation(fields: [testCodeId], references: [testCodeId], onDelete: Cascade)
 }
 
 model Comment {
@@ -206,11 +231,15 @@ model Comment {
   courseId   String @db.Uuid
   userId     String @db.Uuid
   content    String
+  rating     Int?   @db.Integer  // Rating từ 1-5 sao
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([userId])
 }
 
 model Notification {

@@ -64,14 +64,29 @@ export const learningSpeedLimiter = rateLimit({
 
 /**
  * Rate limiter lỏng cho các thao tác đọc (GET)
- * 200 requests / 15 phút / IP
+ * 500 requests / 15 phút / IP (tăng cho statistics & admin dashboard)
  */
 export const readLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 phút
-  max: 200, // Giới hạn 200 requests
+  max: 500, // Giới hạn 500 requests (tăng từ 200)
   message: {
     success: false,
     message: "Quá nhiều requests đọc dữ liệu, vui lòng thử lại sau 15 phút",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate limiter riêng cho statistics endpoints (admin dashboard)
+ * 1000 requests / 15 phút / IP - cho phép refresh dashboard thường xuyên
+ */
+export const statisticsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  max: 1000, // Giới hạn 1000 requests
+  message: {
+    success: false,
+    message: "Quá nhiều requests thống kê, vui lòng thử lại sau",
   },
   standardHeaders: true,
   legacyHeaders: false,

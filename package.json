@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "migrate": "prisma migrate dev ",
     "seed": "ts-node src/scripts/seed-roles.ts",
-    "seed-data": "ts-node src/scripts/seed-data.ts"
+    "seed-data": "ts-node src/scripts/seed-data.ts && ts-node src/scripts/seed-learning-paths.ts"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +25,7 @@
     "argon2": "^0.44.0",
     "axios": "^1.13.2",
     "chalk": "^5.6.2",
+    "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^17.2.3",
@@ -37,9 +38,11 @@
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "morgan": "^1.10.1",
+    "multer": "^2.0.2",
     "path": "^0.12.7",
     "prisma": "^6.16.3",
     "qs": "^6.14.0",
+    "stream": "^0.0.3",
     "url": "^0.11.4",
     "uuid": "^13.0.0",
     "vnpay": "^2.4.4"
@@ -49,6 +52,7 @@
     "@types/crypto-js": "^4.2.2",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.7.1",
     "@types/qs": "^6.14.0",
     "nodemon": "^3.1.10",
