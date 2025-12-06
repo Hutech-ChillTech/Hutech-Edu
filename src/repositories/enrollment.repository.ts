@@ -33,7 +33,7 @@ class EnrollmentRepository extends BaseRepository<
   }
 
   async findByUserId(userId: string) {
-    return await this.prisma.enrollment.findMany({
+    const enrollments = await this.prisma.enrollment.findMany({
       where: { userId },
       include: {
         course: {
@@ -52,11 +52,76 @@ class EnrollmentRepository extends BaseRepository<
                 email: true,
               },
             },
+            chapters: {
+              include: {
+                lessons: true,
+              },
+            },
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    // Tính progress cho mỗi enrollment
+    const enrollmentsWithProgress = await Promise.all(
+      enrollments.map(async (enrollment) => {
+        // Đếm tổng số lessons
+        const totalLessons = enrollment.course.chapters.reduce(
+          (sum, chapter) => sum + chapter.lessons.length,
+          0
+        );
+
+        // Đếm số lessons đã hoàn thành
+        const completedLessons = await this.prisma.userLessonProgress.count({
+          where: {
+            userId,
+            isCompleted: true,
+            lesson: {
+              chapter: {
+                courseId: enrollment.courseId,
+              },
+            },
+          },
+        });
+
+        // Tính progress %
+        const progress =
+          totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+
+        // Lấy lastAccessAt
+        const lastAccessed = await this.prisma.userLessonProgress.findFirst({
+          where: {
+            userId,
+            lesson: {
+              chapter: {
+                courseId: enrollment.courseId,
+              },
+            },
+          },
+          orderBy: {
+            lastAccessAt: "desc",
+          },
+          select: {
+            lastAccessAt: true,
+          },
+        });
+
+        // Remove chapters từ response (chỉ dùng để tính toán)
+        const { chapters, ...courseWithoutChapters } = enrollment.course;
+
+        return {
+          ...enrollment,
+          course: courseWithoutChapters,
+          progress: parseFloat(progress.toFixed(2)),
+          completedLessons,
+          totalLessons,
+          lastAccessAt: lastAccessed?.lastAccessAt || null,
+        };
+      })
+    );
+
+    return enrollmentsWithProgress;
   }
 
   async findByCourseId(courseId: string) {

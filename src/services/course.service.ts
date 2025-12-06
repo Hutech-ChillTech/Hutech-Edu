@@ -81,6 +81,44 @@ class CourseService {
     return await this.courseRepo.getCourseWithChaptersAndLessons(courseId);
   }
 
+  /**
+   * Lấy danh sách khóa học mà user đã mua (enrolled)
+   */
+  async getEnrolledCourses(userId: string, skip?: number, take?: number) {
+    return await this.courseRepo.getEnrolledCourses(userId, { skip, take });
+  }
+
+  /**
+   * Kiểm tra user đã mua khóa học chưa
+   */
+  async checkUserEnrolled(userId: string, courseId: string): Promise<boolean> {
+    return await this.courseRepo.checkUserEnrolled(userId, courseId);
+  }
+
+  /**
+   * Lấy danh sách courseId mà user đã enroll
+   */
+  async getUserEnrolledCourseIds(userId: string): Promise<string[]> {
+    return await this.courseRepo.getUserEnrolledCourseIds(userId);
+  }
+
+  /**
+   * Thêm field isEnrolled vào danh sách courses
+   */
+  async addEnrollmentStatus(courses: any[], userId?: string) {
+    if (!userId) {
+      return courses.map((course) => ({ ...course, isEnrolled: false }));
+    }
+
+    const enrolledCourseIds = await this.getUserEnrolledCourseIds(userId);
+    const enrolledSet = new Set(enrolledCourseIds);
+
+    return courses.map((course) => ({
+      ...course,
+      isEnrolled: enrolledSet.has(course.courseId),
+    }));
+  }
+
   async createCourse(course: Prisma.CourseCreateInput) {
     const existing = await this.courseRepo.getCourseByName(course.courseName);
     if (existing && existing.length > 0) {

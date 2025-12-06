@@ -91,19 +91,13 @@ class LearningSpeedController {
         courseId,
         totalScore,
         estimatedDuration,
-        totalLearningTime,
+        totalLearningTime, // Optional - sẽ tự động lấy từ Enrollment nếu không cung cấp
       } = req.body;
 
-      if (
-        !userId ||
-        !courseId ||
-        !totalScore ||
-        !estimatedDuration ||
-        !totalLearningTime
-      ) {
+      if (!userId || !courseId || !totalScore || !estimatedDuration) {
         return sendError(
           res,
-          "Thiếu thông tin: userId, courseId, totalScore, estimatedDuration, totalLearningTime",
+          "Thiếu thông tin: userId, courseId, totalScore, estimatedDuration",
           400
         );
       }

@@ -34,8 +34,7 @@ router.get(
 
 router.get(
   "/lesson/:lessonId",
-  authenticate,
-  requirePermission([Permissions.COURSE_READ]),
+  // Không yêu cầu auth - cho phép xem test cases nếu lesson là preview hoặc đã enroll
   (req, res, next) => testCaseController.getTestCaseByLessonId(req, res, next)
 );
 

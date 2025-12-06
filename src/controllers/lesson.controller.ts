@@ -43,11 +43,23 @@ class LessonController {
 
   async createLesson(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = req.body;
+      const { lessonName, videoUrl, content, isPreview, chapterId } = req.body;
 
-      const lesson = await this.lessonService.createLesson(data);
+      // Transform to Prisma LessonCreateInput format
+      const lessonData = {
+        lessonName,
+        videoUrl: videoUrl || null,
+        content: content || null,
+        isPreview: isPreview === true || isPreview === "true",
+        chapter: {
+          connect: { chapterId },
+        },
+      };
+
+      const lesson = await this.lessonService.createLesson(lessonData);
       return sendSuccess(res, lesson, "Thêm mới lesson thành công.");
     } catch (error) {
+      console.error("Error in createLesson controller:", error);
       return next(error);
     }
   }

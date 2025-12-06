@@ -54,13 +54,17 @@ export class VNPayService {
     const date = new Date();
 
     console.log("\n=== VNPay Library Payment Debug ===");
-    console.log("1. Input Amount:", amount);
-    console.log("2. TMN Code:", PaymentConfig.vnpay.tmnCode);
-    console.log("3. Hash Secret:", PaymentConfig.vnpay.hashSecret);
-    console.log("4. Return URL:", PaymentConfig.vnpay.returnUrl);
+    console.log("1. Input Amount (VND):", amount);
+    console.log("2. Amount for VNPay (x100):", amount * 100);
+    console.log("3. TMN Code:", PaymentConfig.vnpay.tmnCode);
+    console.log("4. Hash Secret:", PaymentConfig.vnpay.hashSecret);
+    console.log("5. Return URL:", PaymentConfig.vnpay.returnUrl);
+
+    // VNPay yêu cầu amount phải nhân 100 (đơn vị là đồng x 100)
+    const vnpayAmount = amount * 100;
 
     const paymentUrl = this.vnpay.buildPaymentUrl({
-      vnp_Amount: amount,
+      vnp_Amount: vnpayAmount,
       vnp_IpAddr: ipAddr,
       vnp_TxnRef: orderId,
       vnp_OrderInfo: orderInfo,

@@ -22,7 +22,7 @@ interface CalculateSpeedParams {
   courseId: string;
   totalScore: number; // Từ Certificate
   estimatedDuration: number; // Từ Course (giờ)
-  totalLearningTime: number; // Từ LearningSession (giờ)
+  totalLearningTime?: number; // Optional - Từ Enrollment.totalCompletionTime (giờ)
 }
 
 interface SubLevelInfo {
@@ -41,8 +41,28 @@ export class LearningSpeedService {
       courseId,
       totalScore,
       estimatedDuration,
-      totalLearningTime,
+      totalLearningTime: providedTime,
     } = params;
+
+    // Lấy totalLearningTime từ Enrollment.totalCompletionTime nếu không được cung cấp
+    let totalLearningTime = providedTime;
+
+    if (!totalLearningTime || totalLearningTime <= 0) {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_courseId: { userId, courseId },
+        },
+      });
+
+      if (!enrollment || !enrollment.totalCompletionTime) {
+        throw new Error(
+          "Không thể tính learning speed: User chưa có thời gian học (totalCompletionTime = 0 hoặc NULL)"
+        );
+      }
+
+      // Convert seconds to hours
+      totalLearningTime = enrollment.totalCompletionTime / 3600;
+    }
 
     // Validate inputs
     if (totalLearningTime <= 0) {
@@ -100,12 +120,27 @@ export class LearningSpeedService {
   }
 
   /**
-   * Tính tổng thời gian học thực tế từ các sessions
+   * Tính tổng thời gian học thực tế
+   * Priority 1: Enrollment.totalCompletionTime (course-level tracking)
+   * Priority 2: LearningSession (lesson-level tracking)
    */
   async calculateTotalLearningTime(
     userId: string,
     courseId: string
   ): Promise<number> {
+    // Priority 1: Lấy từ Enrollment.totalCompletionTime (đã có sẵn)
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: { userId, courseId },
+      },
+    });
+
+    if (enrollment && enrollment.totalCompletionTime > 0) {
+      // Convert seconds to hours
+      return enrollment.totalCompletionTime / 3600;
+    }
+
+    // Priority 2: Fallback to LearningSession (nếu chưa có totalCompletionTime)
     const sessions = await prisma.learningSession.findMany({
       where: {
         userId,

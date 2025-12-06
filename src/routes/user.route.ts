@@ -67,6 +67,13 @@ router.post("/firebase/verify", authLimiter, (req, res, next) =>
   userController.verifyFirebaseTokenController(req, res, next)
 );
 
+// ============================================
+// GOOGLE AUTHENTICATION (OAuth 2.0)
+// ============================================
+router.post("/google-login", authLimiter, (req, res, next) =>
+  userController.googleLogin(req, res, next)
+);
+
 router.get(
   "/search",
   readLimiter,

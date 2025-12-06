@@ -103,19 +103,66 @@ export const authenticate = async (
 /**
  * Optional authentication
  * Không bắt buộc phải có token, nhưng nếu có thì sẽ verify
+ * Nếu token không hợp lệ, vẫn cho qua (chỉ cảnh báo)
  */
 export const optionalAuth = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
+  try {
+    const authHeader = req.headers.authorization;
 
-  // Nếu không có token, cho qua luôn
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return next();
+    // Nếu không có token, cho qua luôn
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return next();
+    }
+
+    // Nếu có token, thử verify
+    const token = authHeader.substring(7);
+    const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+    // Lấy thông tin user
+    const user = await Prisma.user.findUnique({
+      where: { userId: decoded.userId },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                roleClaims: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Nếu user tồn tại, gắn vào request
+    if (user) {
+      const roles = user.roles.map((ur) => ur.role.name);
+      const permissions = user.roles.flatMap((ur) =>
+        ur.role.roleClaims.map((rc) => rc.permission)
+      );
+
+      req.user = {
+        userId: user.userId,
+        email: user.email,
+        roles,
+        permissions,
+      };
+    }
+
+    // Dù token có hợp lệ hay không, vẫn cho qua
+    next();
+  } catch (error) {
+    // Với optional auth, nếu có lỗi (token không hợp lệ, expired), vẫn cho qua
+    // Chỉ log để debug
+    console.log(
+      "Optional auth warning:",
+      error instanceof Error ? error.message : "Unknown error"
+    );
+    next();
   }
-
-  // Nếu có token, verify như bình thường
-  return authenticate(req, res, next);
 };

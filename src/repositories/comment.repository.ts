@@ -12,11 +12,51 @@ class CommentRepository extends BaseRepository<
   }
 
   /**
-   * Lấy tất cả comments của một khóa học
+   * Lấy tất cả comments của một khóa học (chỉ comment gốc + replies)
    */
   async getCommentsByCourseId(courseId: string) {
     return await this.prisma.comment.findMany({
-      where: { courseId },
+      where: {
+        courseId,
+        parentId: null, // Chỉ lấy comment gốc
+      },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            userName: true,
+            email: true,
+            avatarURL: true,
+          },
+        },
+        replies: {
+          include: {
+            user: {
+              select: {
+                userId: true,
+                userName: true,
+                email: true,
+                avatarURL: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  /**
+   * Lấy replies của một comment
+   */
+  async getRepliesByCommentId(parentId: string) {
+    return await this.prisma.comment.findMany({
+      where: { parentId },
       include: {
         user: {
           select: {
@@ -28,7 +68,36 @@ class CommentRepository extends BaseRepository<
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: "asc",
+      },
+    });
+  }
+
+  /**
+   * Tạo reply cho comment
+   */
+  async createReply(data: {
+    parentId: string;
+    userId: string;
+    courseId: string;
+    content: string;
+  }) {
+    return await this.prisma.comment.create({
+      data: {
+        content: data.content,
+        parentId: data.parentId,
+        userId: data.userId,
+        courseId: data.courseId,
+      },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            userName: true,
+            email: true,
+            avatarURL: true,
+          },
+        },
       },
     });
   }

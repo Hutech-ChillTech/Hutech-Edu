@@ -62,6 +62,18 @@ export class PaymentService {
       finalAmount = course.coursePrice * (1 - course.discount / 100);
     }
 
+    console.log("\n=== Creating Payment ===");
+    console.log("Course data:", JSON.stringify(course, null, 2));
+    console.log(
+      "Course price:",
+      course.coursePrice,
+      "Type:",
+      typeof course.coursePrice
+    );
+    console.log("Discount:", course.discount);
+    console.log("Final amount:", finalAmount, "Type:", typeof finalAmount);
+    console.log("Payment method:", paymentMethod);
+
     // Tạo orderId unique
     const orderId = `ORDER_${Date.now()}_${userId.substring(0, 8)}`;
 
@@ -83,6 +95,10 @@ export class PaymentService {
         },
       },
     });
+
+    console.log("✅ Payment created with ID:", payment.paymentId);
+    console.log("✅ Payment amount in DB:", payment.amount);
+    console.log("========================\n");
 
     return {
       payment,
@@ -204,14 +220,22 @@ export class PaymentService {
    * Xử lý callback từ MoMo
    */
   async handleMoMoCallback(callbackData: any) {
+    console.log("\n=== MoMo Callback Received ===");
+    console.log("Full callback data:", JSON.stringify(callbackData, null, 2));
+
     // Verify signature
     const isValid = this.momoService.verifyCallback(callbackData);
+    console.log("Signature verification result:", isValid);
 
     if (!isValid) {
+      console.error("❌ Invalid MoMo signature!");
       throw new Error("Invalid signature");
     }
 
     const { orderId, resultCode, extraData, transId } = callbackData;
+    console.log("Order ID:", orderId);
+    console.log("Result Code:", resultCode, "Type:", typeof resultCode);
+    console.log("Trans ID:", transId);
 
     // Tìm payment
     const payment = await Prisma.payment.findFirst({
@@ -228,8 +252,11 @@ export class PaymentService {
       throw new Error("Payment not found");
     }
 
-    // Cập nhật trạng thái
-    if (resultCode === 0) {
+    console.log("✅ Found payment:", payment.paymentId);
+    console.log("Payment amount:", payment.amount);
+
+    // Cập nhật trạng thái - Handle both string "0" and number 0
+    if (resultCode == 0 || resultCode === "0") {
       // Thanh toán thành công
       await Prisma.$transaction(async (tx) => {
         // Cập nhật payment
@@ -275,6 +302,10 @@ export class PaymentService {
       return {
         success: true,
         message: "Thanh toán thành công",
+        paymentId: payment.paymentId,
+        amount: payment.amount,
+        orderId: payment.transactionId,
+        transId: transId,
         enrollmentCreated: true,
       };
     } else {
@@ -294,6 +325,9 @@ export class PaymentService {
       return {
         success: false,
         message: callbackData.message || "Thanh toán thất bại",
+        paymentId: payment.paymentId,
+        amount: payment.amount,
+        orderId: payment.transactionId,
       };
     }
   }
@@ -302,15 +336,31 @@ export class PaymentService {
    * Xử lý callback từ VNPay
    */
   async handleVNPayCallback(callbackData: any) {
+    console.log("\n=== VNPay Callback Received ===");
+    console.log("Full callback data:", JSON.stringify(callbackData, null, 2));
+
     // Verify signature
     const verifyResult = this.vnpayService.verifyCallback(callbackData);
+    console.log("Signature verification result:", verifyResult);
 
     if (!verifyResult.isValid) {
+      console.error("❌ Invalid VNPay signature!");
       throw new Error("Invalid signature");
     }
 
     const { vnp_TxnRef, vnp_ResponseCode, vnp_TransactionNo, vnp_Amount } =
       callbackData;
+
+    console.log("Order ID (vnp_TxnRef):", vnp_TxnRef);
+    console.log(
+      "Response Code:",
+      vnp_ResponseCode,
+      "Type:",
+      typeof vnp_ResponseCode
+    );
+    console.log("Transaction No:", vnp_TransactionNo);
+    console.log("Amount from VNPay:", vnp_Amount);
+    console.log("Amount in VND:", parseInt(vnp_Amount) / 100);
 
     // Tìm payment
     const payment = await Prisma.payment.findFirst({
@@ -322,11 +372,16 @@ export class PaymentService {
     });
 
     if (!payment) {
+      console.error("❌ Payment not found for orderId:", vnp_TxnRef);
       throw new Error("Payment not found");
     }
 
-    // Cập nhật trạng thái
-    if (vnp_ResponseCode === "00") {
+    console.log("✅ Found payment:", payment.paymentId);
+    console.log("Payment amount in DB:", payment.amount);
+
+    // Cập nhật trạng thái - Handle both string "00" and number comparison
+    if (vnp_ResponseCode === "00" || vnp_ResponseCode == 0) {
+      console.log("✅ Payment successful, creating enrollment...");
       // Thanh toán thành công
       await Prisma.$transaction(async (tx) => {
         // Cập nhật payment
@@ -373,6 +428,10 @@ export class PaymentService {
       return {
         success: true,
         message: this.vnpayService.getResponseMessage(vnp_ResponseCode),
+        paymentId: payment.paymentId,
+        amount: payment.amount,
+        orderId: payment.transactionId,
+        transactionNo: vnp_TransactionNo,
         enrollmentCreated: true,
       };
     } else {
@@ -393,6 +452,9 @@ export class PaymentService {
       return {
         success: false,
         message: this.vnpayService.getResponseMessage(vnp_ResponseCode),
+        paymentId: payment.paymentId,
+        amount: payment.amount,
+        orderId: payment.transactionId,
       };
     }
   }
@@ -426,7 +488,7 @@ export class PaymentService {
    * Lấy chi tiết thanh toán
    */
   async getPaymentDetail(paymentId: string) {
-    return await Prisma.payment.findUnique({
+    const payment = await Prisma.payment.findUnique({
       where: { paymentId },
       include: {
         user: {
@@ -447,6 +509,15 @@ export class PaymentService {
         enrollment: true,
       },
     });
+
+    console.log("📋 Payment detail retrieved:", {
+      paymentId: payment?.paymentId,
+      amount: payment?.amount,
+      coursePrice: payment?.course?.coursePrice,
+      paymentStatus: payment?.paymentStatus,
+    });
+
+    return payment;
   }
 
   /**
@@ -978,5 +1049,51 @@ export class PaymentService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Thống kê chi tiêu theo học viên (Top Spenders)
+   */
+  async getTopSpendingStudents(limit: number = 10) {
+    // Group payments by userId and calculate total spent
+    const topSpenders = await Prisma.payment.groupBy({
+      by: ["userId"],
+      where: {
+        paymentStatus: "COMPLETED",
+        userId: { not: null },
+      },
+      _sum: { amount: true },
+      _count: true,
+      orderBy: { _sum: { amount: "desc" } },
+      take: limit,
+    });
+
+    // Get user details
+    const userIds = topSpenders
+      .map((item) => item.userId)
+      .filter((id): id is string => id !== null);
+
+    const users = await Prisma.user.findMany({
+      where: { userId: { in: userIds } },
+      select: {
+        userId: true,
+        userName: true,
+        email: true,
+        avatarURL: true,
+      },
+    });
+
+    // Merge data
+    return topSpenders.map((item) => {
+      const user = users.find((u) => u.userId === item.userId);
+      return {
+        userId: item.userId,
+        userName: user?.userName || "N/A",
+        email: user?.email || "N/A",
+        avatarURL: user?.avatarURL,
+        totalSpent: item._sum.amount || 0,
+        transactionCount: item._count,
+      };
+    });
   }
 }

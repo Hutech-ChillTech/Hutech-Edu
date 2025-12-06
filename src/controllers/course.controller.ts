@@ -14,11 +14,17 @@ class CourseController {
     try {
       const skip = parseInt(req.query.skip as string) || 0;
       const take = parseInt(req.query.take as string) || 20;
-      const courses = await this.courseService.getAllCourse(skip, take);
+      const userId = (req as any).user?.userId; // Optional auth
+
+      let courses = await this.courseService.getAllCourse(skip, take);
       if (!courses || courses.length === 0) {
         sendEmpty(res, "Chưa có dữ liệu được thêm vào.");
         return;
       }
+
+      // Thêm field isEnrolled
+      courses = await this.courseService.addEnrollmentStatus(courses, userId);
+
       sendSuccess(res, courses, "Lấy tất cả courses thành công.");
     } catch (error) {
       return next(error);
@@ -28,15 +34,28 @@ class CourseController {
   async getCourseById(req: Request, res: Response, next: NextFunction) {
     try {
       const { courseId } = req.params;
+      const userId = (req as any).user?.userId;
+
       if (!isUUID(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
       }
+
       const course = await this.courseService.getCourseById(courseId);
       if (!course) {
         sendNotFound(res, "Không tìm thấy course cần tìm");
         return;
       }
-      sendSuccess(res, course, "Lấy thành công course cần tìm");
+
+      // Thêm field isEnrolled
+      const isEnrolled = userId
+        ? await this.courseService.checkUserEnrolled(userId, courseId)
+        : false;
+
+      sendSuccess(
+        res,
+        { ...course, isEnrolled },
+        "Lấy thành công course cần tìm"
+      );
     } catch (error) {
       return next(error);
     }
@@ -45,15 +64,28 @@ class CourseController {
   async getCourseWithDetails(req: Request, res: Response, next: NextFunction) {
     try {
       const { courseId } = req.params;
+      const userId = (req as any).user?.userId;
+
       if (!isUUID(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
       }
+
       const course = await this.courseService.getCourseWithDetails(courseId);
       if (!course) {
         sendNotFound(res, "Không tìm thấy course");
         return;
       }
-      sendSuccess(res, course, "Lấy thông tin chi tiết course thành công");
+
+      // Thêm field isEnrolled
+      const isEnrolled = userId
+        ? await this.courseService.checkUserEnrolled(userId, courseId)
+        : false;
+
+      sendSuccess(
+        res,
+        { ...course, isEnrolled },
+        "Lấy thông tin chi tiết course thành công"
+      );
     } catch (error) {
       return next(error);
     }
@@ -66,9 +98,12 @@ class CourseController {
   ) {
     try {
       const { courseId } = req.params;
+      const userId = (req as any).user?.userId;
+
       if (!isUUID(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
       }
+
       const course = await this.courseService.getCourseWithChaptersAndLessons(
         courseId
       );
@@ -76,7 +111,17 @@ class CourseController {
         sendNotFound(res, "Không tìm thấy course");
         return;
       }
-      sendSuccess(res, course, "Lấy nội dung course thành công");
+
+      // Thêm field isEnrolled
+      const isEnrolled = userId
+        ? await this.courseService.checkUserEnrolled(userId, courseId)
+        : false;
+
+      sendSuccess(
+        res,
+        { ...course, isEnrolled },
+        "Lấy nội dung course thành công"
+      );
     } catch (error) {
       return next(error);
     }
@@ -86,10 +131,16 @@ class CourseController {
     try {
       const { search } = req.query;
       const limit = parseInt(req.query.limit as string) || 20;
-      const courses = await this.courseService.searchCourseByName(
+      const userId = (req as any).user?.userId;
+
+      let courses = await this.courseService.searchCourseByName(
         search as string,
         limit
       );
+
+      // Thêm field isEnrolled
+      courses = await this.courseService.addEnrollmentStatus(courses, userId);
+
       sendSuccess(res, courses, "Tìm kiếm course thành công");
     } catch (error) {
       return next(error);
@@ -125,12 +176,17 @@ class CourseController {
       const { level } = req.params;
       const skip = parseInt(req.query.skip as string) || 0;
       const take = parseInt(req.query.take as string) || 20;
+      const userId = (req as any).user?.userId;
 
-      const courses = await this.courseService.getCoursesByLevel(
+      let courses = await this.courseService.getCoursesByLevel(
         level as Level,
         skip,
         take
       );
+
+      // Thêm field isEnrolled
+      courses = await this.courseService.addEnrollmentStatus(courses, userId);
+
       sendSuccess(res, courses, "Lấy khóa học theo level thành công");
     } catch (error) {
       return next(error);
@@ -161,7 +217,13 @@ class CourseController {
   async getPopularCourses(req: Request, res: Response, next: NextFunction) {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
-      const courses = await this.courseService.getPopularCourses(limit);
+      const userId = (req as any).user?.userId;
+
+      let courses = await this.courseService.getPopularCourses(limit);
+
+      // Thêm field isEnrolled
+      courses = await this.courseService.addEnrollmentStatus(courses, userId);
+
       sendSuccess(res, courses, "Lấy khóa học phổ biến thành công");
     } catch (error) {
       return next(error);
@@ -186,6 +248,7 @@ class CourseController {
       const { level, minPrice, maxPrice, searchTerm } = req.query;
       const skip = parseInt(req.query.skip as string) || 0;
       const take = parseInt(req.query.take as string) || 20;
+      const userId = (req as any).user?.userId;
 
       const filters: any = { skip, take };
 
@@ -194,7 +257,11 @@ class CourseController {
       if (maxPrice) filters.maxPrice = parseFloat(maxPrice as string);
       if (searchTerm) filters.searchTerm = searchTerm as string;
 
-      const courses = await this.courseService.filterCourses(filters);
+      let courses = await this.courseService.filterCourses(filters);
+
+      // Thêm field isEnrolled
+      courses = await this.courseService.addEnrollmentStatus(courses, userId);
+
       sendSuccess(res, courses, "Lọc khóa học thành công");
     } catch (error) {
       return next(error);
@@ -213,6 +280,45 @@ class CourseController {
 
       const count = await this.courseService.countCourses(filters);
       sendSuccess(res, { count }, "Đếm số lượng khóa học thành công");
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Lấy danh sách khóa học mà user đã mua
+   * GET /api/courses/enrolled
+   */
+  async getEnrolledCourses(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const skip = parseInt(req.query.skip as string) || 0;
+      const take = parseInt(req.query.take as string) || 20;
+
+      const enrolledCourses = await this.courseService.getEnrolledCourses(
+        userId,
+        skip,
+        take
+      );
+
+      if (!enrolledCourses || enrolledCourses.length === 0) {
+        sendEmpty(res, "Bạn chưa mua khóa học nào");
+        return;
+      }
+
+      sendSuccess(
+        res,
+        enrolledCourses,
+        "Lấy danh sách khóa học đã mua thành công"
+      );
     } catch (error) {
       return next(error);
     }

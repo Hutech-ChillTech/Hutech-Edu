@@ -400,6 +400,104 @@ class CourseRepository extends BaseRepository<
       })),
     };
   }
+
+  /**
+   * Lấy danh sách khóa học mà user đã mua (enrolled)
+   */
+  async getEnrolledCourses(
+    userId: string,
+    options?: { skip?: number; take?: number }
+  ) {
+    const { skip = 0, take = 20 } = options || {};
+
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId },
+      include: {
+        course: {
+          select: {
+            courseId: true,
+            courseName: true,
+            courseDescription: true,
+            coursePrice: true,
+            discount: true,
+            avatarURL: true,
+            level: true,
+            created_at: true,
+            user: {
+              select: {
+                userId: true,
+                userName: true,
+                avatarURL: true,
+              },
+            },
+            _count: {
+              select: {
+                chapters: true,
+                enrollments: true,
+              },
+            },
+          },
+        },
+        payments: {
+          select: {
+            paymentId: true,
+            amount: true,
+            paymentMethod: true,
+            paymentStatus: true,
+            paidAt: true,
+          },
+          where: {
+            paymentStatus: "COMPLETED",
+          },
+          orderBy: {
+            paidAt: "desc",
+          },
+          take: 1,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take,
+    });
+
+    return enrollments.map((enrollment) => ({
+      enrollmentId: enrollment.enrollmentId,
+      enrolledAt: enrollment.createdAt,
+      course: {
+        ...enrollment.course,
+        instructor: enrollment.course.user,
+        totalChapters: enrollment.course._count.chapters,
+        totalEnrollments: enrollment.course._count.enrollments,
+      },
+      payment: enrollment.payments[0] || null,
+    }));
+  }
+
+  /**
+   * Kiểm tra user đã mua khóa học chưa
+   */
+  async checkUserEnrolled(userId: string, courseId: string): Promise<boolean> {
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: {
+        userId,
+        courseId,
+      },
+    });
+    return !!enrollment;
+  }
+
+  /**
+   * Lấy danh sách courseId mà user đã enroll (dùng để check hàng loạt)
+   */
+  async getUserEnrolledCourseIds(userId: string): Promise<string[]> {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId },
+      select: { courseId: true },
+    });
+    return enrollments.map((e) => e.courseId);
+  }
 }
 
 export default CourseRepository;

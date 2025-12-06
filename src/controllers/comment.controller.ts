@@ -203,6 +203,55 @@ class CommentController {
       return next(error);
     }
   };
+
+  /**
+   * Lấy replies của một comment
+   */
+  getReplies = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { commentId } = req.params;
+
+      const replies = await this.commentService.getReplies(commentId);
+
+      if (!replies || replies.length === 0) {
+        return sendEmpty(res, "Comment chưa có reply nào");
+      }
+
+      return sendSuccess(res, replies, "Danh sách replies");
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Tạo reply cho comment
+   */
+  createReply = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const authReq = req as AuthRequest;
+      const userId = authReq.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const { commentId } = req.params;
+      const { content } = req.body;
+
+      const newReply = await this.commentService.createReply({
+        parentId: commentId,
+        userId,
+        content,
+      });
+
+      return sendSuccess(res, newReply, "Tạo reply thành công", 201);
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
 
 export default CommentController;

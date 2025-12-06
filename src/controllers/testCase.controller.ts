@@ -41,11 +41,13 @@ class TestCaseController {
       const testCases = await this.testCaseService.getTestCaseByLessonId(
         lessonId
       );
-      if (!testCases) {
-        sendEmpty(res, "Chưa có test case");
-        return;
+
+      // Trả về array rỗng nếu không có test case thay vì lỗi
+      if (!testCases || testCases.length === 0) {
+        return sendSuccess(res, [], "Bài học này không có test case");
       }
-      sendSuccess(res, testCases, "Lấy tất cả test cases thành công");
+
+      return sendSuccess(res, testCases, "Lấy tất cả test cases thành công");
     } catch (error) {
       return next(error);
     }

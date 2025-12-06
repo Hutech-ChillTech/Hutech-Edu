@@ -126,6 +126,44 @@ class CommentService {
   async getCourseRating(courseId: string) {
     return await this.commentRepository.getAverageRating(courseId);
   }
+
+  /**
+   * Lấy replies của một comment
+   */
+  async getReplies(commentId: string) {
+    return await this.commentRepository.getRepliesByCommentId(commentId);
+  }
+
+  /**
+   * Tạo reply cho comment
+   */
+  async createReply(data: {
+    parentId: string;
+    userId: string;
+    content: string;
+  }) {
+    // Kiểm tra parent comment tồn tại
+    const parentComment = await this.commentRepository.getById(data.parentId);
+    if (!parentComment) {
+      throw createHttpError(404, "Không tìm thấy comment gốc");
+    }
+
+    // Không cho phép reply vào reply (chỉ 1 level)
+    if (parentComment.parentId) {
+      throw createHttpError(
+        400,
+        "Không thể reply vào một reply. Hãy reply vào comment gốc."
+      );
+    }
+
+    // Tạo reply
+    return await this.commentRepository.createReply({
+      parentId: data.parentId,
+      userId: data.userId,
+      courseId: parentComment.courseId, // Lấy courseId từ parent
+      content: data.content,
+    });
+  }
 }
 
 export default CommentService;

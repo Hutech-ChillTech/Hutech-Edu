@@ -9,6 +9,10 @@ dotenv.config();
 import { initializeFirebaseAdmin } from "./configs/firebaseAdminConfig";
 initializeFirebaseAdmin();
 
+// 📊 Initialize Redis & Metrics (phải import sớm để các service khác có thể dùng)
+import "./configs/redis.config.js"; // Initialize Redis connection
+import "./configs/metrics.config.js"; // Initialize Prometheus metrics
+
 // Tất cả endpoint sẽ được khai báo ở đây
 import routes from "./routes/site.route";
 
@@ -19,6 +23,9 @@ import { errorHandler } from "./middlewares/errorHandler.middleware";
 
 // Rate limiting
 import { generalLimiter } from "./middlewares/rateLimiter.middleware";
+
+// 📊 Metrics middleware
+import { metricsMiddleware, metricsEndpoint } from "./middlewares/metrics.middleware";
 
 const app = express();
 
@@ -33,6 +40,13 @@ app.use(
 app.use(express.json());
 
 app.use(morgan("dev"));
+
+// 📊 Metrics middleware - PHẢI đặt trước routes để track tất cả requests
+app.use(metricsMiddleware);
+
+// 📊 Metrics endpoint cho Prometheus scraping
+// Endpoint này KHÔNG cần authentication để Prometheus có thể access
+app.get("/metrics", metricsEndpoint);
 
 // Apply rate limiting cho tất cả routes
 app.use("/api", generalLimiter);

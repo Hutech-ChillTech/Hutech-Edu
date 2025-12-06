@@ -58,6 +58,13 @@ model User {
   region       String?
   dateOfBirth  DateTime?
   level        Level?
+  
+  // ⭐ GAMIFICATION FIELDS
+  experiencePoints Int @default(0)      // Tổng XP (Experience Points)
+  currentLevelXP   Int @default(0)      // XP trong level hiện tại
+  nextLevelXP      Int @default(100)    // XP cần để lên level tiếp theo
+  totalCoursesCompleted Int @default(0) // Số khóa học đã hoàn thành
+  
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
@@ -81,10 +88,13 @@ model User {
   learningSessions      LearningSession[]        // Session học
   activityLogs          ActivityLog[]            // Lịch sử hoạt động
   inactivityWarnings    InactivityWarning[]      // Cảnh báo không hoạt động
+  xpTransactions        XPTransaction[]          // Lịch sử nhận XP
+  achievements          UserAchievement[]        // Thành tích đạt được
 
   @@index([email])
   @@index([userName])
   @@index([level])
+  @@index([experiencePoints])
   @@index([created_at])
 }
 
@@ -231,15 +241,19 @@ model Comment {
   courseId   String @db.Uuid
   userId     String @db.Uuid
   content    String
-  rating     Int?   @db.Integer  // Rating từ 1-5 sao
+  rating     Int?   @db.Integer  // Rating từ 1-5 sao (chỉ cho comment gốc)
+  parentId   String? @db.Uuid     // ID của comment cha (null nếu là comment gốc)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course  Course    @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [commentId], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
 
   @@index([courseId])
   @@index([userId])
+  @@index([parentId])
 }
 
 model Notification {
@@ -405,6 +419,13 @@ model Enrollment {
   createdAt    DateTime @default(now())
   userId       String @db.Uuid
   courseId     String @db.Uuid
+  
+  // ⏱️ COURSE COMPLETION TIME TRACKING
+  firstAccessAt        DateTime?              // Thời điểm bắt đầu học khóa học lần đầu
+  lastAccessAt         DateTime?              // Thời điểm active gần nhất (cập nhật mỗi 60s)
+  completedAt          DateTime?              // Thời điểm hoàn thành khóa học (progress = 100%)
+  totalCompletionTime  Int @default(0)        // Tổng thời gian (giây) từ firstAccessAt → completedAt
+  isCurrentlyActive    Boolean @default(false) // User đang học hay không
 
   user     User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
   course   Course    @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
@@ -414,6 +435,9 @@ model Enrollment {
   @@index([userId])
   @@index([courseId])
   @@index([createdAt])
+  @@index([firstAccessAt])
+  @@index([completedAt])
+  @@index([isCurrentlyActive])
 }
 
 // ========================================
@@ -613,4 +637,92 @@ model InactivityWarning {
   @@index([userId])
   @@index([isResolved])
   @@index([triggeredAt])
+}
+
+// ========================================
+// GAMIFICATION & LEVELING SYSTEM
+// ========================================
+
+// Lịch sử giao dịch XP (Experience Points)
+model XPTransaction {
+  transactionId   String @id @default(uuid()) @db.Uuid
+  userId          String @db.Uuid
+  amount          Int                           // Số XP nhận được (+) hoặc bị trừ (-)
+  source          String                        // "lesson_complete", "course_complete", "quiz_pass", "achievement", "daily_login", "streak_bonus"
+  description     String?                       // Mô tả chi tiết
+  
+  // Metadata
+  courseId        String? @db.Uuid              // Liên kết đến khóa học (nếu có)
+  lessonId        String? @db.Uuid              // Liên kết đến bài học (nếu có)
+  achievementId   String? @db.Uuid              // Liên kết đến achievement (nếu có)
+  metadata        Json?                         // Dữ liệu bổ sung
+  
+  created_at      DateTime @default(now())
+
+  user            User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([source])
+  @@index([created_at])
+}
+
+// Achievement/Badge system
+model Achievement {
+  achievementId   String @id @default(uuid()) @db.Uuid
+  name            String @unique                // "First Steps", "Course Master", "Speed Learner"
+  description     String                        // Mô tả achievement
+  icon            String?                       // URL icon/badge
+  xpReward        Int @default(0)               // XP thưởng khi đạt achievement
+  
+  // Điều kiện đạt achievement
+  category        String                        // "course", "lesson", "quiz", "streak", "social"
+  requirement     Json                          // { type: "complete_courses", count: 5 }
+  
+  isActive        Boolean @default(true)        // Achievement có đang active không
+  rarity          String @default("common")     // "common", "rare", "epic", "legendary"
+  
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  userAchievements UserAchievement[]
+  
+  @@index([category])
+  @@index([isActive])
+  @@index([rarity])
+}
+
+// User đã đạt những achievement nào
+model UserAchievement {
+  id              String @id @default(uuid()) @db.Uuid
+  userId          String @db.Uuid
+  achievementId   String @db.Uuid
+  
+  unlockedAt      DateTime @default(now())      // Thời gian mở khóa
+  progress        Float @default(100)           // Tiến độ % (100 = đã hoàn thành)
+  
+  created_at      DateTime @default(now())
+
+  user            User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  achievement     Achievement @relation(fields: [achievementId], references: [achievementId], onDelete: Cascade)
+  
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+  @@index([unlockedAt])
+}
+
+// Level requirements (Bảng cấu hình XP cần cho mỗi level)
+model LevelRequirement {
+  id              String @id @default(uuid()) @db.Uuid
+  level           Level                         // Basic, Intermediate, Advanced
+  minXP           Int                           // XP tối thiểu để đạt level này
+  maxXP           Int?                          // XP tối đa của level (null = không giới hạn)
+  title           String?                       // "Beginner", "Intermediate", "Expert"
+  perks           Json?                         // Quyền lợi khi đạt level: { discount: 10, badge: "..." }
+  
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@unique([level])
+  @@index([minXP])
 }

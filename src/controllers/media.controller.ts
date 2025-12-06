@@ -7,6 +7,7 @@ import {
 } from "../services/upload.service";
 import { sendSuccess, sendNotFound } from "../utils/responseHelper";
 import createHttpError from "http-errors";
+import cloudinary from "../configs/cloudinary";
 
 class MediaController {
   private readonly userService: UserService;
@@ -35,6 +36,58 @@ class MediaController {
       return sendSuccess(res, { avatarUrl }, "Tải ảnh đại diện lên thành công");
     } catch (error) {
       console.error("Error uploading user avatar:", error);
+      return next(error);
+    }
+  }
+
+  /**
+   * Generate Cloudinary signature for client-side upload
+   * POST /api/uploads/signature
+   *
+   * Body: { folder?: string, upload_preset?: string }
+   * Returns: signature, timestamp, cloudName, apiKey để FE upload trực tiếp lên Cloudinary
+   */
+  async getCloudinarySignature(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      // Nhận params từ body hoặc query (linh hoạt cho FE)
+      const folder = req.body?.folder || req.query?.folder || "videos";
+      const upload_preset = req.body?.upload_preset || req.query?.upload_preset;
+
+      const timestamp = Math.round(new Date().getTime() / 1000);
+
+      // Tạo params để sign
+      const params: any = {
+        timestamp,
+        folder,
+      };
+
+      if (upload_preset) {
+        params.upload_preset = upload_preset;
+      }
+
+      // Generate signature bằng Cloudinary API Secret
+      const signature = cloudinary.utils.api_sign_request(
+        params,
+        process.env.CLOUDINARY_CLOUD_SECRET as string
+      );
+
+      return sendSuccess(
+        res,
+        {
+          signature,
+          timestamp,
+          cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+          apiKey: process.env.CLOUDINARY_CLOUD_KEY,
+          folder,
+        },
+        "Lấy chữ ký upload thành công"
+      );
+    } catch (error) {
+      console.error("Error generating Cloudinary signature:", error);
       return next(error);
     }
   }

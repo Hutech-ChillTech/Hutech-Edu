@@ -45,8 +45,10 @@ class QuizController {
   async getQuizzesByChapter(req: Request, res: Response, next: NextFunction) {
     try {
       const { chapterId } = req.params;
+
+      // If not UUID, return empty instead of error (for public read endpoint)
       if (!isUUID(chapterId)) {
-        return res.status(400).json({ message: "Invalid chapter ID" });
+        return sendEmpty(res, "Chương này chưa có quiz nào");
       }
 
       const quizzes = await this.quizService.getQuizzesByChapter(chapterId);

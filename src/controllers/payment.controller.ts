@@ -80,27 +80,157 @@ export class PaymentController {
    */
   momoCallback = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log("\n========================================");
+      console.log("🔔 MoMo Callback Received");
+      console.log("Method:", req.method);
+      console.log("Query params:", JSON.stringify(req.query, null, 2));
+      console.log("Body params:", JSON.stringify(req.body, null, 2));
+      console.log("========================================\n");
+
       const callbackData = req.method === "GET" ? req.query : req.body;
 
       const result = await this.paymentService.handleMoMoCallback(callbackData);
 
-      // Redirect về frontend với kết quả
-      const redirectUrl = result.success
-        ? `${
-            process.env.FRONTEND_URL || "http://localhost:3001"
-          }/payment/success?orderId=${callbackData.orderId}`
-        : `${
-            process.env.FRONTEND_URL || "http://localhost:3001"
-          }/payment/failed?orderId=${
-            callbackData.orderId
-          }&message=${encodeURIComponent(result.message)}`;
+      console.log("\n✅ MoMo callback processed successfully");
+      console.log("Result:", result);
+      console.log("Result.success:", result.success);
 
-      res.redirect(redirectUrl);
+      // Redirect về frontend với query parameters
+      if (result.success) {
+        console.log("🎯 Redirecting to frontend success page");
+
+        const frontendUrl =
+          process.env.FRONTEND_SUCCESS_URL ||
+          "http://localhost:5173/payment/success";
+
+        // Redirect trực tiếp với query params (sessionStorage không work với redirect từ payment gateway)
+        const redirectUrl = `${frontendUrl}?paymentId=${
+          result.paymentId
+        }&orderId=${result.orderId}&amount=${
+          result.amount
+        }&partnerCode=MOMO&transId=${result.transId || ""}&status=success`;
+
+        console.log("🔗 Full redirect URL:", redirectUrl);
+        console.log("📦 Payment details being sent:");
+        console.log("  - paymentId:", result.paymentId);
+        console.log("  - orderId:", result.orderId);
+        console.log("  - amount:", result.amount);
+        console.log("  - transId:", result.transId);
+
+        return res.redirect(redirectUrl);
+
+        /* HTML approach không work vì browser security policy
+        const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Redirecting...</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              }
+              .loader {
+                text-align: center;
+                color: white;
+              }
+              .spinner {
+                border: 4px solid rgba(255,255,255,0.3);
+                border-top: 4px solid white;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="loader">
+              <div class="spinner"></div>
+              <p>Đang xử lý thanh toán...</p>
+            </div>
+            <script>
+              try {
+                console.log('💾 Saving payment data to sessionStorage...');
+                
+                const paymentData = {
+                  orderId: '${result.orderId || callbackData.orderId}',
+                  paymentId: '${result.paymentId || ""}',
+                  amount: ${result.amount || 0},
+                  partnerCode: 'MOMO',
+                  transId: '${result.transId || ""}',
+                  message: '${(result.message || "")
+                    .replace(/'/g, "\\'")
+                    .replace(/"/g, '\\"')}',
+                  paidAt: '${new Date().toISOString()}',
+                  enrollmentCreated: ${result.enrollmentCreated || false}
+                };
+                
+                console.log('Payment data to save:', paymentData);
+                
+                // Lưu dữ liệu vào sessionStorage
+                sessionStorage.setItem('paymentData', JSON.stringify(paymentData));
+                
+                // Verify data đã lưu
+                const saved = sessionStorage.getItem('paymentData');
+                console.log('✅ Saved to sessionStorage:', saved);
+                
+                // Delay 500ms để đảm bảo sessionStorage được lưu
+                setTimeout(() => {
+                  console.log('🚀 Redirecting to:', '${
+                    frontendUrl.split("?")[0]
+                  }');
+                  window.location.href = '${frontendUrl.split("?")[0]}';
+                }, 500);
+                
+              } catch (error) {
+                console.error('❌ SessionStorage error:', error);
+                // Fallback: redirect với URL params
+                window.location.href = '${frontendUrl}?paymentId=${
+          result.paymentId || ""
+        }';
+              }
+            </script>
+          </body>
+          </html>
+        `;
+        return res.send(html);
+        */
+      } else {
+        // Thất bại - redirect với message
+        console.log("⚠️ Payment FAILED - redirecting to failed page");
+        console.log("Result object:", JSON.stringify(result, null, 2));
+
+        const failedUrl = `${
+          process.env.FRONTEND_FAILED_URL ||
+          "http://localhost:5173/payment/failed"
+        }?message=${encodeURIComponent(result.message)}`;
+
+        console.log("Redirecting to failed page:", failedUrl);
+        return res.redirect(failedUrl);
+      }
     } catch (error: any) {
+      console.error("\n❌ MoMo Callback Error:");
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+
       const redirectUrl = `${
-        process.env.FRONTEND_URL || "http://localhost:3001"
-      }/payment/error?message=${encodeURIComponent(error.message)}`;
-      res.redirect(redirectUrl);
+        process.env.FRONTEND_FAILED_URL ||
+        "http://localhost:5173/payment/failed"
+      }?message=${encodeURIComponent(error.message)}`;
+
+      console.log("Redirecting to error page:", redirectUrl);
+      return res.redirect(redirectUrl);
     }
   };
 
@@ -140,18 +270,125 @@ export class PaymentController {
         callbackData
       );
 
-      // Redirect về frontend với kết quả
-      const redirectUrl = result.success
-        ? `${
-            process.env.FRONTEND_URL || "http://localhost:3001"
-          }/payment/success?orderId=${callbackData.vnp_TxnRef}`
-        : `${
-            process.env.FRONTEND_URL || "http://localhost:3001"
-          }/payment/failed?orderId=${
-            callbackData.vnp_TxnRef
-          }&message=${encodeURIComponent(result.message)}`;
+      // Redirect trực tiếp với query params
+      if (result.success) {
+        const frontendUrl =
+          process.env.FRONTEND_SUCCESS_URL ||
+          "http://localhost:5173/payment/success";
 
-      res.redirect(redirectUrl);
+        const redirectUrl = `${frontendUrl}?paymentId=${
+          result.paymentId
+        }&orderId=${result.orderId}&amount=${
+          result.amount
+        }&partnerCode=VNPAY&transactionNo=${
+          result.transactionNo || ""
+        }&status=success`;
+
+        console.log("🔗 Full VNPay redirect URL:", redirectUrl);
+        console.log("📦 VNPay payment details being sent:");
+        console.log("  - paymentId:", result.paymentId);
+        console.log("  - orderId:", result.orderId);
+        console.log("  - amount:", result.amount);
+        console.log("  - transactionNo:", result.transactionNo);
+
+        return res.redirect(redirectUrl);
+
+        /* HTML approach không work
+        const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Redirecting...</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              }
+              .loader {
+                text-align: center;
+                color: white;
+              }
+              .spinner {
+                border: 4px solid rgba(255,255,255,0.3);
+                border-top: 4px solid white;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="loader">
+              <div class="spinner"></div>
+              <p>Đang xử lý thanh toán...</p>
+            </div>
+            <script>
+              try {
+                console.log('💾 Saving VNPay payment data to sessionStorage...');
+                
+                const paymentData = {
+                  orderId: '${result.orderId || callbackData.vnp_TxnRef}',
+                  paymentId: '${result.paymentId || ""}',
+                  amount: ${result.amount || 0},
+                  partnerCode: 'VNPAY',
+                  transactionNo: '${result.transactionNo || ""}',
+                  message: '${(result.message || "")
+                    .replace(/'/g, "\\'")
+                    .replace(/"/g, '\\"')}',
+                  paidAt: '${new Date().toISOString()}',
+                  enrollmentCreated: ${result.enrollmentCreated || false}
+                };
+                
+                console.log('Payment data to save:', paymentData);
+                
+                // Lưu dữ liệu vào sessionStorage
+                sessionStorage.setItem('paymentData', JSON.stringify(paymentData));
+                
+                // Verify data đã lưu
+                const saved = sessionStorage.getItem('paymentData');
+                console.log('✅ Saved to sessionStorage:', saved);
+                
+                // Delay 500ms để đảm bảo sessionStorage được lưu
+                setTimeout(() => {
+                  console.log('🚀 Redirecting to:', '${
+                    frontendUrl.split("?")[0]
+                  }');
+                  window.location.href = '${frontendUrl.split("?")[0]}';
+                }, 500);
+                
+              } catch (error) {
+                console.error('❌ SessionStorage error:', error);
+                // Fallback: redirect với URL params
+                window.location.href = '${frontendUrl}?paymentId=${
+          result.paymentId || ""
+        }';
+              }
+            </script>
+          </body>
+          </html>
+        `;
+        return res.send(html);
+        */
+      } else {
+        // Thất bại - redirect với message
+        const failedUrl = `${
+          process.env.FRONTEND_FAILED_URL ||
+          "http://localhost:5173/payment/failed"
+        }?message=${encodeURIComponent(result.message)}`;
+
+        return res.redirect(failedUrl);
+      }
     } catch (error: any) {
       const redirectUrl = `${
         process.env.FRONTEND_URL || "http://localhost:3001"
@@ -288,12 +525,8 @@ export class PaymentController {
     next: NextFunction
   ) => {
     try {
-      const { limit } = req.query;
-      const courseLimit = limit ? parseInt(limit as string) : 10;
-
-      const topCourses = await this.paymentService.getTopSellingCourses(
-        courseLimit
-      );
+      // Dashboard admin: trả về toàn bộ top courses, không giới hạn số lượng
+      const topCourses = await this.paymentService.getTopSellingCourses();
       sendSuccess(res, topCourses, "Lấy top khóa học bán chạy thành công");
     } catch (error: any) {
       sendError(res, error.message, 500);
@@ -440,6 +673,28 @@ export class PaymentController {
       sendSuccess(res, result, "Lấy trạng thái thanh toán thành công");
     } catch (error: any) {
       sendError(res, error.message, 400);
+    }
+  };
+
+  /**
+   * Thống kê top học viên chi tiêu nhiều nhất
+   * GET /api/payment/statistics/top-spenders?limit=10
+   */
+  getTopSpendingStudents = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const { limit } = req.query;
+      const studentLimit = limit ? parseInt(limit as string) : 10;
+
+      const topSpenders = await this.paymentService.getTopSpendingStudents(
+        studentLimit
+      );
+      sendSuccess(res, topSpenders, "Lấy top học viên chi tiêu thành công");
+    } catch (error: any) {
+      sendError(res, error.message, 500);
     }
   };
 }

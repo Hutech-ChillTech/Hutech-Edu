@@ -5,6 +5,7 @@ import { UserRoles } from "../constants/roles";
 import createHttpError from "http-errors";
 import argon2 from "argon2";
 import FirebaseService from "./firebase.service";
+import jwt from "jsonwebtoken";
 
 class UserService {
   private readonly userRepository: UserRepository;
@@ -277,6 +278,110 @@ class UserService {
 
     const { password: _, ...userData } = user;
     return userData;
+  }
+
+  /**
+   * Google Login - Verify Firebase token và tạo/update user, trả về JWT
+   * Xử lý cả user mới (auto-register) và user đã tồn tại
+   */
+  async googleLogin(idToken: string) {
+    // 1. Verify Firebase token
+    const decodedToken = await FirebaseService.verifyIdToken(idToken);
+    const { uid, email, name, picture } = decodedToken;
+
+    if (!email) {
+      throw createHttpError(400, "Email không tồn tại trong Google account");
+    }
+
+    // 2. Tìm user theo firebaseUid hoặc email
+    let user = await this.userRepository.findUserByFirebaseUid(uid);
+
+    if (!user) {
+      // Kiểm tra user đã tồn tại với email này chưa (login bằng cách khác trước đó)
+      const existingUser = await this.userRepository.getUserByEmail(email);
+
+      if (existingUser) {
+        // User tồn tại nhưng chưa link Firebase - update firebaseUid
+        await this.userRepository.update(existingUser.userId, {
+          firebaseUid: uid,
+          avatarURL: picture || existingUser.avatarURL,
+        });
+        // Lấy lại user với roles sau khi update
+        user = await this.userRepository.findUserByFirebaseUid(uid);
+      } else {
+        // User hoàn toàn mới - tạo account
+        await PrismaClient.$transaction(async (tx) => {
+          const newUser = await tx.user.create({
+            data: {
+              userName: name || email.split("@")[0],
+              email: email,
+              firebaseUid: uid,
+              avatarURL: picture,
+              password: "", // Google users không cần password
+              gender: "OTHER" as const, // Giá trị mặc định
+            },
+          });
+
+          // Gán role User mặc định
+          const defaultRole = await tx.role.findUnique({
+            where: { name: UserRoles.USER },
+          });
+
+          if (!defaultRole) {
+            throw new Error("Role mặc định 'User' chưa được khởi tạo");
+          }
+
+          await tx.userRole.create({
+            data: {
+              userId: newUser.userId,
+              roleId: defaultRole.roleId,
+            },
+          });
+        });
+
+        // Lấy user với roles sau khi tạo mới
+        user = await this.userRepository.findUserByFirebaseUid(uid);
+      }
+    } else {
+      // User đã tồn tại - update thông tin mới nhất từ Google
+      await this.userRepository.update(user.userId, {
+        avatarURL: picture || user.avatarURL,
+        userName: name || user.userName,
+      });
+      // Lấy lại user sau khi update
+      user = await this.userRepository.findUserByFirebaseUid(uid);
+    }
+
+    // 3. Kiểm tra user có tồn tại không
+    if (!user) {
+      throw createHttpError(500, "Lỗi khi lấy thông tin user");
+    }
+
+    // 4. Extract roles
+    const roles = user.roles.map((ur: any) => ur.role.name);
+
+    // 5. Tạo JWT token
+    const token = jwt.sign(
+      {
+        userId: user.userId,
+        email: user.email,
+        roles,
+      },
+      process.env.JWT_SECRET || "supersecret",
+      { expiresIn: "7d" }
+    );
+
+    // 6. Trả về token + user info
+    return {
+      token,
+      user: {
+        userId: user.userId,
+        email: user.email,
+        userName: user.userName,
+        avatarURL: user.avatarURL,
+        roles,
+      },
+    };
   }
 }
 

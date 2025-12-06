@@ -46,3 +46,15 @@ export const updateCommentSchema = Joi.object({
   .messages({
     "object.min": "Phải có ít nhất một trường để cập nhật",
   });
+
+/**
+ * Schema validation cho create reply
+ */
+export const createReplySchema = Joi.object({
+  content: Joi.string().trim().min(1).max(2000).required().messages({
+    "string.empty": "Nội dung reply không được để trống",
+    "string.min": "Nội dung reply phải có ít nhất 1 ký tự",
+    "string.max": "Nội dung reply không được vượt quá 2000 ký tự",
+    "any.required": "Nội dung reply là bắt buộc",
+  }),
+});

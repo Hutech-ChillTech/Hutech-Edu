@@ -30,12 +30,9 @@ class UserController {
         { expiresIn: "7d" }
       );
 
-      sendSuccess(res, token, "Đăng nhập thành công");
+      return sendSuccess(res, token, "Đăng nhập thành công");
     } catch (error) {
-      const msg = (error as Error).message || "Lỗi máy chủ";
-      const status = msg.includes("mật khẩu") ? 401 : 500;
-      res.status(status).json({ error: msg });
-      return next(error);
+      next(error);
     }
   }
   async getUserById(req: Request, res: Response, next: NextFunction) {
@@ -276,6 +273,34 @@ class UserController {
     } catch (error) {
       const status = (error as any).statusCode || 500;
       const message = (error as Error).message || "Lỗi máy chủ";
+      res.status(status).json({ success: false, message });
+      return next(error);
+    }
+  }
+
+  /**
+   * Google Login - Xác thực qua Firebase token và trả về JWT
+   * POST /api/users/google-login
+   */
+  async googleLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { idToken } = req.body;
+
+      if (!idToken) {
+        return res.status(400).json({
+          success: false,
+          message: "idToken là bắt buộc",
+        });
+      }
+
+      const result = await this.userService.googleLogin(idToken);
+
+      // Trả về JWT token (backend token)
+      sendSuccess(res, result.token, "Đăng nhập Google thành công");
+    } catch (error) {
+      const status = (error as any).statusCode || 500;
+      const message =
+        (error as Error).message || "Lỗi server khi xử lý đăng nhập Google";
       res.status(status).json({ success: false, message });
       return next(error);
     }

@@ -2,11 +2,11 @@ import rateLimit from "express-rate-limit";
 
 /**
  * Rate limiter chung cho toàn bộ API
- * 100 requests / 15 phút / IP
+ * 5000 requests / 15 phút / IP - Tăng cao vì mỗi route đã có limiter riêng
  */
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 phút
-  max: 100, // Giới hạn 100 requests
+  max: 5000, // Giới hạn 5000 requests (tăng từ 100)
   message: {
     success: false,
     message: "Quá nhiều requests từ IP này, vui lòng thử lại sau 15 phút",
@@ -33,11 +33,12 @@ export const authLimiter = rateLimit({
 
 /**
  * Rate limiter cho các thao tác tạo mới (POST)
- * 20 requests / 5 phút / IP
+ * Development: 100 requests / 5 phút / IP
+ * Production: 20 requests / 5 phút / IP
  */
 export const createLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 phút
-  max: 20, // Giới hạn 20 requests
+  max: process.env.NODE_ENV === "production" ? 20 : 100, // Development: 100, Production: 20
   message: {
     success: false,
     message: "Quá nhiều requests tạo mới, vui lòng thử lại sau 5 phút",
@@ -87,6 +88,21 @@ export const statisticsLimiter = rateLimit({
   message: {
     success: false,
     message: "Quá nhiều requests thống kê, vui lòng thử lại sau",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate limiter rất lỏng cho public content (courses, popular pages)
+ * 2000 requests / 15 phút / IP - cho phép user browse thoải mái
+ */
+export const publicContentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  max: 2000, // Giới hạn 2000 requests
+  message: {
+    success: false,
+    message: "Quá nhiều requests, vui lòng thử lại sau",
   },
   standardHeaders: true,
   legacyHeaders: false,

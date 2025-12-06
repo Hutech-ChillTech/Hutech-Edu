@@ -16,11 +16,17 @@ const mediaController = new MediaController(userService, lessonService);
 
 const router = Router();
 
+// Upload avatar
 router.post(
   "/upload-avatar/:userId",
   authenticate,
   uploadImage.single("avatar"),
   (req, res, next) => mediaController.uploadUserAvatar(req, res, next)
+);
+
+// Get Cloudinary signature for client-side upload
+router.post("/signature", authenticate, (req, res, next) =>
+  mediaController.getCloudinarySignature(req, res, next)
 );
 
 export default router;

@@ -25,7 +25,16 @@ export const createLessonSchema = Joi.object({
     "string.uuid": "ID chương phải là UUID hợp lệ.",
     "any.required": "ID chương là bắt buộc.",
   }),
-});
+
+  // Extra fields from frontend (not in Prisma schema, will be stripped)
+  publicId: Joi.string().optional().allow(null, "").messages({
+    "string.base": "Public ID phải là chuỗi.",
+  }),
+
+  lessonType: Joi.string().optional().allow(null, "").messages({
+    "string.base": "Lesson type phải là chuỗi.",
+  }),
+}).options({ stripUnknown: true });
 
 export const updateLessonSchema = Joi.object({
   lessonName: Joi.string().trim().min(3).max(255).messages({

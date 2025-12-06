@@ -62,6 +62,15 @@ router.get(
   paymentController.getTopSellingCourses
 );
 
+// Top học viên chi tiêu nhiều nhất
+router.get(
+  "/statistics/top-spenders",
+  statisticsLimiter,
+  authenticate,
+  requireRole([UserRoles.ADMIN]),
+  paymentController.getTopSpendingStudents
+);
+
 // Thống kê doanh thu theo khóa học (Admin or course owner)
 router.get(
   "/statistics/course/:courseId",

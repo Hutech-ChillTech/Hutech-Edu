@@ -114,6 +114,9 @@ export class MoMoService {
    * Xác thực callback từ MoMo
    */
   verifyCallback(callbackData: any): boolean {
+    console.log("\n=== MoMo Signature Verification ===");
+    console.log("Raw callback data:", callbackData);
+
     const {
       partnerCode,
       orderId,
@@ -130,10 +133,29 @@ export class MoMoService {
       signature,
     } = callbackData;
 
+    console.log("Received signature:", signature);
+    console.log("Partner Code:", partnerCode);
+    console.log("Order ID:", orderId);
+    console.log("Result Code:", resultCode);
+    console.log("Amount:", amount);
+    console.log("Extra Data:", extraData || "");
+    console.log("Message:", message);
+    console.log("Order Info:", orderInfo);
+
+    // Handle empty extraData - MoMo gửi "" nếu không có
+    const safeExtraData = extraData || "";
+
     // Tạo raw signature theo thứ tự alphabet
-    const rawSignature = `accessKey=${this.accessKey}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&orderType=${orderType}&partnerCode=${partnerCode}&payType=${payType}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+    const rawSignature = `accessKey=${this.accessKey}&amount=${amount}&extraData=${safeExtraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&orderType=${orderType}&partnerCode=${partnerCode}&payType=${payType}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+
+    console.log("Raw signature string:");
+    console.log(rawSignature);
 
     const computedSignature = this.createSignature(rawSignature);
+    console.log("Computed signature:", computedSignature);
+    console.log("Received signature:", signature);
+    console.log("Match:", computedSignature === signature);
+    console.log("==================================\n");
 
     return computedSignature === signature;
   }

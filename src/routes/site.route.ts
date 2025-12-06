@@ -15,6 +15,10 @@ import testCodeRoute from "./testCode.route";
 import codeSubmissionRoute from "./codeSubmission.route";
 import uploadRoute from "./upload.route";
 import commentRoute from "./comment.route";
+import progressRoute from "./progress.route";
+import xpRoute from "./xp.route";
+import learningSessionRoute from "./learningSession.route";
+import courseTrackingRoute from "./courseTracking.route";
 
 function setUpRoutes(app: Express) {
   app.use("/api/users", userRoute);
@@ -32,7 +36,12 @@ function setUpRoutes(app: Express) {
   app.use("/api/test-code", testCodeRoute);
   app.use("/api/code-submissions", codeSubmissionRoute);
   app.use("/api/media", uploadRoute);
+  app.use("/api/uploads", uploadRoute); // Alias for consistency
   app.use("/api/comments", commentRoute);
+  app.use("/api/progress", progressRoute);
+  app.use("/api/xp", xpRoute); // ⭐ XP & Gamification routes
+  app.use("/api/sessions", learningSessionRoute); // ⏱️ Learning Session Tracking
+  app.use("/api/courses", courseTrackingRoute); // 📊 Course Completion Time Tracking
 }
 
 export default setUpRoutes;
