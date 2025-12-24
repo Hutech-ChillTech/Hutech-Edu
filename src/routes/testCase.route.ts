@@ -12,7 +12,7 @@ import { authenticate } from "../middlewares/auth.middleware";
 import { requirePermission } from "../middlewares/role.middleware";
 import { Permissions } from "../constants/roles";
 
-const testCaseRepository = new TestCaseRepository(Prisma, "testCodeId");
+const testCaseRepository = new TestCaseRepository(Prisma, "testCaseId");
 const testCaseService = new TestCaseService(testCaseRepository);
 const testCaseController = new TestCaseController(testCaseService);
 

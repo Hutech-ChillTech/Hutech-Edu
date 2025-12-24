@@ -17,10 +17,10 @@ export const createTestCaseSchema = Joi.object({
   input: Joi.string().optional().allow(null, "").max(5000),
   expectedOutput: Joi.string().optional().allow(null, "").max(5000),
 
-  testCode: Joi.string().optional().allow(null, ""),
+  testCodes: Joi.string().optional().allow(null, ""),
 })
   .custom((value, helpers) => {
-    const hasTestCode = value.testCode && value.testCode.trim() !== "";
+    const hasTestCodes = value.testCodes && value.testCodes.trim() !== "";
 
     return value;
   })
@@ -31,5 +31,5 @@ export const updateTestCaseSchema = Joi.object({
   description: Joi.string().max(5000).optional().allow(null, ""),
   input: Joi.string().max(5000).optional().allow(null, ""),
   expectedOutput: Joi.string().max(5000).optional().allow(null, ""),
-  testCode: Joi.string().optional().allow(null, ""),
+  testCodes: Joi.string().optional().allow(null, ""),
 }).unknown(true);

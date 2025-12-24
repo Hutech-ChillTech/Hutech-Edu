@@ -2,17 +2,17 @@ import { BaseRepository } from "./baseRepository";
 import { Prisma, PrismaClient } from "@prisma/client";
 
 class TestCaseRepository extends BaseRepository<
-  "testCode",
-  PrismaClient["testCode"],
-  Prisma.TestCodeCreateInput,
-  Prisma.TestCodeUpdateInput
+  "testCases",
+  PrismaClient["testCases"], 
+  Prisma.TestCasesCreateInput,
+  Prisma.TestCasesUpdateInput
 > {
   constructor(prisma: PrismaClient, primaryKey: string) {
-    super(prisma, "testCode", primaryKey);
+    super(prisma, "testCases", primaryKey);
   }
 
   async getTestCaseByLessonId(lessonId: string) {
-    return await this.prisma.testCode.findMany({
+    return await this.prisma.testCases.findMany({
       where: {
         lessonId,
       },

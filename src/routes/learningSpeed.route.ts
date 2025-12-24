@@ -35,6 +35,17 @@ router.get(
 router.get("/history/:userId", readLimiter, LearningSpeedController.getHistory);
 
 /**
+ * POST /api/learning-speed/on-course-completed
+ * Tự động tính learning speed và gợi ý khóa học khi hoàn thành
+ * Body: { userId, courseId }
+ */
+router.post(
+  "/on-course-completed",
+  learningSpeedLimiter,
+  LearningSpeedController.onCourseCompleted
+);
+
+/**
  * POST /api/learning-speed/manual
  * Tính toán learning speed thủ công (để test)
  * Body: { userId, courseId, totalScore, estimatedDuration, totalLearningTime }

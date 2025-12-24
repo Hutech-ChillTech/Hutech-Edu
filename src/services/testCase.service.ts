@@ -36,7 +36,7 @@ class TestCaseService {
     }
   }
 
-  async createTestCase(data: Prisma.TestCodeCreateInput) {
+  async createTestCase(data: Prisma.TestCasesCreateInput) {
     try {
       return await this.testCaseRepository.create(data);
     } catch (error) {
@@ -44,7 +44,7 @@ class TestCaseService {
     }
   }
 
-  async updateTestCase(id: string, data: Prisma.TestCodeUpdateInput) {
+  async updateTestCase(id: string, data: Prisma.TestCasesUpdateInput) {
     try {
       return await this.testCaseRepository.update(id, data);
     } catch (error) {

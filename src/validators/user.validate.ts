@@ -52,9 +52,8 @@ export const createUserSchema = Joi.object({
     .messages({
       "any.only": "Level phải là Basic, Intermediate hoặc Advanced",
     }),
-  specialization: Joi.string().optional().max(100).messages({
+  specialization: Joi.string().optional().allow("").max(100).messages({
     "string.max": "Ngành nghề không được vượt quá 100 ký tự",
-    "string.empty": "Ngành nghề không được để trống",
   }),
 });
 
@@ -89,7 +88,7 @@ export const updateUserSchema = Joi.object({
     .messages({
       "any.only": "Level phải là Basic, Intermediate hoặc Advanced",
     }),
-  specialization: Joi.string().optional().max(100).messages({
+  specialization: Joi.string().optional().allow("").max(100).messages({
     "string.max": "Ngành nghề không được vượt quá 100 ký tự",
   }),
 })

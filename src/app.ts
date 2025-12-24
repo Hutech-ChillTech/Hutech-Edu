@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
+import path from "path";
 
 dotenv.config();
 
@@ -10,8 +11,8 @@ import { initializeFirebaseAdmin } from "./configs/firebaseAdminConfig";
 initializeFirebaseAdmin();
 
 // 📊 Initialize Redis & Metrics (phải import sớm để các service khác có thể dùng)
-import "./configs/redis.config.js"; // Initialize Redis connection
-import "./configs/metrics.config.js"; // Initialize Prometheus metrics
+import "./configs/redis.config"; // Initialize Redis connection
+import "./configs/metrics.config"; // Initialize Prometheus metrics
 
 // Tất cả endpoint sẽ được khai báo ở đây
 import routes from "./routes/site.route";
@@ -40,6 +41,9 @@ app.use(
 app.use(express.json());
 
 app.use(morgan("dev"));
+
+// 📁 Serve static files từ thư mục public
+app.use(express.static(path.join(__dirname, "../public")));
 
 // 📊 Metrics middleware - PHẢI đặt trước routes để track tất cả requests
 app.use(metricsMiddleware);

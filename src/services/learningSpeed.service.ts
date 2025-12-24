@@ -419,58 +419,6 @@ export class LearningSpeedService {
   }
 
   /**
-   * Trigger khi user hoàn thành khóa học (có Certificate)
-   * → Tính toán learning speed và gợi ý khóa học tiếp theo
-   */
-  async onCourseCompleted(userId: string, courseId: string) {
-    // 1. Lấy Certificate (chứa totalScore)
-    const certificate = await prisma.certificate.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    });
-
-    if (!certificate || certificate.totalScore === null) {
-      throw new Error("Certificate not found or totalScore is null");
-    }
-
-    // 2. Lấy thông tin khóa học (estimatedDuration)
-    const course = await prisma.course.findUnique({
-      where: { courseId },
-      select: { estimatedDuration: true },
-    });
-
-    if (!course || !course.estimatedDuration) {
-      throw new Error("Course estimatedDuration not found");
-    }
-
-    // 3. Tính tổng thời gian học thực tế
-    const totalLearningTime = await this.calculateTotalLearningTime(
-      userId,
-      courseId
-    );
-
-    if (totalLearningTime <= 0) {
-      throw new Error("No learning time recorded");
-    }
-
-    // 4. Tính learning speed
-    const speedResult = await this.calculateLearningSpeed({
-      userId,
-      courseId,
-      totalScore: certificate.totalScore,
-      estimatedDuration: course.estimatedDuration,
-      totalLearningTime,
-    });
-
-    // 5. Gợi ý khóa học tiếp theo
-    const recommendations = await this.recommendNextCourses(userId, courseId);
-
-    return {
-      speedResult,
-      recommendations,
-    };
-  }
-
-  /**
    * Lấy learning speed history của user
    */
   async getUserLearningSpeedHistory(userId: string) {
@@ -481,6 +429,121 @@ export class LearningSpeedService {
     });
 
     return history;
+  }
+
+  /**
+   * 🎯 GỢI Ý KHÓA HỌC SAU KHI HOÀN THÀNH (KHÔNG CẦN CERTIFICATE)
+   * Chỉ dựa trên level của khóa học đã hoàn thành
+   */
+  async onCourseCompleted(userId: string, completedCourseId: string) {
+    try {
+      // 1. Lấy thông tin user (specialization)
+      const user = await prisma.user.findUnique({
+        where: { userId },
+        select: { specialization: true },
+      });
+
+      // 2. Lấy thông tin khóa học vừa hoàn thành
+      const completedCourse = await prisma.course.findUnique({
+        where: { courseId: completedCourseId },
+        select: {
+          courseName: true,
+          level: true,
+          subLevel: true,
+          specialization: true,
+          tag: true,
+        },
+      });
+
+      if (!completedCourse || !completedCourse.level || !completedCourse.subLevel) {
+        throw new Error('Course level/subLevel not found');
+      }
+
+      // 3. Xác định vị trí hiện tại (1-9)
+      const currentPosition = this.getSubLevelPosition(
+        completedCourse.level,
+        completedCourse.subLevel
+      );
+
+      // 4. Gợi ý khóa học CAO HƠN 1 CẤP
+      const recommendedPosition = currentPosition + 1;
+      const recommendedLevel = this.positionToSubLevel(recommendedPosition);
+
+      // 5. Tìm khóa học phù hợp
+      // 5.1. Ưu tiên 1: Cùng TAG + Level cao hơn
+      const coursesByTag = completedCourse.tag
+        ? await prisma.course.findMany({
+            where: {
+              tag: completedCourse.tag,
+              level: recommendedLevel.level,
+              subLevel: recommendedLevel.subLevel,
+              courseId: { not: completedCourseId },
+            },
+            take: 3,
+            orderBy: { created_at: 'desc' },
+          })
+        : [];
+
+      // 5.2. Ưu tiên 2: Cùng specialization với user
+      const coursesBySpecialization = user?.specialization
+        ? await prisma.course.findMany({
+            where: {
+              level: recommendedLevel.level,
+              subLevel: recommendedLevel.subLevel,
+              specialization: user.specialization,
+              courseId: {
+                not: completedCourseId,
+                notIn: coursesByTag.map((c) => c.courseId),
+              },
+            },
+            take: 2,
+            orderBy: { created_at: 'desc' },
+          })
+        : [];
+
+      // 5.3. Ưu tiên 3: Các khóa học khác cùng level
+      const otherCourses = await prisma.course.findMany({
+        where: {
+          level: recommendedLevel.level,
+          subLevel: recommendedLevel.subLevel,
+          courseId: {
+            not: completedCourseId,
+            notIn: [
+              ...coursesByTag.map((c) => c.courseId),
+              ...coursesBySpecialization.map((c) => c.courseId),
+            ],
+          },
+        },
+        take: 5 - coursesByTag.length - coursesBySpecialization.length,
+        orderBy: { created_at: 'desc' },
+      });
+
+      // Gộp tất cả khóa học
+      const recommendedCourses = [
+        ...coursesByTag,
+        ...coursesBySpecialization,
+        ...otherCourses,
+      ];
+
+      return {
+        currentCourse: {
+          courseName: completedCourse.courseName,
+          level: completedCourse.level,
+          subLevel: completedCourse.subLevel,
+          position: currentPosition,
+        },
+        recommendedLevel: {
+          level: recommendedLevel.level,
+          subLevel: recommendedLevel.subLevel,
+          position: recommendedLevel.position,
+        },
+        reason: `Bạn đã hoàn thành ${completedCourse.courseName}. Gợi ý khóa học tiếp theo!`,
+        courses: recommendedCourses,
+      };
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      throw error;
+    }
   }
 }
 

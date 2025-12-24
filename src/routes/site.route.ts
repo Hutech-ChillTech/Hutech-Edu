@@ -19,6 +19,11 @@ import progressRoute from "./progress.route";
 import xpRoute from "./xp.route";
 import learningSessionRoute from "./learningSession.route";
 import courseTrackingRoute from "./courseTracking.route";
+import tagRoute from "./tag.route";
+import searchRoute from "./search.route";
+import categoryRoute from "./category.route";
+import blogRoute from "./blog.route";
+import courseRecommendationRoute from "./courseRecommendation.route";
 
 function setUpRoutes(app: Express) {
   app.use("/api/users", userRoute);
@@ -42,6 +47,11 @@ function setUpRoutes(app: Express) {
   app.use("/api/xp", xpRoute); // ⭐ XP & Gamification routes
   app.use("/api/sessions", learningSessionRoute); // ⏱️ Learning Session Tracking
   app.use("/api/courses", courseTrackingRoute); // 📊 Course Completion Time Tracking
+  app.use("/api/tags", tagRoute); // 🏷️ Tag Management
+  app.use("/api/categories", categoryRoute); // 📂 Category Management
+  app.use("/api/search", searchRoute); // 🔍 Advanced Search (Courses by Tags)
+  app.use("/api/blog-posts", blogRoute); // 📝 Blog Posts
+  app.use("/api/recommendations", courseRecommendationRoute); // 🎯 Course Recommendations
 }
 
 export default setUpRoutes;

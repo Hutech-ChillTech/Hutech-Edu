@@ -1,22 +1,22 @@
 import { BaseRepository } from "./baseRepository";
-import PrismaClient from "../configs/prismaClient";
+import prisma from "../configs/prismaClient";
 import { Enrollment, Prisma } from "@prisma/client";
 
 class CourseTrackingRepository extends BaseRepository<
   "enrollment",
-  typeof PrismaClient.enrollment,
+  typeof prisma.enrollment,
   Prisma.EnrollmentCreateInput,
   Prisma.EnrollmentUpdateInput
 > {
   constructor() {
-    super(PrismaClient, "enrollment", "enrollmentId");
+    super(prisma, "enrollment", "enrollmentId");
   }
 
   /**
    * Lấy enrollment với tracking info
    */
   async getEnrollmentWithTracking(userId: string, courseId: string) {
-    return await PrismaClient.enrollment.findUnique({
+    return await prisma.enrollment.findUnique({
       where: {
         userId_courseId: {
           userId,
@@ -57,7 +57,7 @@ class CourseTrackingRepository extends BaseRepository<
       updateData.firstAccessAt = now;
     }
 
-    return await PrismaClient.enrollment.update({
+    return await prisma.enrollment.update({
       where: { enrollmentId: enrollment.enrollmentId },
       data: updateData,
       include: {
@@ -90,10 +90,10 @@ class CourseTrackingRepository extends BaseRepository<
       (now.getTime() - lastAccess.getTime()) / 1000
     );
 
-    // Chỉ cộng thời gian nếu elapsed < 1860 giây (31 phút - heartbeat 30p + buffer 1p)
-    const timeToAdd = elapsedSeconds < 1860 ? elapsedSeconds : 0;
+    // Chỉ cộng thời gian nếu elapsed < 300 giây (5 phút)
+    const timeToAdd = elapsedSeconds < 300 ? elapsedSeconds : 0;
 
-    return await PrismaClient.enrollment.update({
+    return await prisma.enrollment.update({
       where: { enrollmentId: enrollment.enrollmentId },
       data: {
         totalCompletionTime: enrollment.totalCompletionTime + timeToAdd,
@@ -121,10 +121,10 @@ class CourseTrackingRepository extends BaseRepository<
       (now.getTime() - lastAccess.getTime()) / 1000
     );
 
-    // Chỉ cộng thời gian nếu elapsed < 1020 giây (17 phút)
-    const timeToAdd = elapsedSeconds < 1020 ? elapsedSeconds : 0;
+    // Chỉ cộng thời gian nếu elapsed < 300 giây (5 phút)
+    const timeToAdd = elapsedSeconds < 300 ? elapsedSeconds : 0;
 
-    return await PrismaClient.enrollment.update({
+    return await prisma.enrollment.update({
       where: { enrollmentId: enrollment.enrollmentId },
       data: {
         totalCompletionTime: enrollment.totalCompletionTime + timeToAdd,
@@ -152,9 +152,9 @@ class CourseTrackingRepository extends BaseRepository<
     const elapsedSeconds = Math.floor(
       (now.getTime() - lastAccess.getTime()) / 1000
     );
-    const timeToAdd = elapsedSeconds < 1020 ? elapsedSeconds : 0;
+    const timeToAdd = elapsedSeconds < 300 ? elapsedSeconds : 0;
 
-    return await PrismaClient.enrollment.update({
+    return await prisma.enrollment.update({
       where: { enrollmentId: enrollment.enrollmentId },
       data: {
         completedAt: now,
@@ -208,7 +208,7 @@ class CourseTrackingRepository extends BaseRepository<
    * Lấy tất cả courses với completion time của user
    */
   async getAllCompletionTimes(userId: string) {
-    const enrollments = await PrismaClient.enrollment.findMany({
+    const enrollments = await prisma.enrollment.findMany({
       where: { userId },
       include: {
         course: {

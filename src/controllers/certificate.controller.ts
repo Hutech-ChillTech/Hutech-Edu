@@ -19,8 +19,12 @@ export class CertificateController {
     next: NextFunction
   ) => {
     try {
-      const userId = req.body.userId; // Từ middleware auth
+      const userId = (req as any).user?.userId; // Từ middleware auth
       const { courseId } = req.params;
+
+      if (!userId) {
+        return sendError(res, "Unauthorized - User not authenticated", 401);
+      }
 
       const result = await this.certificateService.checkAndIssueCertificate(
         userId,
@@ -43,7 +47,11 @@ export class CertificateController {
     next: NextFunction
   ) => {
     try {
-      const userId = req.body.userId; // Từ middleware auth
+      const userId = (req as any).user?.userId; // Từ middleware auth
+
+      if (!userId) {
+        return sendError(res, "Unauthorized - User not authenticated", 401);
+      }
 
       const certificates = await this.certificateService.getUserCertificates(
         userId
@@ -71,6 +79,17 @@ export class CertificateController {
     try {
       const { certificateId } = req.params;
 
+      // Validate UUID format (tránh crash khi nhận certificateURL thay vì certificateId)
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(certificateId)) {
+        return sendError(
+          res,
+          "Invalid certificateId format. Expected UUID.",
+          400
+        );
+      }
+
       const certificate = await this.certificateService.getCertificateById(
         certificateId
       );
@@ -91,8 +110,12 @@ export class CertificateController {
     next: NextFunction
   ) => {
     try {
-      const userId = req.body.userId; // Từ middleware auth
+      const userId = (req as any).user?.userId; // Từ middleware auth
       const { courseId } = req.params;
+
+      if (!userId) {
+        return sendError(res, "Unauthorized - User not authenticated", 401);
+      }
 
       const certificate =
         await this.certificateService.getUserCertificateInCourse(
@@ -192,7 +215,11 @@ export class CertificateController {
     next: NextFunction
   ) => {
     try {
-      const userId = req.body.userId; // Từ middleware auth
+      const userId = (req as any).user?.userId; // Từ middleware auth
+
+      if (!userId) {
+        return sendError(res, "Unauthorized - User not authenticated", 401);
+      }
 
       const stats = await this.certificateService.getCertificateStats(userId);
 

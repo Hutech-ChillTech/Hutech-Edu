@@ -31,8 +31,15 @@ export class SubmissionService {
         chapterQuizId
       );
 
+    // Cho phép làm lại quiz bất kể PASSED hay FAILED
     if (existingSubmission) {
-      throw new Error("Bạn đã làm bài quiz này rồi!");
+      await this.submissionRepository.deleteSubmission(
+        existingSubmission.submissionId
+      );
+      const status = existingSubmission.isPassed ? "PASSED" : "FAILED";
+      console.log(
+        `🔄 User ${userId} đang làm lại quiz ${chapterQuizId} (lần trước ${status})`
+      );
     }
 
     // 2. Lấy thông tin quiz và câu hỏi
@@ -78,6 +85,146 @@ export class SubmissionService {
       submittedAt: new Date(),
     });
 
+    // 6. Kiểm tra xem đã hoàn thành 100% course chưa
+    let courseCompleted = false;
+    let certificateCreated = false;
+
+    try {
+      // Lấy courseId từ chapterQuiz
+      const chapterQuiz = await prisma.chapterQuiz.findUnique({
+        where: { chapterQuizId },
+        include: { chapter: true },
+      });
+
+      if (chapterQuiz) {
+        const courseId = chapterQuiz.chapter.courseId;
+
+        // Đếm tổng items và completed items
+        const [totalLessons, totalQuizzes, completedLessons, completedQuizzes] =
+          await Promise.all([
+            prisma.lesson.count({
+              where: { chapter: { courseId } },
+            }),
+            prisma.chapterQuiz.count({
+              where: { chapter: { courseId } },
+            }),
+            prisma.userLessonProgress.count({
+              where: {
+                userId,
+                lesson: { chapter: { courseId } },
+                isCompleted: true,
+              },
+            }),
+            prisma.submission.count({
+              where: {
+                userId,
+                isPassed: true,
+                chapterQuiz: { chapter: { courseId } },
+              },
+            }),
+          ]);
+
+        const totalItems = totalLessons + totalQuizzes;
+        const completedItems = completedLessons + completedQuizzes;
+        const progress =
+          totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+        // Nếu đạt 100% → Tạo Certificate
+        if (progress >= 100) {
+          courseCompleted = true;
+
+          // Kiểm tra xem đã có certificate chưa
+          const existingCert = await prisma.certificate.findUnique({
+            where: { userId_courseId: { userId, courseId } },
+          });
+
+          if (!existingCert) {
+            // Import PDFGenerator và tạo certificate
+            const { PDFGenerator } = await import("../utils/pdfGenerator.js");
+
+            // Lấy thông tin user và course
+            const [user, course, allSubmissions] = await Promise.all([
+              prisma.user.findUnique({
+                where: { userId },
+                select: { userName: true },
+              }),
+              prisma.course.findUnique({
+                where: { courseId },
+                select: { courseName: true, level: true, subLevel: true },
+              }),
+              prisma.submission.findMany({
+                where: {
+                  userId,
+                  chapterQuiz: { chapter: { courseId } },
+                },
+                select: { score: true, maxScore: true },
+              }),
+            ]);
+
+            if (user && course) {
+              // Tính totalScore
+              let totalScore = 0;
+              if (allSubmissions.length > 0) {
+                const totalPoints = allSubmissions.reduce(
+                  (sum, s) => sum + (s.score || 0),
+                  0
+                );
+                const maxPoints = allSubmissions.reduce(
+                  (sum, s) => sum + (s.maxScore || 100),
+                  0
+                );
+                totalScore =
+                  maxPoints > 0 ? (totalPoints / maxPoints) * 100 : 0;
+              }
+
+              // Generate PDF
+              let certificateURL = "";
+              try {
+                certificateURL = await PDFGenerator.generateCertificatePDF(
+                  userId,
+                  courseId,
+                  {
+                    userName: user.userName,
+                    courseName: course.courseName,
+                    level: course.level || "Basic",
+                    subLevel: course.subLevel || "Low",
+                    totalScore,
+                    issuedDate: new Date(),
+                  }
+                );
+              } catch (pdfError) {
+                console.error("Error generating PDF:", pdfError);
+              }
+
+              // Tạo Certificate record
+              await prisma.certificate.create({
+                data: {
+                  userId,
+                  courseId,
+                  certificateTitle: `Certificate of Completion - ${course.courseName}`,
+                  certificateURL,
+                  totalScore: parseFloat(totalScore.toFixed(2)),
+                  averageScore: parseFloat(totalScore.toFixed(2)),
+                  maxScore: 100,
+                  issuedAt: new Date(),
+                },
+              });
+
+              certificateCreated = true;
+              console.log(
+                `🎓 Certificate created after quiz completion! User: ${userId}, Course: ${courseId}, Score: ${totalScore.toFixed(
+                  2
+                )}%`
+              );
+            }
+          }
+        }
+      }
+    } catch (certError) {
+      console.error("Error checking/creating certificate:", certError);
+      // Không throw error, chỉ log
+    }
+
     return {
       submission,
       percentage: Math.round(percentage * 100) / 100,
@@ -87,6 +234,8 @@ export class SubmissionService {
         : `Rất tiếc! Bạn chỉ đạt ${percentage.toFixed(
             2
           )}%. Cần ít nhất ${passingScore}% để pass.`,
+      courseCompleted,
+      certificateCreated,
     };
   }
 

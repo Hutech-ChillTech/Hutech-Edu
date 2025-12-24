@@ -14,6 +14,9 @@ import promClient from 'prom-client';
  * Sau đó dùng Grafana để visualize metrics thành dashboard đẹp.
  */
 
+// Clear existing metrics to prevent duplicate registration during hot-reload
+promClient.register.clear();
+
 // Enable default metrics (CPU, Memory, Event Loop, etc.)
 // Prometheus tự động thu thập các metrics hệ thống
 promClient.collectDefaultMetrics({

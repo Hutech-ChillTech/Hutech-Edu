@@ -1,8 +1,9 @@
 import LessonProgressRepository from "../repositories/lessonProgress.repository";
 import CourseTrackingRepository from "../repositories/courseTracking.repository";
 import createHttpError from "http-errors";
-import PrismaClient from "../configs/prismaClient";
+import prisma from "../configs/prismaClient";
 import XPService from "./xp.service";
+import { PDFGenerator } from "../utils/pdfGenerator";
 
 class LessonProgressService {
   private readonly progressRepository: LessonProgressRepository;
@@ -36,7 +37,7 @@ class LessonProgressService {
 
       // Nếu chưa có cache, query database
       // Lấy chapter cuối cùng (theo created_at DESC)
-      const lastChapter = await PrismaClient.chapter.findFirst({
+      const lastChapter = await prisma.chapter.findFirst({
         where: { courseId },
         orderBy: { created_at: "desc" },
         select: { chapterId: true },
@@ -45,7 +46,7 @@ class LessonProgressService {
       if (!lastChapter) return false;
 
       // Lấy lesson cuối cùng trong chapter cuối (theo created_at DESC)
-      const lastLesson = await PrismaClient.lesson.findFirst({
+      const lastLesson = await prisma.lesson.findFirst({
         where: { chapterId: lastChapter.chapterId },
         orderBy: { created_at: "desc" },
         select: { lessonId: true },
@@ -112,7 +113,7 @@ class LessonProgressService {
   async completeLesson(userId: string, lessonId: string) {
     try {
       // Kiểm tra lesson tồn tại
-      const lesson = await PrismaClient.lesson.findUnique({
+      const lesson = await prisma.lesson.findUnique({
         where: { lessonId },
         include: {
           chapter: {
@@ -129,7 +130,7 @@ class LessonProgressService {
       }
 
       // Kiểm tra user đã đăng ký khóa học chưa
-      const enrollment = await PrismaClient.enrollment.findUnique({
+      const enrollment = await prisma.enrollment.findUnique({
         where: {
           userId_courseId: {
             userId,
@@ -185,7 +186,7 @@ class LessonProgressService {
       if (courseProgress.progress >= 100 && enrollment.completedAt === null) {
         try {
           // Lấy enrollment hiện tại
-          const currentEnrollment = await PrismaClient.enrollment.findUnique({
+          const currentEnrollment = await prisma.enrollment.findUnique({
             where: {
               userId_courseId: {
                 userId,
@@ -205,10 +206,10 @@ class LessonProgressService {
             const elapsedSeconds = Math.floor(
               (now.getTime() - lastAccess.getTime()) / 1000
             );
-            const timeToAdd = elapsedSeconds < 120 ? elapsedSeconds : 0;
+            const timeToAdd = elapsedSeconds < 300 ? elapsedSeconds : 0;
 
             // Cập nhật Enrollment
-            const completedEnrollment = await PrismaClient.enrollment.update({
+            const completedEnrollment = await prisma.enrollment.update({
               where: { enrollmentId: currentEnrollment.enrollmentId },
               data: {
                 completedAt: now,
@@ -225,6 +226,109 @@ class LessonProgressService {
                 (completedEnrollment.totalCompletionTime / 3600).toFixed(2)
               ),
             };
+
+            // 📜 TẠO CERTIFICATE
+            try {
+              // Lấy thông tin user và course để tạo PDF
+              const [user, course, submissions] = await Promise.all([
+                prisma.user.findUnique({
+                  where: { userId },
+                  select: { userName: true },
+                }),
+                prisma.course.findUnique({
+                  where: { courseId: lesson.chapter.courseId },
+                  select: { courseName: true, level: true, subLevel: true },
+                }),
+                prisma.submission.findMany({
+                  where: {
+                    userId,
+                    chapterQuiz: {
+                      chapter: {
+                        courseId: lesson.chapter.courseId,
+                      },
+                    },
+                  },
+                  select: {
+                    score: true,
+                    maxScore: true,
+                  },
+                }),
+              ]);
+
+              if (!user || !course) {
+                throw new Error('User or Course not found');
+              }
+
+              // Tính điểm trung bình
+              let totalScore = 0;
+              if (submissions.length > 0) {
+                const totalPoints = submissions.reduce(
+                  (sum, s) => sum + (s.score || 0),
+                  0
+                );
+                const maxPoints = submissions.reduce(
+                  (sum, s) => sum + (s.maxScore || 100),
+                  0
+                );
+                totalScore = maxPoints > 0 ? (totalPoints / maxPoints) * 100 : 0;
+              }
+
+              // 🎨 Generate PDF Certificate
+              let certificateURL = '';
+              try {
+                certificateURL = await PDFGenerator.generateCertificatePDF(
+                  userId,
+                  lesson.chapter.courseId,
+                  {
+                    userName: user.userName,
+                    courseName: course.courseName,
+                    level: course.level || 'Basic',
+                    subLevel: course.subLevel || 'Low',
+                    totalScore,
+                    issuedDate: now,
+                  }
+                );
+                console.log(`🎨 PDF Certificate generated: ${certificateURL}`);
+              } catch (pdfError) {
+                console.error('Error generating PDF:', pdfError);
+                // Continue without PDF if generation fails
+              }
+
+              // Tạo hoặc update Certificate trong database
+              await prisma.certificate.upsert({
+                where: {
+                  userId_courseId: {
+                    userId,
+                    courseId: lesson.chapter.courseId,
+                  },
+                },
+                create: {
+                  userId,
+                  courseId: lesson.chapter.courseId,
+                  certificateTitle: `Certificate of Completion - ${course.courseName}`,
+                  certificateURL,
+                  totalScore: parseFloat(totalScore.toFixed(2)),
+                  averageScore: parseFloat(totalScore.toFixed(2)),
+                  maxScore: 100,
+                  issuedAt: now,
+                },
+                update: {
+                  certificateURL,
+                  totalScore: parseFloat(totalScore.toFixed(2)),
+                  averageScore: parseFloat(totalScore.toFixed(2)),
+                  issuedAt: now,
+                },
+              });
+
+              console.log(
+                `📜 Certificate created for user ${userId} with totalScore: ${totalScore.toFixed(
+                  2
+                )}%`
+              );
+            } catch (certError) {
+              console.error("Error creating certificate:", certError);
+              // Không throw error, chỉ log
+            }
 
             console.log(
               `✅ User ${userId} completed course ${lesson.chapter.courseId}! Total time: ${completedEnrollment.totalCompletionTime}s`
@@ -250,6 +354,10 @@ class LessonProgressService {
         courseProgress: courseProgress.progress,
         completedLessons: courseProgress.completedLessons,
         totalLessons: courseProgress.totalLessons,
+        completedQuizzes: courseProgress.completedQuizzes,
+        totalQuizzes: courseProgress.totalQuizzes,
+        completedItems: courseProgress.completedItems,
+        totalItems: courseProgress.totalItems,
         isLastLesson, // ← Flag để Frontend biết
         courseCompleted: courseProgress.progress >= 100, // ← Confirmed completion
         xpReward, // Thêm thông tin XP reward
@@ -266,7 +374,7 @@ class LessonProgressService {
   async accessLesson(userId: string, lessonId: string) {
     try {
       // Kiểm tra lesson tồn tại
-      const lesson = await PrismaClient.lesson.findUnique({
+      const lesson = await prisma.lesson.findUnique({
         where: { lessonId },
         include: {
           chapter: {
@@ -284,7 +392,7 @@ class LessonProgressService {
       // Nếu lesson là preview, cho phép access mà không cần enrollment
       if (!lesson.isPreview) {
         // Kiểm tra enrollment chỉ khi lesson không phải preview
-        const enrollment = await PrismaClient.enrollment.findUnique({
+        const enrollment = await prisma.enrollment.findUnique({
           where: {
             userId_courseId: {
               userId,
@@ -311,7 +419,7 @@ class LessonProgressService {
   async getCourseProgress(userId: string, courseId: string) {
     try {
       // Kiểm tra enrollment
-      const enrollment = await PrismaClient.enrollment.findUnique({
+      const enrollment = await prisma.enrollment.findUnique({
         where: {
           userId_courseId: {
             userId,
@@ -325,7 +433,7 @@ class LessonProgressService {
       }
 
       // Đếm tổng số lessons trong course
-      const totalLessons = await PrismaClient.lesson.count({
+      const totalLessons = await prisma.lesson.count({
         where: {
           chapter: {
             courseId,
@@ -333,13 +441,41 @@ class LessonProgressService {
         },
       });
 
+      // Đếm tổng số quizzes trong course
+      const totalQuizzes = await prisma.chapterQuiz.count({
+        where: {
+          chapter: {
+            courseId,
+          },
+        },
+      });
+
+      // Tổng số items cần hoàn thành = lessons + quizzes
+      const totalItems = totalLessons + totalQuizzes;
+
       // Đếm số lessons đã hoàn thành
       const completedLessons =
         await this.progressRepository.countCompletedLessons(userId, courseId);
 
+      // Đếm số quizzes đã pass
+      const completedQuizzes = await prisma.submission.count({
+        where: {
+          userId,
+          isPassed: true,
+          chapterQuiz: {
+            chapter: {
+              courseId,
+            },
+          },
+        },
+      });
+
+      // Tổng số items đã hoàn thành
+      const completedItems = completedLessons + completedQuizzes;
+
       // Tính progress %
       const progress =
-        totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+        totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
       // Lấy lesson cuối cùng đã truy cập
       const lastAccessedLesson =
@@ -357,6 +493,10 @@ class LessonProgressService {
         enrollmentId: enrollment.enrollmentId,
         totalLessons,
         completedLessons,
+        totalQuizzes,
+        completedQuizzes,
+        totalItems,
+        completedItems,
         progress: parseFloat(progress.toFixed(2)),
         lastAccessedLesson: lastAccessedLesson
           ? {
@@ -384,7 +524,7 @@ class LessonProgressService {
   async getAllUserProgress(userId: string) {
     try {
       // Lấy tất cả enrollments
-      const enrollments = await PrismaClient.enrollment.findMany({
+      const enrollments = await prisma.enrollment.findMany({
         where: { userId },
         include: {
           course: {
@@ -465,7 +605,7 @@ class LessonProgressService {
       }
 
       // Delete progress record
-      await PrismaClient.userLessonProgress.delete({
+      await prisma.userLessonProgress.delete({
         where: { id: progress.id },
       });
 

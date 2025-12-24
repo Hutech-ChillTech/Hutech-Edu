@@ -4,6 +4,7 @@ import {
   readLimiter,
   createLimiter,
 } from "../middlewares/rateLimiter.middleware";
+import { authenticate } from "../middlewares/auth.middleware";
 
 const router = Router();
 const certificateController = new CertificateController();
@@ -15,6 +16,7 @@ const certificateController = new CertificateController();
  */
 router.post(
   "/issue/:courseId",
+  authenticate,
   createLimiter,
   certificateController.issueCertificate
 );
@@ -26,6 +28,7 @@ router.post(
  */
 router.get(
   "/my-certificates",
+  authenticate,
   readLimiter,
   certificateController.getMyCertificates
 );
@@ -35,28 +38,36 @@ router.get(
  * GET /api/certificates/stats
  * Yêu cầu: Authenticated
  */
-router.get("/stats", readLimiter, certificateController.getCertificateStats);
-
-/**
- * Lấy certificate theo ID
- * GET /api/certificates/:certificateId
- * Yêu cầu: Public (để share certificate)
- */
 router.get(
-  "/:certificateId",
+  "/stats",
+  authenticate,
   readLimiter,
-  certificateController.getCertificateById
+  certificateController.getCertificateStats
 );
 
 /**
  * Lấy certificate của user trong một course
  * GET /api/certificates/course/:courseId
  * Yêu cầu: Authenticated
+ * QUAN TRỌNG: Route này phải ĐẶT TRƯỚC /:certificateId
  */
 router.get(
   "/course/:courseId",
+  authenticate,
   readLimiter,
   certificateController.getCertificateInCourse
+);
+
+/**
+ * Lấy certificate theo ID
+ * GET /api/certificates/:certificateId
+ * Yêu cầu: Public (để share certificate)
+ * QUAN TRỌNG: Route này phải ĐẶT SAU /course/:courseId
+ */
+router.get(
+  "/:certificateId",
+  readLimiter,
+  certificateController.getCertificateById
 );
 
 /**

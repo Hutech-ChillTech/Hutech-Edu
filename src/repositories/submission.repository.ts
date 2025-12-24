@@ -118,18 +118,19 @@ export class SubmissionRepository extends BaseRepository<
 
   /**
    * Kiểm tra xem user đã làm quiz này chưa
+   * Trả về submission nếu có, null nếu chưa làm
    */
   async hasUserSubmittedQuiz(
     userId: string,
     chapterQuizId: string
-  ): Promise<boolean> {
+  ): Promise<Submission | null> {
     const submission = await this.prisma.submission.findFirst({
       where: {
         userId,
         chapterQuizId,
       },
     });
-    return !!submission;
+    return submission;
   }
 
   /**

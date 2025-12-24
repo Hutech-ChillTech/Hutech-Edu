@@ -90,6 +90,11 @@ model User {
   inactivityWarnings    InactivityWarning[]      // Cảnh báo không hoạt động
   xpTransactions        XPTransaction[]          // Lịch sử nhận XP
   achievements          UserAchievement[]        // Thành tích đạt được
+  
+  // Blog relations
+  blogPosts             BlogPost[]               // Bài viết blog đã tạo
+  blogLikes             BlogLike[]               // Bài viết đã like
+  blogBookmarks         BlogBookmark[]           // Bài viết đã bookmark
 
   @@index([email])
   @@index([userName])
@@ -168,6 +173,7 @@ model Course {
   userCoursePreviews    UserCoursePreview[]
   learningPathCourses   LearningPathCourse[]   // Khóa học thuộc lộ trình nào
   payments              Payment[]              // Thanh toán cho khóa học
+  courseTags            CourseTag[]            // Tags của khóa học (many-to-many)
 
   @@index([courseName])
 }
@@ -196,16 +202,17 @@ model Lesson {
   updated_at     DateTime @updatedAt
 
   chapter         Chapter  @relation(fields: [chapterId], references: [chapterId], onDelete: Cascade)
-  testCodes       TestCode[]
+  testCases       TestCases[]
   lessonsProgress UserLessonProgress[]
 }
 
-model TestCode {
-  testCodeId     String @id @default(uuid()) @db.Uuid
+model TestCases {
+  testCaseId     String @id @default(uuid()) @db.Uuid
   description    String?
   input          String?
   expectedOutput String?
   lessonId       String @db.Uuid
+  testCodes       String?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
@@ -216,7 +223,7 @@ model TestCode {
 model CodeSubmission {
   submissionId     String    @id @default(uuid()) @db.Uuid
   userId           String    @db.Uuid
-  testCodeId       String    @db.Uuid
+  testCaseId       String    @db.Uuid
   source_code      String?   
   language_id      Int?      
   stdin            String?   
@@ -233,25 +240,28 @@ model CodeSubmission {
   updated_at       DateTime  @updatedAt
 
   user             User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  testCode         TestCode  @relation(fields: [testCodeId], references: [testCodeId], onDelete: Cascade)
+  testCases         TestCases  @relation(fields: [testCaseId], references: [testCaseId], onDelete: Cascade)
 }
 
 model Comment {
-  commentId  String @id @default(uuid()) @db.Uuid
-  courseId   String @db.Uuid
-  userId     String @db.Uuid
-  content    String
-  rating     Int?   @db.Integer  // Rating từ 1-5 sao (chỉ cho comment gốc)
-  parentId   String? @db.Uuid     // ID của comment cha (null nếu là comment gốc)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  commentId   String @id @default(uuid()) @db.Uuid
+  courseId    String? @db.Uuid              // Optional - cho course comments
+  blogPostId  String? @db.Uuid              // Optional - cho blog comments
+  userId      String @db.Uuid
+  content     String
+  rating      Int?   @db.Integer            // Rating từ 1-5 sao (chỉ cho comment gốc)
+  parentId    String? @db.Uuid              // ID của comment cha (null nếu là comment gốc)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  course  Course    @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [commentId], onDelete: Cascade)
-  replies Comment[] @relation("CommentReplies")
+  user      User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course    Course?    @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  blogPost  BlogPost?  @relation(fields: [blogPostId], references: [blogPostId], onDelete: Cascade)
+  parent    Comment?   @relation("CommentReplies", fields: [parentId], references: [commentId], onDelete: Cascade)
+  replies   Comment[]  @relation("CommentReplies")
 
   @@index([courseId])
+  @@index([blogPostId])
   @@index([userId])
   @@index([parentId])
 }
@@ -725,4 +735,213 @@ model LevelRequirement {
 
   @@unique([level])
   @@index([minXP])
+}
+
+// TAG & CATEGORY SYSTEM (Shared for Course & Blog)
+// ========================================
+
+// Tag chung cho cả Course và Blog (VD: nodejs, react, python, ai, etc.)
+model Tag {
+  tagId         String @id @default(uuid()) @db.Uuid
+  name          String @unique                // "Node.js", "React", "Python"
+  slug          String @unique                // "nodejs", "react", "python"
+  description   String?                       // Mô tả tag
+  
+  // Type phân loại
+  type          TagType @default(GENERAL)     // COURSE, BLOG, GENERAL
+  
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  
+  // Relations
+  courseTags    CourseTag[]
+  blogTags      BlogPostTag[]
+  
+  @@index([slug])
+  @@index([type])
+  @@index([name])
+}
+
+enum TagType {
+  COURSE      // Chỉ dùng cho Course
+  BLOG        // Chỉ dùng cho Blog
+  GENERAL     // Dùng chung
+}
+
+// Category cho Blog (VD: Tutorial, News, Best Practices, etc.)
+model Category {
+  categoryId    String @id @default(uuid()) @db.Uuid
+  name          String @unique                // "Tutorial", "News", "Best Practices"
+  slug          String @unique                // "tutorial", "news", "best-practices"
+  description   String?                       // Mô tả category
+  
+  // Hierarchy (optional - cho nested categories)
+  parentId      String? @db.Uuid              // Category cha (null = root)
+  orderIndex    Int @default(0)               // Thứ tự hiển thị
+  
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  
+  // Relations
+  parent        Category?  @relation("CategoryHierarchy", fields: [parentId], references: [categoryId], onDelete: SetNull)
+  children      Category[] @relation("CategoryHierarchy")
+  blogPosts     BlogPostCategory[]
+  
+  @@index([slug])
+  @@index([parentId])
+  @@index([orderIndex])
+}
+
+
+
+// ========================================
+// BLOG SYSTEM
+// ========================================
+
+// Blog Post
+model BlogPost {
+  blogPostId    String @id @default(uuid()) @db.Uuid
+  
+  // Content
+  title         String                        // Tiêu đề
+  slug          String @unique                // URL-friendly slug
+  content       String @db.Text               // Nội dung (Markdown hoặc HTML)
+  excerpt       String?                       // Tóm tắt ngắn
+  coverImage    String?                       // Ảnh bìa
+  
+  // SEO
+  metaTitle       String?                     // SEO title
+  metaDescription String?                     // SEO description
+  metaKeywords    String?                     // SEO keywords
+  
+  // Status & Publishing
+  status        BlogStatus @default(DRAFT)    // DRAFT, PUBLISHED, ARCHIVED
+  publishedAt   DateTime?                     // Thời gian xuất bản
+  scheduledAt   DateTime?                     // Lên lịch xuất bản
+  
+  // Stats
+  viewCount     Int @default(0)               // Lượt xem
+  likeCount     Int @default(0)               // Lượt thích
+  commentCount  Int @default(0)               // Số comment
+  bookmarkCount Int @default(0)               // Số lượt bookmark
+  shareCount    Int @default(0)               // Số lượt share
+  readingTime   Int?                          // Thời gian đọc (phút)
+  
+  // Author
+  authorId      String @db.Uuid
+  
+  // Featured
+  isFeatured    Boolean @default(false)       // Bài viết nổi bật
+  isPinned      Boolean @default(false)       // Ghim lên đầu
+  
+  // Timestamps
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  
+  // Relations
+  author        User              @relation(fields: [authorId], references: [userId], onDelete: Cascade)
+  categories    BlogPostCategory[]
+  tags          BlogPostTag[]
+  comments      Comment[]         // Tái sử dụng Comment model
+  likes         BlogLike[]
+  bookmarks     BlogBookmark[]
+  
+  @@index([slug])
+  @@index([authorId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([viewCount])
+  @@index([isFeatured])
+  @@index([isPinned])
+  @@index([created_at])
+}
+
+enum BlogStatus {
+  DRAFT       // Bản nháp
+  PUBLISHED   // Đã xuất bản
+  ARCHIVED    // Lưu trữ
+  SCHEDULED   // Đã lên lịch
+}
+
+// Many-to-Many: BlogPost <-> Category
+model BlogPostCategory {
+  id            String @id @default(uuid()) @db.Uuid
+  blogPostId    String @db.Uuid
+  categoryId    String @db.Uuid
+  
+  created_at    DateTime @default(now())
+  
+  blogPost      BlogPost @relation(fields: [blogPostId], references: [blogPostId], onDelete: Cascade)
+  category      Category @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade)
+  
+  @@unique([blogPostId, categoryId])
+  @@index([blogPostId])
+  @@index([categoryId])
+}
+
+// Many-to-Many: BlogPost <-> Tag
+model BlogPostTag {
+  id            String @id @default(uuid()) @db.Uuid
+  blogPostId    String @db.Uuid
+  tagId         String @db.Uuid
+  
+  created_at    DateTime @default(now())
+  
+  blogPost      BlogPost @relation(fields: [blogPostId], references: [blogPostId], onDelete: Cascade)
+  tag           Tag      @relation(fields: [tagId], references: [tagId], onDelete: Cascade)
+  
+  @@unique([blogPostId, tagId])
+  @@index([blogPostId])
+  @@index([tagId])
+}
+
+// Many-to-Many: Course <-> Tag (Migration từ String sang Table)
+model CourseTag {
+  id            String @id @default(uuid()) @db.Uuid
+  courseId      String @db.Uuid
+  tagId         String @db.Uuid
+  
+  created_at    DateTime @default(now())
+  
+  course        Course @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  tag           Tag    @relation(fields: [tagId], references: [tagId], onDelete: Cascade)
+  
+  @@unique([courseId, tagId])
+  @@index([courseId])
+  @@index([tagId])
+}
+
+// Blog Likes
+model BlogLike {
+  id            String @id @default(uuid()) @db.Uuid
+  blogPostId    String @db.Uuid
+  userId        String @db.Uuid
+  
+  created_at    DateTime @default(now())
+  
+  blogPost      BlogPost @relation(fields: [blogPostId], references: [blogPostId], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@unique([blogPostId, userId])
+  @@index([blogPostId])
+  @@index([userId])
+}
+
+// Blog Bookmarks
+model BlogBookmark {
+  id            String @id @default(uuid()) @db.Uuid
+  blogPostId    String @db.Uuid
+  userId        String @db.Uuid
+  
+  note          String?                       // Ghi chú cá nhân
+  
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  
+  blogPost      BlogPost @relation(fields: [blogPostId], references: [blogPostId], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@unique([blogPostId, userId])
+  @@index([blogPostId])
+  @@index([userId])
 }

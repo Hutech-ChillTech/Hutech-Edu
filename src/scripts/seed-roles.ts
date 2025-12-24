@@ -13,6 +13,7 @@ const ADMIN_ACCOUNTS = [
     level: Level.Advanced,
     specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2000-01-01"),
+    avatarURL: "/assest/admin.jpg",
   },
   {
     userName: "admin2",
@@ -23,6 +24,7 @@ const ADMIN_ACCOUNTS = [
     level: Level.Advanced,
     specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2000-05-15"),
+    avatarURL: "/assest/admin.jpg",
   },
   {
     userName: "admin3",
@@ -33,6 +35,7 @@ const ADMIN_ACCOUNTS = [
     level: Level.Advanced,
     specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2000-10-20"),
+    avatarURL: "/assest/admin.jpg",
   },
 ];
 
@@ -46,6 +49,7 @@ const USER_ACCOUNTS = [
     level: Level.Basic,
     specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2002-03-15"),
+    avatarURL: "/assest/user.png",
   },
   {
     userName: "user2",
@@ -56,36 +60,40 @@ const USER_ACCOUNTS = [
     level: Level.Intermediate,
     specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2001-07-20"),
+    avatarURL: "/assest/user.png",
   },
   {
     userName: "user3",
     email: "user3@hutech.edu.vn",
     password: "User@123",
     gender: Gender.MALE,
-    region: "Việt Nam",
+    region: "Korean",
     level: Level.Basic,
-    specialization: "Marketing",
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2003-11-05"),
+    avatarURL: "/assest/user.png",
   },
   {
     userName: "user4",
     email: "user4@hutech.edu.vn",
     password: "User@123",
     gender: Gender.FEMALE,
-    region: "Việt Nam",
+    region: "Japan",
     level: Level.Intermediate,
-    specialization: "Thiết kế đồ họa",
+    specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2002-09-12"),
+    avatarURL: "/assest/user.png",
   },
   {
     userName: "user5",
     email: "user5@hutech.edu.vn",
     password: "User@123",
     gender: Gender.MALE,
-    region: "Việt Nam",
+    region: "Canada",
     level: Level.Advanced,
     specialization: "Công nghệ thông tin",
     dateOfBirth: new Date("2001-12-25"),
+    avatarURL: "/assest/user.png",
   },
 ];
 
@@ -164,6 +172,7 @@ async function seedRoles() {
           level: adminData.level,
           specialization: adminData.specialization,
           dateOfBirth: adminData.dateOfBirth,
+          avatarURL: adminData.avatarURL,
         },
       });
 
@@ -211,6 +220,7 @@ async function seedRoles() {
           level: userData.level,
           specialization: userData.specialization,
           dateOfBirth: userData.dateOfBirth,
+          avatarURL: userData.avatarURL,
         },
       });
 

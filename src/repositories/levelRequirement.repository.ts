@@ -89,21 +89,21 @@ class LevelRequirementRepository extends BaseRepository<
         minXP: 0,
         maxXP: 1000,
         title: "Beginner",
-        perks: { discount: 0, badge: "🌱" },
+        perks: { discount: 0, badge: "/icon/begin.png", description: "Người mới bắt đầu" },
       },
       {
         level: "Intermediate" as Level,
         minXP: 1000,
         maxXP: 5000,
         title: "Intermediate",
-        perks: { discount: 5, badge: "⭐" },
+        perks: { discount: 5, badge: "/icon/mid.png", description: "Học viên trung cấp - Giảm giá 5%" },
       },
       {
         level: "Advanced" as Level,
         minXP: 5000,
         maxXP: null,
         title: "Expert",
-        perks: { discount: 10, badge: "🏆" },
+        perks: { discount: 10, badge: "/icon/high.png", description: "Chuyên gia - Giảm giá 10%" },
       },
     ];
 

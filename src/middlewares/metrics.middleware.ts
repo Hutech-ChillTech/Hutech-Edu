@@ -5,7 +5,7 @@ import { recordHttpRequest } from '../configs/metrics.config.js';
  * 📊 METRICS MIDDLEWARE
  * 
  * Middleware này tự động ghi lại metrics cho mỗi HTTP request:
- * - Thời gian response
+ * - Thời gian response 
  * - Status code
  * - Route path
  * - HTTP method

@@ -7,14 +7,14 @@ async function seedGamification() {
 
   try {
     // 1. Seed Level Requirements
-    console.log("📊 Seed Level Requirements...");
+    console.log("Seed Level Requirements...");
     const levelRequirements = [
       {
         level: "Basic" as Level,
         minXP: 0,
         maxXP: 1000,
         title: "Beginner",
-        perks: { discount: 0, badge: "🌱", description: "Người mới bắt đầu" },
+        perks: { discount: 0, badge: "/icon/begin.png", description: "Người mới bắt đầu" },
       },
       {
         level: "Intermediate" as Level,
@@ -23,7 +23,7 @@ async function seedGamification() {
         title: "Intermediate",
         perks: {
           discount: 5,
-          badge: "⭐",
+          badge: "/icon/mid.png",
           description: "Học viên trung cấp - Giảm giá 5%",
         },
       },
@@ -34,7 +34,7 @@ async function seedGamification() {
         title: "Expert",
         perks: {
           discount: 10,
-          badge: "🏆",
+          badge: "/icon/high.png",
           description: "Chuyên gia - Giảm giá 10%",
         },
       },
@@ -47,18 +47,18 @@ async function seedGamification() {
         create: levelData,
       });
       console.log(
-        `   ✅ Level "${levelData.level}" - ${levelData.title} (${levelData.minXP} XP)`
+        `Level "${levelData.level}" - ${levelData.title} (${levelData.minXP} XP)`
       );
     }
 
     // 2. Seed Achievements
-    console.log("\n🏅 Seed Achievements...");
+    console.log("\n Seed Achievements...");
     const achievements = [
       // Lesson Achievements
       {
         name: "First Steps",
         description: "Hoàn thành bài học đầu tiên",
-        icon: "👶",
+        icon: "/icon/firststeps.png",
         xpReward: 25,
         category: "lesson",
         requirement: { type: "complete_lessons", count: 1 },
@@ -68,7 +68,7 @@ async function seedGamification() {
       {
         name: "Beginner",
         description: "Hoàn thành 5 bài học",
-        icon: "🎯",
+        icon: "/icon/beginner.png",
         xpReward: 50,
         category: "lesson",
         requirement: { type: "complete_lessons", count: 5 },
@@ -78,7 +78,7 @@ async function seedGamification() {
       {
         name: "Lesson Master",
         description: "Hoàn thành 50 bài học",
-        icon: "📚",
+        icon: "/icon/lessonmaster.png",
         xpReward: 200,
         category: "lesson",
         requirement: { type: "complete_lessons", count: 50 },
@@ -88,7 +88,7 @@ async function seedGamification() {
       {
         name: "Lesson Legend",
         description: "Hoàn thành 100 bài học",
-        icon: "⚡",
+        icon: "/icon/lessonlegend.png",
         xpReward: 500,
         category: "lesson",
         requirement: { type: "complete_lessons", count: 100 },
@@ -100,7 +100,7 @@ async function seedGamification() {
       {
         name: "Course Starter",
         description: "Hoàn thành khóa học đầu tiên",
-        icon: "🎓",
+        icon: "/icon/coursestarter.png",
         xpReward: 150,
         category: "course",
         requirement: { type: "complete_courses", count: 1 },
@@ -110,7 +110,7 @@ async function seedGamification() {
       {
         name: "Course Enthusiast",
         description: "Hoàn thành 5 khóa học",
-        icon: "🌟",
+        icon: "/icon/courseenthusiast.png",
         xpReward: 300,
         category: "course",
         requirement: { type: "complete_courses", count: 5 },
@@ -120,7 +120,7 @@ async function seedGamification() {
       {
         name: "Course Master",
         description: "Hoàn thành 10 khóa học",
-        icon: "🏆",
+        icon: "/icon/coursemaster.png",
         xpReward: 750,
         category: "course",
         requirement: { type: "complete_courses", count: 10 },
@@ -130,7 +130,7 @@ async function seedGamification() {
       {
         name: "Course Champion",
         description: "Hoàn thành 20 khóa học",
-        icon: "👑",
+        icon: "/icon/coursechampion.png",
         xpReward: 1500,
         category: "course",
         requirement: { type: "complete_courses", count: 20 },
@@ -142,7 +142,7 @@ async function seedGamification() {
       {
         name: "Quiz Champion",
         description: "Đạt điểm pass 10 quiz",
-        icon: "🎯",
+        icon: "/icon/quizchampion.png",
         xpReward: 100,
         category: "quiz",
         requirement: { type: "pass_quizzes", count: 10 },
@@ -152,7 +152,7 @@ async function seedGamification() {
       {
         name: "Perfect Score",
         description: "Đạt 100% điểm 5 quiz",
-        icon: "💯",
+        icon: "/icon/perfectscore.png",
         xpReward: 250,
         category: "quiz",
         requirement: { type: "perfect_quizzes", count: 5 },
@@ -162,7 +162,7 @@ async function seedGamification() {
       {
         name: "Quiz Master",
         description: "Đạt điểm pass 50 quiz",
-        icon: "🎓",
+        icon: "/icon/quizmaster.png",
         xpReward: 500,
         category: "quiz",
         requirement: { type: "pass_quizzes", count: 50 },
@@ -174,7 +174,7 @@ async function seedGamification() {
       {
         name: "Speed Learner",
         description: "Hoàn thành khóa học trong 7 ngày",
-        icon: "⚡",
+        icon: "/icon/speedlearner.png",
         xpReward: 200,
         category: "speed",
         requirement: { type: "complete_course_fast", days: 7 },
@@ -184,7 +184,7 @@ async function seedGamification() {
       {
         name: "Lightning Fast",
         description: "Hoàn thành khóa học trong 3 ngày",
-        icon: "🚀",
+        icon: "/icon/lightningfast.png",
         xpReward: 500,
         category: "speed",
         requirement: { type: "complete_course_fast", days: 3 },
@@ -200,12 +200,12 @@ async function seedGamification() {
         create: achievementData,
       });
       console.log(
-        `   ✅ Achievement "${achievementData.name}" [${achievementData.rarity}] - ${achievementData.xpReward} XP`
+        `Achievement "${achievementData.name}" [${achievementData.rarity}] - ${achievementData.xpReward} XP`
       );
     }
 
     // 3. Update existing users với default gamification fields
-    console.log("\n👤 Cập nhật users với default gamification data...");
+    console.log("\nCập nhật users với default gamification data...");
     await Prisma.user.updateMany({
       data: {
         experiencePoints: 0,
@@ -214,11 +214,11 @@ async function seedGamification() {
         totalCoursesCompleted: 0,
       },
     });
-    console.log(`   ✅ Đã cập nhật tất cả users`);
+    console.log(`Đã cập nhật tất cả users`);
 
-    console.log("\n🎉 Hoàn tất seed gamification data!");
+    console.log("\nHoàn tất seed gamification data!");
   } catch (error) {
-    console.error("❌ Lỗi khi seed gamification:", error);
+    console.error("Lỗi khi seed gamification:", error);
     throw error;
   } finally {
     await Prisma.$disconnect();
@@ -227,10 +227,10 @@ async function seedGamification() {
 
 seedGamification()
   .then(() => {
-    console.log("\n✅ Seed completed successfully!");
+    console.log("\nSeed completed successfully!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error("\n❌ Seed failed:", error);
+    console.error("\nSeed failed:", error);
     process.exit(1);
   });

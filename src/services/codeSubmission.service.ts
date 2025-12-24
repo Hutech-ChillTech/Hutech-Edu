@@ -20,7 +20,7 @@ class CodeSubmissionService {
       source_code: data.source_code,
       language_id: data.language_id,
       user: { connect: { userId: data.userId } },
-      testCode: { connect: { testCodeId: data.testCaseId } },
+      testCases: { connect: { testCaseId: data.testCaseId } },
     });
   }
 

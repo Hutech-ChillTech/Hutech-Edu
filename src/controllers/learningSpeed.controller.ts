@@ -24,11 +24,12 @@ class LearningSpeedController {
       return sendSuccess(
         res,
         {
-          speedScore: result.speedResult.speedScore,
-          learningSpeed: result.speedResult.learningSpeed,
-          recommendations: result.recommendations,
+          currentCourse: result.currentCourse,
+          recommendedLevel: result.recommendedLevel,
+          reason: result.reason,
+          courses: result.courses,
         },
-        "Tính toán learning speed thành công"
+        "Lấy gợi ý khóa học thành công"
       );
     } catch (error: any) {
       return sendError(res, error.message, 500);
@@ -149,6 +150,11 @@ class LearningSpeedController {
       return sendError(res, error.message, 500);
     }
   }
+  /**
+   * POST /api/learning-speed/on-course-completed
+   * Alias của calculateSpeed - tự động tính learning speed khi hoàn thành khóa học
+   */
+  onCourseCompleted = this.calculateSpeed;
 }
 
 export default new LearningSpeedController();
