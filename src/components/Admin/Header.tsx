@@ -6,7 +6,6 @@ import {
   Avatar,
   Space,
   Input,
-  Badge,
   Typography,
   Modal,
 } from "antd";
@@ -15,7 +14,6 @@ import {
   MenuUnfoldOutlined,
   UserOutlined,
   LogoutOutlined,
-  BellOutlined,
   SearchOutlined,
   SettingOutlined,
   LockOutlined,
@@ -148,13 +146,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, collapsed }) => {
           allowClear
         />
 
-        <Badge count={5} offset={[-5, 5]}>
-          <Button
-            type="text"
-            icon={<BellOutlined style={{ fontSize: 18 }} />}
-            style={{ width: 40, height: 40 }}
-          />
-        </Badge>
+       
 
         <Dropdown
           menu={{ items: userMenuItems, onClick: handleMenuClick }}

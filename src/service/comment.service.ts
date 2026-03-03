@@ -11,7 +11,8 @@ export interface User {
 
 export interface Comment {
   commentId: string;
-  courseId: string;
+  courseId?: string; // Optional - for course comments
+  blogPostId?: string; // Optional - for blog comments
   userId: string;
   content: string;
   rating: number | null;
@@ -117,6 +118,49 @@ class CommentService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  // ============ BLOG POST COMMENTS ============
+
+  // Lấy tất cả comments của blog post (Public)
+  async getCommentsByBlogPost(blogPostId: string): Promise<Comment[]> {
+    const response = await axios.get(
+      `${API_URL}/comments/blog/${blogPostId}`
+    );
+    return response.data.data;
+  }
+
+  // Tạo comment cho blog post (Private)
+  async createBlogComment(
+    blogPostId: string,
+    content: string
+  ): Promise<Comment> {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      `${API_URL}/comments`,
+      { blogPostId, content },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data.data;
+  }
+
+  // Tạo reply cho blog comment (Private)
+  async createBlogReply(
+    commentId: string,
+    content: string
+  ): Promise<Comment> {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      `${API_URL}/comments/${commentId}/reply`,
+      { content },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data.data;
+  }
 }
 
 export const commentService = new CommentService();
+

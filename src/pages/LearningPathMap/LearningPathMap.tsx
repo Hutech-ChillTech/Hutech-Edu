@@ -1,22 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Code,
-  Palette,
-  Server,
-  Smartphone,
-  Database,
-  Brain,
-  Globe,
-  Rocket,
-  Lock,
-  CheckCircle,
-  Clock,
-  Award,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-} from "lucide-react";
+  CodeOutlined,
+  BgColorsOutlined,
+  CloudServerOutlined,
+  MobileOutlined,
+  DatabaseOutlined,
+  BulbOutlined,
+  GlobalOutlined,
+  RocketOutlined,
+  LockOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  TrophyOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  ExpandOutlined,
+} from "@ant-design/icons";
 import styles from "../../styles/LearningPathMap.module.css";
 import { learningPathService } from "../../service/learningPath.service";
 
@@ -65,13 +65,13 @@ const LearningPathMap = () => {
 
   const getPathIcon = (pathTitle: string) => {
     const title = pathTitle.toLowerCase();
-    if (title.includes("frontend") || title.includes("web")) return Code;
-    if (title.includes("backend") || title.includes("server")) return Server;
-    if (title.includes("mobile") || title.includes("app")) return Smartphone;
-    if (title.includes("ui") || title.includes("ux") || title.includes("design")) return Palette;
-    if (title.includes("ai") || title.includes("ml") || title.includes("machine")) return Brain;
-    if (title.includes("data") || title.includes("database")) return Database;
-    return Code;
+    if (title.includes("frontend") || title.includes("web")) return CodeOutlined;
+    if (title.includes("backend") || title.includes("server")) return CloudServerOutlined;
+    if (title.includes("mobile") || title.includes("app")) return MobileOutlined;
+    if (title.includes("ui") || title.includes("ux") || title.includes("design")) return BgColorsOutlined;
+    if (title.includes("ai") || title.includes("ml") || title.includes("machine")) return BulbOutlined;
+    if (title.includes("data") || title.includes("database")) return DatabaseOutlined;
+    return CodeOutlined;
   };
 
   const getPathColor = (level: string) => {
@@ -121,10 +121,10 @@ const LearningPathMap = () => {
   };
 
   const getStatusIcon = (status: string) => {
-    if (status === "completed") return <CheckCircle className={styles.statusIcon} />;
-    if (status === "in-progress") return <Clock className={styles.statusIcon} />;
-    if (status === "locked") return <Lock className={styles.statusIcon} />;
-    return <Rocket className={styles.statusIcon} />;
+    if (status === "completed") return <CheckCircleOutlined className={styles.statusIcon} />;
+    if (status === "in-progress") return <ClockCircleOutlined className={styles.statusIcon} />;
+    if (status === "locked") return <LockOutlined className={styles.statusIcon} />;
+    return <RocketOutlined className={styles.statusIcon} />;
   };
 
   const handleCourseClick = (course: any) => {
@@ -163,7 +163,7 @@ const LearningPathMap = () => {
     return (
       <div className={styles.page}>
         <div className={styles.header}>
-          <h1 className={styles.title}><Globe className={styles.spin} /> Đang tải dữ liệu...</h1>
+          <h1 className={styles.title}><GlobalOutlined className={styles.spin} /> Đang tải dữ liệu...</h1>
         </div>
       </div>
     );
@@ -183,7 +183,7 @@ const LearningPathMap = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}><Globe className={styles.spin} /> Bản Đồ Lộ Trình Học Tập</h1>
+        <h1 className={styles.title}><GlobalOutlined className={styles.spin} /> Bản Đồ Lộ Trình Học Tập</h1>
         <p className={styles.subtitle}>Tất cả bắt đầu từ trung tâm - Chọn hướng đi của bạn!</p>
       </div>
 
@@ -200,9 +200,9 @@ const LearningPathMap = () => {
       </div>
 
       <div className={styles.zoomControls}>
-        <button onClick={handleZoomIn} className={styles.zoomButton} title="Phóng to"><ZoomIn size={20} /></button>
-        <button onClick={handleZoomOut} className={styles.zoomButton} title="Thu nhỏ"><ZoomOut size={20} /></button>
-        <button onClick={handleResetZoom} className={styles.zoomButton} title="Đặt lại"><Maximize2 size={20} /></button>
+        <button onClick={handleZoomIn} className={styles.zoomButton} title="Phóng to"><ZoomInOutlined style={{ fontSize: 20 }} /></button>
+        <button onClick={handleZoomOut} className={styles.zoomButton} title="Thu nhỏ"><ZoomOutOutlined style={{ fontSize: 20 }} /></button>
+        <button onClick={handleResetZoom} className={styles.zoomButton} title="Đặt lại"><ExpandOutlined style={{ fontSize: 20 }} /></button>
         <div className={styles.zoomLevel}>{Math.round(zoom * 100)}%</div>
       </div>
 
@@ -221,8 +221,8 @@ const LearningPathMap = () => {
 
           <div className={styles.hub} style={{ left: `${hub.x}%`, top: `${hub.y}%` }}>
             <div className={styles.hubPulse}></div>
-            <div className={styles.hubMain}><Award className={styles.hubIcon} /></div>
-            <div className={styles.hubLabel}>🚀 Bắt Đầu</div>
+            <div className={styles.hubMain}><TrophyOutlined className={styles.hubIcon} /></div>
+            <div className={styles.hubLabel}>Bắt Đầu</div>
           </div>
 
           {sharedCourses.map((course) => {
@@ -231,7 +231,7 @@ const LearningPathMap = () => {
             return (
               <div key={course.id} style={{ left: `${course.x}%`, top: `${course.y}%` }} className={styles.nodeWrapper}>
                 <div className={`${styles.courseNode} ${hoveredCourse === course.id ? styles.hoveredNode : ""} ${course.status === "locked" ? styles.lockedNode : ""}`} onMouseEnter={() => setHoveredCourse(course.id)} onMouseLeave={() => setHoveredCourse(null)} onClick={() => handleCourseClick(course)}>
-                  <Database className={styles.nodeIcon} />
+                  <DatabaseOutlined className={styles.nodeIcon} />
                   <div className={`${styles.statusBadge} ${getStatusColor(course.status)}`}>{getStatusIcon(course.status)}</div>
                   <div className={styles.sharedBadge}>CHUNG</div>
                   <div className={styles.courseLabel}>{course.title}</div>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Admin/Sidebar";
 import Header from "../components/Admin/Header";
+import PageTransition from "../components/PageTransition/PageTransition";
 import styles from "../styles/AdminStyle.module.css";
 
 const AdminLayout: React.FC = () => {
@@ -16,7 +17,9 @@ const AdminLayout: React.FC = () => {
           collapsed={!sidebarVisible}
         />
         <div className="container-fluid mt-4">
-          <Outlet /> {/* Route con sẽ render ở đây */}
+          <PageTransition>
+            <Outlet /> {/* Route con sẽ render ở đây */}
+          </PageTransition>
         </div>
       </div>
     </div>

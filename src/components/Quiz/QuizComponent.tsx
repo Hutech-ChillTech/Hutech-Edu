@@ -6,6 +6,7 @@ interface QuizQuestion {
   questionId: string;
   questionText: string;
   options: string[];
+  optionIds: string[]; // ✅ Thêm để lưu option IDs
   correctAnswer: number;
   explanation?: string;
   points?: number;
@@ -29,6 +30,7 @@ const QuizComponent: React.FC<QuizComponentProps> = ({
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(true);
   const [quizTitle, setQuizTitle] = useState<string>("");
+  const [quizId, setQuizId] = useState<string>("");
 
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -44,6 +46,7 @@ const QuizComponent: React.FC<QuizComponentProps> = ({
 
         const quiz = quizzes[0];
         setQuizTitle(quiz.title || "Bài trắc nghiệm");
+        setQuizId(quiz.chapterQuizId); // ✅ Lưu quizId
 
         const questionsData = await quizService.getQuestionsByQuiz(
           quiz.chapterQuizId
@@ -66,6 +69,7 @@ const QuizComponent: React.FC<QuizComponentProps> = ({
               questionId: q.quizQuestionId,
               questionText: q.questionText,
               options: options.map((opt: any) => opt.optionText),
+              optionIds: options.map((opt: any) => opt.quizOptionId), // ✅ Lưu option IDs
               correctAnswer: correctIndex,
               points: q.points || 1,
             };
@@ -105,14 +109,45 @@ const QuizComponent: React.FC<QuizComponentProps> = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setShowResults(true);
+
+    // Calculate score
+    const { correct, total } = calculateScore();
+    const percentage = Math.round((correct / total) * 100);
+    const passed = percentage >= 70;
+
+    // ✅ GỌI API ĐỂ LƯU SUBMISSION
+    try {
+      console.log('📝 Submitting quiz to backend...');
+      
+      // Transform selectedAnswers to match backend format
+      // Backend expects: { questionId: optionId }
+      const answersPayload: { [questionId: string]: string } = {};
+      
+      for (let index = 0; index < questions.length; index++) {
+        const question = questions[index];
+        const selectedIndex = selectedAnswers[index];
+        
+        if (selectedIndex !== undefined && selectedIndex >= 0) {
+          // ✅ Dùng optionId thực từ backend
+          answersPayload[question.questionId] = question.optionIds[selectedIndex];
+        }
+      }
+
+      const result = await quizService.submitQuiz(
+        quizId,
+        answersPayload
+      );
+
+      console.log('✅ Quiz submission saved:', result);
+    } catch (error) {
+      console.error('❌ Error submitting quiz:', error);
+      // Continue even if submission fails
+    }
 
     // Trigger callback khi quiz hoàn thành
     if (onQuizComplete) {
-      const { correct, total } = calculateScore();
-      const percentage = Math.round((correct / total) * 100);
-      const passed = percentage >= 70;
       onQuizComplete(passed, percentage);
     }
   };

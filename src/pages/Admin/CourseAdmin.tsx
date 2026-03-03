@@ -89,7 +89,7 @@ const CourseAdmin: React.FC = () => {
       }
     } catch (error) {
       console.error(error);
-      message.error("❌ Lỗi khi tải danh sách khóa học!");
+      message.error("Lỗi khi tải danh sách khóa học!");
     }
   }, [token]);
 
@@ -152,13 +152,13 @@ const CourseAdmin: React.FC = () => {
         // Xử lý lỗi HTTP
         if (res.status === 404) {
           message.error(
-            "❌ API endpoint không tồn tại. Vui lòng kiểm tra backend!"
+            "API endpoint không tồn tại. Vui lòng kiểm tra backend!"
           );
           return;
         }
         const errorText = await res.text();
         console.error("Error response:", errorText);
-        message.error(`❌ Lỗi ${res.status}: ${res.statusText}`);
+        message.error(`Lỗi ${res.status}: ${res.statusText}`);
         return;
       }
 
@@ -167,8 +167,8 @@ const CourseAdmin: React.FC = () => {
       if (data.success) {
         message.success(
           editingId
-            ? "✅ Cập nhật khóa học thành công!"
-            : "✅ Thêm khóa học thành công!"
+            ? "Cập nhật khóa học thành công!"
+            : "Thêm khóa học thành công!"
         );
         form.resetFields();
         setEditingId(null);
@@ -176,11 +176,11 @@ const CourseAdmin: React.FC = () => {
         setShowForm(false);
         fetchCourses();
       } else {
-        message.error(data.message || "❌ Lỗi khi lưu khóa học!");
+        message.error(data.message || "Lỗi khi lưu khóa học!");
       }
     } catch (err) {
       console.error(err);
-      message.error("❌ Lỗi khi lưu khóa học!");
+      message.error("Lỗi khi lưu khóa học!");
     }
   };
 
@@ -219,14 +219,14 @@ const CourseAdmin: React.FC = () => {
         const data = await res.json();
 
         if (data.success) {
-          message.success("🗑️ Xóa khóa học thành công!");
+          message.success("Xóa khóa học thành công!");
           fetchCourses();
         } else {
-          message.error(data.message || "❌ Lỗi khi xóa khóa học!");
+          message.error(data.message || "Lỗi khi xóa khóa học!");
         }
       } catch (err) {
         console.error(err);
-        message.error("❌ Không thể xóa khóa học!");
+        message.error("Không thể xóa khóa học!");
       }
     },
     [fetchCourses, token]
@@ -370,7 +370,7 @@ const CourseAdmin: React.FC = () => {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
       <Title level={3} style={{ marginBottom: 24 }}>
-        🎓 Quản lý Khóa học
+        Quản lý Khóa học
       </Title>
 
       <div style={{ textAlign: "right", marginBottom: 12 }}>
@@ -385,7 +385,7 @@ const CourseAdmin: React.FC = () => {
 
       {showForm && (
         <Card
-          title={editingId ? "✏️ Chỉnh sửa khóa học" : "➕ Thêm khóa học mới"}
+          title={editingId ? "Chỉnh sửa khóa học" : "Thêm khóa học mới"}
           variant="borderless" // ✅ Thay bordered={false}
           style={{
             borderRadius: "1rem",

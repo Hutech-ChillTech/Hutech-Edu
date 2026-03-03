@@ -17,6 +17,8 @@ import { courseService } from "../../service/course.service";
 import { lessonService } from "../../service/lesson.service";
 import QuizComponent from "../../components/Quiz/QuizComponent";
 import { progressService } from "../../service/progress.service";
+import { learningSpeedService } from "../../service/learningSpeed.service";
+import { certificateService } from "../../service/certificate.service";
 import XPNotification from "../../components/Gamification/XPNotification";
 import { useCourseTracking } from "../../hooks/useCourseTracking";
 
@@ -30,6 +32,11 @@ const PracticePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recommendedCourses, setRecommendedCourses] = useState<any[]>([]);
+  const [learningSpeed, setLearningSpeed] = useState<string>("");
+  const [recommendationReason, setRecommendationReason] = useState<string>("");
+  const [certificateURL, setCertificateURL] = useState<string>("");
+  const [actualHours, setActualHours] = useState<number>(0);
+  const [estimatedHours, setEstimatedHours] = useState<number>(0);
 
   const [currentLessonPos, setCurrentLessonPos] = useState({
     chapterIndex: 0,
@@ -271,14 +278,14 @@ const PracticePage: React.FC = () => {
           content: (
             <div>
               <h3 style={{ margin: 0, color: "#52c41a" }}>
-                🎉 Chúc mừng! Bạn đã hoàn thành khóa học!
+                Chúc mừng! Bạn đã hoàn thành khóa học!
               </h3>
               <p style={{ margin: "8px 0 0 0" }}>
                 Đây là bài học cuối cùng. Bạn nhận được 100 XP bonus!
               </p>
               {result.courseCompletionInfo && (
                 <p style={{ margin: "4px 0 0 0", fontSize: "13px" }}>
-                  ⏱️ Thời gian hoàn thành:{" "}
+                  Thời gian hoàn thành:{" "}
                   {result.courseCompletionInfo.totalHours.toFixed(1)} giờ
                 </p>
               )}
@@ -328,7 +335,6 @@ const PracticePage: React.FC = () => {
   if (!course) {
     return (
       <div className={styles.errorContainer}>
-        <div className={styles.errorIcon}>⚠️</div>
         <h2 className={styles.errorText}>Không tìm thấy khóa học</h2>
         <p className={styles.errorSubtext}>
           Vui lòng kiểm tra lại đường dẫn hoặc quay về trang chủ
@@ -399,21 +405,125 @@ const PracticePage: React.FC = () => {
               }
               lessonName={activeLesson?.lessonName || ""}
               onQuizComplete={async (passed, score) => {
-                console.log("Quiz completed:", { passed, score });
+                console.log("✅ Quiz completed:", { passed, score });
 
-                // Nếu quiz passed, check course progress
-                if (passed && courseId) {
+                if (courseId) {
                   try {
                     const courseProgress =
                       await progressService.getCourseProgress(courseId);
                     console.log(
-                      "Course progress after quiz:",
-                      courseProgress.progress
+                      "📊 Course progress after quiz:",
+                      courseProgress.progress,
+                      "%"
                     );
 
                     // Nếu đã hoàn thành 100% course
                     if (courseProgress.progress >= 100) {
                       console.log("🎉 Showing course completion modal!");
+
+                      // ✅ Fetch recommendations với cấu trúc API mới
+                      try {
+                        const token = localStorage.getItem("token");
+                        if (token) {
+                          const payload = JSON.parse(atob(token.split(".")[1]));
+                          const userId = payload.userId;
+
+                          const recommendations =
+                            await learningSpeedService.onCourseCompleted(
+                              userId,
+                              courseId
+                            );
+
+                          console.log("📚 Recommendations:", recommendations);
+
+                          // Sử dụng cấu trúc mới
+                          if (recommendations.courses) {
+                            setRecommendedCourses(recommendations.courses);
+                          }
+
+                          if (recommendations.actualHours) {
+                            setActualHours(recommendations.actualHours);
+                          }
+
+                          if (recommendations.estimatedHours) {
+                            setEstimatedHours(recommendations.estimatedHours);
+                          }
+
+                          if (recommendations.learningSpeed) {
+                            setLearningSpeed(recommendations.learningSpeed);
+
+                            const speedMap: { [key: string]: string } = {
+                              "Very Fast":
+                                "Bạn học rất nhanh! Gợi ý khóa học khó hơn 2 cấp độ",
+                              Fast: "Bạn học nhanh! Gợi ý khóa học khó hơn 1 cấp độ",
+                              Normal:
+                                "Tốc độ học bình thường. Gợi ý khóa học cùng cấp độ",
+                              Slow: "Gợi ý khóa học dễ hơn để củng cố kiến thức",
+                            };
+                            setRecommendationReason(
+                              speedMap[recommendations.learningSpeed] ||
+                                recommendations.reason ||
+                                "Gợi ý khóa học phù hợp"
+                            );
+                          }
+                        }
+                      } catch (err) {
+                        console.error("Error fetching recommendations:", err);
+                      }
+
+                      // ✅ Xử lý certificate với API mới
+                      try {
+                        if (courseId) {
+                          let certificate = null;
+
+                          // Thử tạo certificate mới
+                          try {
+                            console.log(
+                              "🔄 Attempting to issue certificate for course:",
+                              courseId
+                            );
+                            certificate =
+                              await certificateService.issueCertificate(
+                                courseId
+                              );
+                            console.log("✅ Certificate created:", certificate);
+                          } catch (issueError: any) {
+                            console.log(
+                              "⚠️ Certificate issue failed:",
+                              issueError.message
+                            );
+                            console.log(
+                              "Certificate already exists, fetching..."
+                            );
+                            // Nếu đã tồn tại, lấy certificate
+                            try {
+                              certificate =
+                                await certificateService.getUserCertificateInCourse(
+                                  courseId
+                                );
+                              console.log(
+                                "✅ Certificate retrieved:",
+                                certificate
+                              );
+                            } catch (fetchError: any) {
+                              console.error(
+                                "❌ Failed to fetch certificate:",
+                                fetchError.message
+                              );
+                            }
+                          }
+
+                          if (certificate?.pdfUrl) {
+                            // Backend đã trả về full URL từ Cloudinary
+                            setCertificateURL(certificate.pdfUrl);
+                            console.log("✅ Certificate PDF URL:", certificate.pdfUrl);
+                          } else {
+                            console.log("ℹ️ No certificate URL available yet");
+                          }
+                        }
+                      } catch (err) {
+                        console.error("❌ Error handling certificate:", err);
+                      }
 
                       // Set state để hiển thị modal
                       setCompletionScore(score);
@@ -451,7 +561,7 @@ const PracticePage: React.FC = () => {
                                     fontSize: "18px",
                                   }}
                                 >
-                                  🎉 Chúc mừng! Bạn đã hoàn thành khóa học!
+                                  Chúc mừng! Bạn đã hoàn thành khóa học!
                                 </h3>
                                 <p
                                   style={{
@@ -523,7 +633,7 @@ const PracticePage: React.FC = () => {
                   </div>
                 ) : (
                   <div className={styles.theoryPlaceholder}>
-                    <div className={styles.theoryIcon}>📚</div>
+                    <div className={styles.theoryIcon}></div>
                     <h4 className={styles.theoryTitle}>
                       {activeLesson?.lessonName}
                     </h4>
@@ -539,10 +649,10 @@ const PracticePage: React.FC = () => {
                       disabled={lessonCompleted || completingLesson}
                     >
                       {completingLesson
-                        ? "⏳ Đang xử lý..."
+                        ? "Đang xử lý..."
                         : lessonCompleted
-                        ? "✅ Đã hoàn thành"
-                        : "📝 Đánh dấu hoàn thành"}
+                        ? "Đã hoàn thành"
+                        : "Đánh dấu hoàn thành"}
                     </button>
                   </div>
                 )}
@@ -589,6 +699,49 @@ const PracticePage: React.FC = () => {
                     <p className={styles.recommendSubtitle}>
                       Dựa trên tốc độ học tập và trình độ hiện tại của bạn
                     </p>
+                    {actualHours > 0 && estimatedHours > 0 && (
+                      <div className={styles.learningSpeedInfo}>
+                        <div className={styles.speedDetail}>
+                          <span className={styles.speedLabel}>
+                            ⏱️ Thời gian học thực tế:
+                          </span>
+                          <span className={styles.speedValue}>
+                            {actualHours.toFixed(1)} giờ
+                          </span>
+                        </div>
+                        <div className={styles.speedDetail}>
+                          <span className={styles.speedLabel}>
+                            📊 Thời gian ước lượng:
+                          </span>
+                          <span className={styles.speedValue}>
+                            {estimatedHours.toFixed(1)} giờ
+                          </span>
+                        </div>
+                        <div className={styles.speedDetail}>
+                          <span className={styles.speedLabel}>
+                            🎯 Tốc độ học:
+                          </span>
+                          <span
+                            className={`${styles.speedValue} ${
+                              styles[
+                                learningSpeed.toLowerCase().replace(" ", "-")
+                              ]
+                            }`}
+                          >
+                            {learningSpeed === "Very Fast"
+                              ? "⚡ Rất Nhanh"
+                              : learningSpeed === "Fast"
+                              ? "🚀 Nhanh"
+                              : learningSpeed === "Normal"
+                              ? "✅ Bình Thường"
+                              : "🐢 Chậm"}
+                          </span>
+                        </div>
+                        <div className={styles.speedReason}>
+                          <p>{recommendationReason}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {recommendedCourses.length > 0 ? (
@@ -676,7 +829,7 @@ const PracticePage: React.FC = () => {
         onOk={() => setShowCompletionModal(false)}
         onCancel={() => setShowCompletionModal(false)}
         centered
-        width={500}
+        width={800}
         footer={[
           <button
             key="ok"
@@ -705,7 +858,6 @@ const PracticePage: React.FC = () => {
             color: "white",
           }}
         >
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</div>
           <h2
             style={{
               fontSize: "28px",
@@ -731,6 +883,118 @@ const PracticePage: React.FC = () => {
               Điểm số: <strong>{completionScore}%</strong>
             </p>
           </div>
+
+          {/* Learning Speed & Recommendations */}
+          {learningSpeed && (
+            <div style={{ marginTop: "20px", textAlign: "left" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ color: "white", fontSize: "20px", margin: 0 }}>
+                  📊 Tốc độ học: <strong>{learningSpeed}</strong>
+                </h3>
+                {certificateURL && (
+                  <button
+                    onClick={() => window.open(certificateURL, '_blank')}
+                    style={{
+                      padding: "6px 16px",
+                      background: "#f9b115",
+                      color: "#333",
+                      border: "none",
+                      borderRadius: "4px",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px"
+                    }}
+                  >
+                    🎓 Tải chứng chỉ
+                  </button>
+                )}
+              </div>
+              <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "14px" }}>
+                {recommendationReason}
+              </p>
+            </div>
+          )}
+
+          {recommendedCourses.length > 0 && (
+            <div style={{ marginTop: "20px" }}>
+              <h3
+                style={{
+                  color: "white",
+                  fontSize: "18px",
+                  marginBottom: "15px",
+                }}
+              >
+                🎯 Khóa học gợi ý cho bạn:
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                {recommendedCourses.slice(0, 3).map((course: any) => (
+                  <div
+                    key={course.courseId}
+                    style={{
+                      background: "rgba(255,255,255,0.15)",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onClick={() => {
+                      setShowCompletionModal(false);
+                      window.location.href = `/course/${course.courseId}`;
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(255,255,255,0.25)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(255,255,255,0.15)";
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontWeight: "600",
+                            color: "white",
+                            fontSize: "15px",
+                          }}
+                        >
+                          {course.courseName}
+                        </p>
+                        <p
+                          style={{
+                            margin: "4px 0 0 0",
+                            fontSize: "13px",
+                            color: "rgba(255,255,255,0.8)",
+                          }}
+                        >
+                          Cấp độ: {course.level}
+                        </p>
+                      </div>
+                      <span style={{ color: "white", fontSize: "18px" }}>
+                        →
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

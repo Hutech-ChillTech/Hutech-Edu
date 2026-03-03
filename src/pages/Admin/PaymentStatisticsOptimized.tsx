@@ -389,9 +389,123 @@ const PaymentStatisticsOptimized: React.FC = () => {
     }
   };
 
-  // Export data
-  const handleExportData = () => {
-    message.info("Tính năng xuất dữ liệu đang được phát triển");
+  // Helper function to remove Vietnamese diacritics for PDF
+  const removeVietnameseTones = (str: string): string => {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+  };
+
+  // Format currency for PDF (without special characters)
+  const formatCurrencyForPDF = (amount: number): string => {
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+  };
+
+  // Export data to PDF
+  const handleExportData = async () => {
+    try {
+      // Dynamic import
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(18);
+      doc.text('BAO CAO GIAO DICH', 14, 20);
+      
+      // Date range
+      doc.setFontSize(11);
+      doc.text(
+        `Thoi gian: ${dateRange[0].format('DD/MM/YYYY')} - ${dateRange[1].format('DD/MM/YYYY')}`,
+        14,
+        30
+      );
+
+      let currentY = 45;
+
+      // Overview statistics
+      if (overview) {
+        doc.setFontSize(14);
+        doc.text('TONG QUAN', 14, 40);
+        
+        const overviewData = [
+          ['Tong doanh thu', formatCurrencyForPDF(overview.totalRevenue)],
+          ['Tong giao dich', overview.totalTransactions.toString()],
+          ['Giao dich thanh cong', overview.successfulTransactions.toString()],
+          ['Giao dich that bai', overview.failedTransactions.toString()],
+          ['Giao dich cho xu ly', overview.pendingTransactions.toString()],
+        ];
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [['CHI TIEU', 'GIA TRI']],
+          body: overviewData,
+          theme: 'grid',
+          headStyles: { fillColor: [24, 144, 255] },
+        });
+
+        currentY = (doc as any).lastAutoTable.finalY + 15;
+      }
+
+      // Top courses
+      if (topCourses.length > 0) {
+        doc.setFontSize(14);
+        doc.text('TOP 10 KHOA HOC BAN CHAY', 14, currentY);
+
+        const coursesData = topCourses.map((course, index) => [
+          (index + 1).toString(),
+          removeVietnameseTones(course.courseName),
+          removeVietnameseTones(course.instructor),
+          formatCurrencyForPDF(course.totalRevenue),
+          course.totalSales.toString(),
+        ]);
+
+        autoTable(doc, {
+          startY: currentY + 5,
+          head: [['STT', 'KHOA HOC', 'GIANG VIEN', 'DOANH THU', 'LUOT BAN']],
+          body: coursesData,
+          theme: 'grid',
+          headStyles: { fillColor: [24, 144, 255] },
+        });
+      }
+
+      // Payments table
+      if (payments.length > 0) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text('DANH SACH GIAO DICH', 14, 20);
+
+        const paymentsData = payments.map((payment) => [
+          payment.transactionId || payment.orderId || payment.paymentId.slice(0, 8),
+          removeVietnameseTones(payment.user?.userName || 'N/A'),
+          removeVietnameseTones(payment.course?.courseName || 'N/A'),
+          formatCurrencyForPDF(payment.amount),
+          payment.paymentMethod,
+          payment.paymentStatus === 'COMPLETED' ? 'Thanh cong' : 
+          payment.paymentStatus === 'PENDING' ? 'Cho xu ly' : 'That bai',
+          dayjs(payment.created_at).format('DD/MM/YYYY'),
+        ]);
+
+        autoTable(doc, {
+          startY: 25,
+          head: [['MA GD', 'NGUOI DUNG', 'KHOA HOC', 'SO TIEN', 'PT', 'TRANG THAI', 'NGAY']],
+          body: paymentsData,
+          theme: 'grid',
+          headStyles: { fillColor: [24, 144, 255] },
+          styles: { fontSize: 8 },
+        });
+      }
+
+      // Save PDF
+      doc.save(`bao-cao-giao-dich-${dayjs().format('YYYY-MM-DD')}.pdf`);
+      message.success('Xuat du lieu thanh cong!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      message.error('Khong the xuat du lieu. Vui long thu lai!');
+    }
   };
 
   // Table columns
@@ -594,7 +708,7 @@ const PaymentStatisticsOptimized: React.FC = () => {
       >
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>
-            📊 Quản lý Giao dịch
+            Quản lý Giao dịch
           </h1>
         </div>
 
@@ -772,7 +886,7 @@ const PaymentStatisticsOptimized: React.FC = () => {
         {/* Top Courses and User Stats Tables */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={24} lg={12}>
-            <Card bordered={true} title="🏆 Top 10 Khóa Học Bán Chạy">
+            <Card bordered={true} title="Top 10 Khóa Học Bán Chạy">
               <Table
                 columns={topCoursesColumns}
                 dataSource={topCourses}
@@ -873,7 +987,7 @@ const PaymentStatisticsOptimized: React.FC = () => {
         </Row>
 
         {/* Payments Table */}
-        <Card bordered={true} title="💳 Danh Sách Giao Dịch">
+        <Card bordered={true} title="Danh Sách Giao Dịch">
           <Table
             columns={columns}
             dataSource={payments}

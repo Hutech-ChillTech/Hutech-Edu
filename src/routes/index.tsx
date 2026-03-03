@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastProvider } from "../contexts/ToastContext";
 
 // Layouts
 import AdminLayout from "../layouts/AdminLayout";
@@ -29,62 +30,86 @@ import PaymentFailedPage from "../pages/Payment/PaymentFailedPage";
 import ContactPage from "../pages/User/ContactPage";
 import GamificationPage from "../pages/Gamification/GamificationPage";
 import XPStatisticsPage from "../pages/Admin/XPStatisticsPage";
+import BlogListPage from "../pages/BlogListPage/BlogListPage";
+import BlogDetailPage from "../pages/BlogDetailPage/BlogDetailPage";
+import SearchPage from "../pages/SearchPage/SearchPage";
+import AdminBlogPage from "../pages/Admin/AdminBlogPage";
+import AdminTagPage from "../pages/Admin/AdminTagPage";
+import AdminCategoryPage from "../pages/Admin/AdminCategoryPage";
+import MyCertificates from "../pages/User/MyCertificates";
+import CertificateVerify from "../pages/User/CertificateVerify";
 
 const AppRoutes: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+      <ToastProvider>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-        {/* Admin routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="users" element={<AdminUser />} />
-          <Route path="course" element={<CourseAdmin />} />
-          <Route path="chapters/:courseId" element={<ChapterList />} />
-          <Route path="lessons/:chapterId" element={<LessonList />} />
+          {/* Admin routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="users" element={<AdminUser />} />
+            <Route path="course" element={<CourseAdmin />} />
+            <Route path="chapters/:courseId" element={<ChapterList />} />
+            <Route path="lessons/:chapterId" element={<LessonList />} />
+            <Route
+              path="payment-statistics"
+              element={<PaymentStatisticsOptimized />}
+            />
+            <Route path="xp-statistics" element={<XPStatisticsPage />} />
+            <Route path="blogs" element={<AdminBlogPage />} />
+            <Route path="tags" element={<AdminTagPage />} />
+            <Route path="categories" element={<AdminCategoryPage />} />
+          </Route>
+
+          {/* User routes */}
+          <Route path="/" element={<UserLayout />}>
+            <Route index element={<UserMain />} />
+            <Route path="practice/:courseId" element={<PracticePage />} />
+            <Route
+              path="featured-courses"
+              element={<FeaturedCourses></FeaturedCourses>}
+            ></Route>
+            <Route path="all-courses" element={<AllCourses></AllCourses>}></Route>
+            <Route path="profile" element={<UserProfile />} />
+            <Route path="course/:id" element={<CourseDetailPage />} />
+            <Route
+              path="course/:courseId/lesson-video/:lessonId"
+              element={<LessonVideoPage />}
+            />
+            <Route path="lesson-video" element={<LessonVideoPage />} />{" "}
+            {/* test lesson-video page*/}
+            <Route path="learningPathMap" element={<LearningPathMap />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="gamification" element={<GamificationPage />} />
+            {/* Blog routes */}
+            <Route path="blogs" element={<BlogListPage />} />
+            <Route path="blog/:slug" element={<BlogDetailPage />} />
+            <Route path="search" element={<SearchPage />} />
+            {/* Payment routes */}
+            <Route path="payment" element={<PaymentPage />} />
+            <Route path="payment/success" element={<PaymentSuccessPage />} />
+            <Route path="payment/failed" element={<PaymentFailedPage />} />
+            <Route path="my-certificates" element={<MyCertificates />} />
+          </Route>
+
+          {/* Public routes for certification */}
           <Route
-            path="payment-statistics"
-            element={<PaymentStatisticsOptimized />}
+            path="/certificate/verify/:certificateCode"
+            element={<CertificateVerify />}
           />
-          <Route path="xp-statistics" element={<XPStatisticsPage />} />
-        </Route>
 
-        {/* User routes */}
-        <Route path="/" element={<UserLayout />}>
-          <Route index element={<UserMain />} />
-          <Route path="practice/:courseId" element={<PracticePage />} />
-          <Route
-            path="featured-courses"
-            element={<FeaturedCourses></FeaturedCourses>}
-          ></Route>
-          <Route path="all-courses" element={<AllCourses></AllCourses>}></Route>
-          <Route path="profile" element={<UserProfile />} />
-          <Route path="course/:id" element={<CourseDetailPage />} />
-          <Route
-            path="course/:courseId/lesson-video/:lessonId"
-            element={<LessonVideoPage />}
-          />
-          <Route path="lesson-video" element={<LessonVideoPage />} />{" "}
-          {/* test lesson-video page*/}
-          <Route path="learningPathMap" element={<LearningPathMap />} />
-          <Route path="contact" element={<ContactPage />} />
-          <Route path="gamification" element={<GamificationPage />} />
-          {/* Payment routes */}
-          <Route path="payment" element={<PaymentPage />} />
-          <Route path="payment/success" element={<PaymentSuccessPage />} />
-          <Route path="payment/failed" element={<PaymentFailedPage />} />
-        </Route>
+          {/* Payment callback routes - Backup routes ngoài UserLayout */}
+          <Route path="/payment-success" element={<PaymentSuccessPage />} />
+          <Route path="/payment-failed" element={<PaymentFailedPage />} />
 
-        {/* Payment callback routes - Backup routes ngoài UserLayout */}
-        <Route path="/payment-success" element={<PaymentSuccessPage />} />
-        <Route path="/payment-failed" element={<PaymentFailedPage />} />
-
-        {/* Thông báo lỗi 404 khi người dùng truy cấp vào route không tồn tại */}
-        <Route path="*" element={<NotFountPage></NotFountPage>} />
-      </Routes>
+          {/* Thông báo lỗi 404 khi người dùng truy cấp vào route không tồn tại */}
+          <Route path="*" element={<NotFountPage></NotFountPage>} />
+        </Routes>
+      </ToastProvider>
     </Router>
   );
 };

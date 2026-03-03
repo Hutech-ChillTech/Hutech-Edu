@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Card, Avatar, Badge, Spin } from "antd";
-import { TrophyOutlined, CrownOutlined } from "@ant-design/icons";
+import { Card, Avatar, Badge, Spin, Empty, Select } from "antd";
 import {
   gamificationService,
   type LeaderboardUser,
 } from "../../service/gamification.service";
 import styles from "./Leaderboard.module.css";
 
+const { Option } = Select;
+
 const Leaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedLevel, setSelectedLevel] = useState<string>("all");
 
   useEffect(() => {
     loadLeaderboard();
@@ -17,7 +19,7 @@ const Leaderboard: React.FC = () => {
 
   const loadLeaderboard = async () => {
     try {
-      const data = await gamificationService.getLeaderboard(20);
+      const data = await gamificationService.getLeaderboard(100); // Lấy nhiều hơn để filter
       setLeaderboard(data);
     } catch (error) {
       console.error("Error loading leaderboard:", error);
@@ -26,14 +28,25 @@ const Leaderboard: React.FC = () => {
     }
   };
 
+  // Filter leaderboard by level
+  const filteredLeaderboard = selectedLevel === "all"
+    ? leaderboard
+    : leaderboard.filter(user => user.level === selectedLevel);
+
+  // Re-rank after filtering
+  const rankedLeaderboard = filteredLeaderboard.map((user, index) => ({
+    ...user,
+    rank: index + 1,
+  }));
+
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <span className={styles.goldMedal}>🥇</span>;
+        return <span className={styles.goldMedal}>#1</span>;
       case 2:
-        return <span className={styles.silverMedal}>🥈</span>;
+        return <span className={styles.silverMedal}>#2</span>;
       case 3:
-        return <span className={styles.bronzeMedal}>🥉</span>;
+        return <span className={styles.bronzeMedal}>#3</span>;
       default:
         return <span className={styles.rank}>#{rank}</span>;
     }
@@ -52,68 +65,104 @@ const Leaderboard: React.FC = () => {
     }
   };
 
+  const getLevelLabel = (level: string) => {
+    switch (level) {
+      case "Basic":
+        return "Cơ bản";
+      case "Intermediate":
+        return "Trung cấp";
+      case "Advanced":
+        return "Nâng cao";
+      default:
+        return level;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <Spin size="large" />
+        <p style={{ marginTop: "1rem", color: "#666" }}>
+          Đang tải bảng xếp hạng...
+        </p>
+      </div>
+    );
+  }
+
+  if (leaderboard.length === 0) {
+    return (
+      <Card className={styles.leaderboardCard}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="Chưa có dữ liệu bảng xếp hạng"
+        />
+      </Card>
+    );
+  }
+
   return (
     <div className={styles.leaderboardContainer}>
-      <Card className={styles.leaderboardCard} bordered={false}>
-        <div className={styles.headerSection}>
-          <TrophyOutlined className={styles.headerIcon} />
-          <h2 className={styles.headerTitle}>Đường đua</h2>
-          <p className={styles.headerSubtitle}>
-            Top {leaderboard.length} học viên xuất sắc nhất
-          </p>
-        </div>
+      {/* Level Filter */}
+      <div className={styles.filterSection}>
+        <label style={{ marginRight: 12, fontWeight: 500 }}>
+          Lọc theo cấp độ:
+        </label>
+        <Select
+          value={selectedLevel}
+          onChange={setSelectedLevel}
+          style={{ width: 200 }}
+          size="large"
+        >
+          <Option value="all">Tất cả</Option>
+          <Option value="Basic">Cơ bản</Option>
+          <Option value="Intermediate">Trung cấp</Option>
+          <Option value="Advanced">Nâng cao</Option>
+        </Select>
+        <span style={{ marginLeft: 16, color: "#666" }}>
+          {rankedLeaderboard.length} học viên
+        </span>
+      </div>
 
-        {loading ? (
-          <div className={styles.loadingContainer}>
-            <Spin size="large" />
-          </div>
-        ) : leaderboard.length === 0 ? (
-          <div className={styles.emptyState}>
-            <TrophyOutlined className={styles.emptyIcon} />
-            <p className={styles.emptyText}>Chưa có dữ liệu</p>
-          </div>
+      <div className={styles.listSection}>
+        {rankedLeaderboard.length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={`Không có học viên nào ở cấp độ ${getLevelLabel(selectedLevel)}`}
+          />
         ) : (
-          <div className={styles.listSection}>
-            {leaderboard.map((user) => (
-              <div
-                key={user.userId}
-                className={`${styles.listItem} ${
-                  user.rank === 1 ? styles.firstPlace : ""
-                }`}
-              >
-                <div className={styles.rankSection}>
-                  {getRankIcon(user.rank)}
-                </div>
-                <Avatar
-                  src={user.avatarURL || "/images/default-avatar.png"}
-                  size={50}
-                  className={styles.userAvatar}
+          rankedLeaderboard.map((user) => (
+            <div
+              key={user.userId}
+              className={`${styles.listItem} ${
+                user.rank <= 3 ? styles.topThree : ""
+              } ${user.rank === 1 ? styles.firstPlace : ""}`}
+            >
+              <div className={styles.rankSection}>{getRankIcon(user.rank)}</div>
+              <Avatar
+                src={user.avatarURL || "/images/default-avatar.png"}
+                size={50}
+                className={styles.userAvatar}
+              />
+              <div className={styles.userDetails}>
+                <span className={styles.userName}>{user.userName}</span>
+                <Badge
+                  count={getLevelLabel(user.level)}
+                  style={{
+                    backgroundColor: getLevelColor(user.level),
+                    fontSize: "0.75rem",
+                  }}
                 />
-                <div className={styles.userDetails}>
-                  <div className={styles.userNameRow}>
-                    <span className={styles.userName}>{user.userName}</span>
-                    {user.rank <= 3 && (
-                      <CrownOutlined className={styles.crownIcon} />
-                    )}
-                  </div>
-                  <Badge
-                    count={user.level}
-                    style={{
-                      backgroundColor: getLevelColor(user.level),
-                    }}
-                  />
-                </div>
-                <div className={styles.xpSection}>
-                  <span className={styles.xpAmount}>
-                    {user.totalXP.toLocaleString()}
-                  </span>
-                  <span className={styles.xpLabel}>XP</span>
-                </div>
               </div>
-            ))}
-          </div>
+              <div className={styles.xpSection}>
+                <span className={styles.xpAmount}>
+                  {user.totalXP.toLocaleString()}
+                </span>
+                <span className={styles.xpLabel}>XP</span>
+              </div>
+            </div>
+          ))
         )}
-      </Card>
+      </div>
     </div>
   );
 };

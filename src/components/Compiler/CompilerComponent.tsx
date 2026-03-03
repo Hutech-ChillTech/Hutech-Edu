@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { message } from "antd";
+import { 
+    PlayCircleFilled, 
+    ReloadOutlined, 
+    EyeOutlined, 
+    EyeInvisibleOutlined,
+    FileTextOutlined,
+    CodeOutlined,
+    DesktopOutlined,
+    ConsoleSqlOutlined
+} from "@ant-design/icons";
 import { useHtmlGrader } from "../../hooks/useHtmlGrader";
 import { codeExecutionService, LANGUAGE_IDS } from "../../service/codeExecution.service";
 import { type TestCase } from "../../types/database.types";
+import "./CompilerComponent.css";
 
 interface CompilerProps {
     code: string;
@@ -25,13 +36,14 @@ const CompilerComponent: React.FC<CompilerProps> = ({
     const [cssCode, setCssCode] = useState("");
     const [isRunning, setIsRunning] = useState(false);
     const [testResults, setTestResults] = useState<any[]>([]);
+    const [showPreview, setShowPreview] = useState(true);
 
     const { results, isAllPassed, runCodeCheck, resetGrader } = useHtmlGrader();
 
     useEffect(() => {
         resetGrader();
         setTestResults([]);
-        setOutput("Kết quả sẽ hiển thị ở đây");
+        setOutput("Nhấn ▶ Run để chạy code của bạn");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [language]);
 
@@ -54,12 +66,12 @@ const CompilerComponent: React.FC<CompilerProps> = ({
         if (language === "html") {
             // HTML/CSS: Dùng grader hiện tại
             runCodeCheck(code, cssCode, testCases);
-            setOutput("Đang kiểm tra code HTML của bạn...");
+            setOutput("⏳ Đang kiểm tra code HTML của bạn...");
         } else {
             // JavaScript, Python, C++: Dùng Judge0
             setIsRunning(true);
             setTestResults([]);
-            setOutput("Đang chạy code trên server...");
+            setOutput("⏳ Đang chạy code trên server...");
 
             try {
                 if (testCases && testCases.length > 0) {
@@ -149,195 +161,250 @@ const CompilerComponent: React.FC<CompilerProps> = ({
         setCssCode("");
         resetGrader();
         setTestResults([]);
-        setOutput("Đã reset");
+        setOutput("Đã reset code");
+        message.info("Code đã được reset");
     };
 
-    const goPrevious = () => console.log("Previous clicked");
-    const goNext = () => console.log("Next clicked");
-
-    // --- STYLE CHO GIAO DIỆN TỐI ---
-    const darkTheme = {
-        containerBg: '#1e1e1e',
-        toolbarBg: '#252526',
-        consoleBg: '#1e1e1e',
-        borderColor: '#333333',
-        textColor: '#d4d4d4'
-    };
+    // Calculate progress
+    const totalTests = language === 'html' ? results.length : testResults.length;
+    const passedTests = language === 'html' 
+        ? results.filter(r => r.pass).length 
+        : testResults.filter(r => r.isPassed).length;
+    const progressPercent = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
 
     return (
-        <div className="col-12 col-md-6 d-flex flex-column p-3" style={{ height: '100vh', backgroundColor: darkTheme.containerBg, color: darkTheme.textColor }}>
+        <div className="compiler-container">
+            {/* Header with Controls */}
+            <div className="compiler-header">
+                <div className="compiler-controls">
+                    <div className="language-selector">
+                        <select
+                            className="form-select"
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
+                            disabled={isRunning}
+                        >
+                            <option value="html">🌐 HTML/CSS</option>
+                            <option value="javascript">📜 JavaScript</option>
+                            <option value="python">🐍 Python</option>
+                            <option value="cpp">⚙️ C++</option>
+                        </select>
+                    </div>
 
-            {/* Control panel */}
-            <div className="d-flex mb-2 gap-2 align-items-center p-2 rounded" style={{ backgroundColor: darkTheme.toolbarBg }}>
-                <select
-                    className="form-select w-auto bg-dark text-white border-secondary"
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    style={{ height: "38px" }}
-                    disabled={isRunning}
-                >
-                    <option value="html">HTML/CSS</option>
-                    <option value="javascript">JavaScript (NodeJS)</option>
-                    <option value="python">Python</option>
-                    <option value="cpp">C++</option>
-                </select>
+                    <button
+                        className="btn-run"
+                        onClick={runCode}
+                        disabled={isRunning}
+                        title="Run code (Ctrl+Enter)"
+                    >
+                        {isRunning ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                Running...
+                            </>
+                        ) : (
+                            <>
+                                <PlayCircleFilled />
+                                Run
+                            </>
+                        )}
+                    </button>
 
-                <button
-                    className="btn btn-success d-flex align-items-center justify-content-center"
-                    onClick={runCode}
-                    title="Run code"
-                    style={{ height: "38px", width: "40px" }}
-                    disabled={isRunning}
-                >
-                    {isRunning ? (
-                        <span className="spinner-border spinner-border-sm"></span>
-                    ) : (
-                        <i className="bi bi-play-fill"></i>
+                    <button
+                        className="btn-reset"
+                        onClick={resetCode}
+                        disabled={isRunning}
+                        title="Reset code"
+                    >
+                        <ReloadOutlined />
+                    </button>
+
+                    {language === 'html' && (
+                        <button
+                            className="btn-toggle-preview"
+                            onClick={() => setShowPreview(!showPreview)}
+                            title={showPreview ? "Hide preview" : "Show preview"}
+                        >
+                            {showPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                        </button>
                     )}
-                </button>
-
-                <button
-                    className="btn btn-dark border-secondary d-flex align-items-center justify-content-center"
-                    onClick={resetCode}
-                    title="Reset code"
-                    style={{ height: "38px", width: "40px" }}
-                    disabled={isRunning}
-                >
-                    <i className="bi bi-arrow-counterclockwise"></i>
-                </button>
-
-                <div className="ms-auto d-flex gap-2">
-                    <button className="btn btn-outline-light border-secondary" onClick={goPrevious} style={{ height: "38px" }}>
-                        Previous
-                    </button>
-                    <button className="btn btn-outline-light border-secondary" onClick={goNext} style={{ height: "38px" }}>
-                        Next
-                    </button>
                 </div>
-            </div>
 
-            {/* Tabs cho HTML/CSS */}
-            {language === 'html' && (
-                <div className="d-flex border-bottom border-secondary mb-0">
-                    <button
-                        className={`btn btn-sm rounded-0 rounded-top ${activeTab === 'html' ? 'btn-dark text-white border border-bottom-0 border-secondary' : 'btn-secondary text-light'}`}
-                        onClick={() => setActiveTab('html')}
-                        style={{ minWidth: 80, backgroundColor: activeTab === 'html' ? darkTheme.containerBg : undefined }}
-                    >
-                        HTML
-                    </button>
-                    <button
-                        className={`btn btn-sm rounded-0 rounded-top ${activeTab === 'css' ? 'btn-dark text-white border border-bottom-0 border-secondary' : 'btn-secondary text-light'}`}
-                        onClick={() => setActiveTab('css')}
-                        style={{ minWidth: 80, backgroundColor: activeTab === 'css' ? darkTheme.containerBg : undefined }}
-                    >
-                        CSS
-                    </button>
-                </div>
-            )}
-
-            {/* Monaco Editor */}
-            <div className="flex-grow-1 mb-2" style={{ border: `1px solid ${darkTheme.borderColor}`, borderTop: language === 'html' ? 'none' : `1px solid ${darkTheme.borderColor}` }}>
-                <Editor
-                    height="50vh"
-                    language={language === 'html' ? (activeTab === 'html' ? 'html' : 'css') : language}
-                    theme="vs-dark"
-                    value={language === 'html' ? (activeTab === 'html' ? code : cssCode) : code}
-                    onChange={(value) => {
-                        if (language === 'html') {
-                            if (activeTab === 'html') setCode(value || "");
-                            else setCssCode(value || "");
-                        } else {
-                            setCode(value || "");
-                        }
-                    }}
-                    options={{ minimap: { enabled: false }, scrollBeyondLastLine: false }}
-                />
-            </div>
-
-            {/* Khu vực hiển thị kết quả */}
-            <div className="d-flex flex-column rounded" style={{ height: "35%", overflow: "hidden", backgroundColor: darkTheme.consoleBg, border: `1px solid ${darkTheme.borderColor}` }}>
-
-                {/* Preview HTML */}
-                {language === 'html' && (
-                    <div style={{ flex: 1, background: 'white', borderBottom: `1px solid ${darkTheme.borderColor}`, overflow: 'hidden' }}>
-                        <iframe
-                            title="preview"
-                            srcDoc={`${code}<style>${cssCode}</style>`}
-                            style={{ width: '100%', height: '100%', border: 'none' }}
-                        />
+                {/* Test Progress Bar */}
+                {testCases.length > 0 && (
+                    <div className="test-progress">
+                        <div className="progress-info">
+                            <span className="progress-label">
+                                Test Cases: {passedTests}/{totalTests}
+                            </span>
+                            <span className="progress-percent">{progressPercent.toFixed(0)}%</span>
+                        </div>
+                        <div className="progress-bar-container">
+                            <div 
+                                className={`progress-bar-fill ${progressPercent === 100 ? 'complete' : ''}`}
+                                style={{ width: `${progressPercent}%` }}
+                            ></div>
+                        </div>
                     </div>
                 )}
+            </div>
 
-                {/* Console / Test Results */}
-                <div className="p-2" style={{ height: language === 'html' ? '40%' : '100%', overflowY: "auto", color: darkTheme.textColor, fontFamily: 'monospace', fontSize: '13px' }}>
-
-                    {/* HTML Test Results */}
-                    {language === 'html' && results.length > 0 ? (
-                        <div>
-                            <div style={{ fontWeight: 'bold', marginBottom: 5, color: '#fff' }}>Kết quả kiểm tra:</div>
-                            {results.map((res, idx) => (
-                                <div key={idx} style={{ color: res.pass ? '#4caf50' : '#f44336', marginBottom: 2 }}>
-                                    {res.pass ? '✅' : '❌'} Case {idx + 1}: {res.message}
-                                </div>
-                            ))}
-                            {isAllPassed && <div style={{ color: '#4caf50', fontWeight: 'bold', marginTop: 5 }}>🎉 Chúc mừng! Bạn đã hoàn thành bài tập.</div>}
+            {/* Editor Section */}
+            <div className="compiler-body">
+                <div className="editor-section">
+                    {/* Tabs for HTML/CSS */}
+                    {language === 'html' && (
+                        <div className="editor-tabs">
+                            <button
+                                className={`tab ${activeTab === 'html' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('html')}
+                            >
+                                <FileTextOutlined />
+                                HTML
+                            </button>
+                            <button
+                                className={`tab ${activeTab === 'css' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('css')}
+                            >
+                                <CodeOutlined />
+                                CSS
+                            </button>
                         </div>
-                    ) : testResults.length > 0 ? (
-                        /* Other Languages Test Results */
-                        <div>
-                            <div style={{ fontWeight: 'bold', marginBottom: 8, color: '#fff' }}>📊 Kết quả Test Cases:</div>
-                            {testResults.map((result, index) => (
-                                <div
-                                    key={index}
-                                    style={{
-                                        padding: 10,
-                                        marginBottom: 8,
-                                        border: `1px solid ${result.isPassed ? '#4caf50' : '#f44336'}`,
-                                        borderRadius: 4,
-                                        backgroundColor: result.isPassed ? '#1a3a1a' : '#3a1a1a',
-                                    }}
-                                >
-                                    <div style={{ marginBottom: 4, fontWeight: 'bold' }}>
-                                        {result.isPassed ? '✅' : '❌'} Test Case #{result.testCaseIndex}
-                                        <span style={{ marginLeft: 8, fontSize: 11, color: '#999' }}>
-                                            {result.time && `⏱️ ${result.time}s`}
-                                            {result.memory && ` | 💾 ${result.memory}KB`}
-                                        </span>
-                                    </div>
-
-                                    {result.description && (
-                                        <div style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>
-                                            {result.description}
-                                        </div>
-                                    )}
-
-                                    {result.input && (
-                                        <div style={{ fontSize: 11, marginBottom: 2 }}>
-                                            <span style={{ color: '#888' }}>Input:</span> {result.input}
-                                        </div>
-                                    )}
-
-                                    <div style={{ fontSize: 11, marginBottom: 2 }}>
-                                        <span style={{ color: '#888' }}>Expected:</span> {result.expectedOutput}
-                                    </div>
-
-                                    <div style={{ fontSize: 11, color: result.isPassed ? '#4caf50' : '#f44336' }}>
-                                        <span style={{ color: '#888' }}>Got:</span> {result.actualOutput || '(empty)'}
-                                    </div>
-
-                                    {result.stderr && (
-                                        <div style={{ fontSize: 11, color: '#ff6b6b', marginTop: 4 }}>
-                                            ❌ Error: {result.stderr}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        /* Default Output */
-                        <pre style={{ margin: 0, color: darkTheme.textColor, whiteSpace: 'pre-wrap' }}>{output}</pre>
                     )}
+
+                    {/* Monaco Editor */}
+                    <div className="editor-wrapper">
+                        <Editor
+                            height="100%"
+                            language={language === 'html' ? (activeTab === 'html' ? 'html' : 'css') : language}
+                            theme="vs-dark"
+                            value={language === 'html' ? (activeTab === 'html' ? code : cssCode) : code}
+                            onChange={(value) => {
+                                if (language === 'html') {
+                                    if (activeTab === 'html') setCode(value || "");
+                                    else setCssCode(value || "");
+                                } else {
+                                    setCode(value || "");
+                                }
+                            }}
+                            options={{
+                                minimap: { enabled: false },
+                                scrollBeyondLastLine: false,
+                                fontSize: 14,
+                                lineNumbers: 'on',
+                                roundedSelection: false,
+                                scrollbar: {
+                                    vertical: 'auto',
+                                    horizontal: 'auto'
+                                },
+                                automaticLayout: true,
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* Output Section */}
+                <div className="output-section">
+                    {/* HTML Preview */}
+                    {language === 'html' && showPreview && (
+                        <div className="preview-panel">
+                            <div className="panel-header">
+                                <DesktopOutlined />
+                                Preview
+                            </div>
+                            <div className="preview-content">
+                                <iframe
+                                    title="preview"
+                                    srcDoc={`${code}<style>${cssCode}</style>`}
+                                    className="preview-iframe"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Console / Test Results */}
+                    <div className="console-panel">
+                        <div className="panel-header">
+                            <ConsoleSqlOutlined />
+                            {testCases.length > 0 ? 'Test Results' : 'Console'}
+                        </div>
+                        <div className="console-content">
+                            {/* HTML Test Results */}
+                            {language === 'html' && results.length > 0 ? (
+                                <div className="test-results">
+                                    {results.map((res, idx) => (
+                                        <div key={idx} className={`test-case ${res.pass ? 'passed' : 'failed'}`}>
+                                            <div className="test-case-header">
+                                                <span className="test-icon">
+                                                    {res.pass ? '✅' : '❌'}
+                                                </span>
+                                                <span className="test-number">Test Case #{idx + 1}</span>
+                                            </div>
+                                            <div className="test-message">{res.message}</div>
+                                        </div>
+                                    ))}
+                                    {isAllPassed && (
+                                        <div className="success-message">
+                                            🎉 Chúc mừng! Bạn đã hoàn thành tất cả test cases!
+                                        </div>
+                                    )}
+                                </div>
+                            ) : testResults.length > 0 ? (
+                                /* Other Languages Test Results */
+                                <div className="test-results">
+                                    {testResults.map((result, index) => (
+                                        <div
+                                            key={index}
+                                            className={`test-case ${result.isPassed ? 'passed' : 'failed'}`}
+                                        >
+                                            <div className="test-case-header">
+                                                <span className="test-icon">
+                                                    {result.isPassed ? '✅' : '❌'}
+                                                </span>
+                                                <span className="test-number">Test Case #{result.testCaseIndex}</span>
+                                                <span className="test-meta">
+                                                    {result.time && `⏱️ ${result.time}s`}
+                                                    {result.memory && ` | 💾 ${result.memory}KB`}
+                                                </span>
+                                            </div>
+
+                                            {result.description && (
+                                                <div className="test-description">{result.description}</div>
+                                            )}
+
+                                            <div className="test-details">
+                                                {result.input && (
+                                                    <div className="test-detail">
+                                                        <span className="detail-label">Input:</span>
+                                                        <span className="detail-value">{result.input}</span>
+                                                    </div>
+                                                )}
+                                                <div className="test-detail">
+                                                    <span className="detail-label">Expected:</span>
+                                                    <span className="detail-value">{result.expectedOutput}</span>
+                                                </div>
+                                                <div className="test-detail">
+                                                    <span className="detail-label">Got:</span>
+                                                    <span className={`detail-value ${result.isPassed ? 'success' : 'error'}`}>
+                                                        {result.actualOutput || '(empty)'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {result.stderr && (
+                                                <div className="test-error">
+                                                    ❌ Error: {result.stderr}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                /* Default Output */
+                                <pre className="console-output">{output}</pre>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

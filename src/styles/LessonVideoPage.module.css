@@ -10,7 +10,7 @@
 /* === TỔNG THỂ === */
 .lessonVideoPage {
   background-color: var(--bg-light);
-  font-family: "Segoe UI", sans-serif;
+  font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   min-height: 100vh;
   display: flex;
   flex-direction: column;

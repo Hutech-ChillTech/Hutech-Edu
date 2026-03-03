@@ -1,19 +1,20 @@
 import React, { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { message } from "antd";
+import { GoogleOutlined } from "@ant-design/icons";
 import styles from "../styles/LoginPage.module.css";
-import { FcGoogle } from "react-icons/fc";
 import { jwtDecode } from "jwt-decode";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../configs/firebaseConfig";
 import { authService } from "../service/auth.service";
 import { type DecodedToken, type Login } from "../types/login.types";
+import { useToast } from "../contexts/ToastContext";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -26,10 +27,10 @@ const LoginPage: React.FC = () => {
       // 2. Gọi service với object vừa tạo
       const res = await authService.login(loginData);
 
-      // 3. Lấy token từ response (res.data là token string)
+      // 3. Lấy token từ response (res.data)
       const token = res.data;
       if (!token || typeof token !== "string") {
-        message.error("Token không hợp lệ từ server!");
+        toast.error("Token không hợp lệ từ server!");
         return;
       }
 
@@ -55,15 +56,15 @@ const LoginPage: React.FC = () => {
       );
 
       // 6. Thông báo và điều hướng
-      message.success(`Đăng nhập thành công! Xin chào ${userName} 👋`);
+      toast.success(`Đăng nhập thành công! Xin chào ${userName} 👋`);
       setTimeout(() => {
         navigate(normalizedRole === "admin" ? "/admin/dashboard" : "/");
       }, 500);
     } catch (error: any) {
-      message.error(
+      toast.error(
         error.message ||
           error.response?.data?.message ||
-          "Email hoặc mật khẩu không đúng hoặc server không phản hồi!"
+          "Email hoặc mật khẩu không đúng!"
       );
     } finally {
       setLoading(false);
@@ -82,9 +83,18 @@ const LoginPage: React.FC = () => {
       const res = await authService.googleLogin(idToken);
 
       // 3. Lấy token từ backend response
-      const token = res.data;
+      // Backend có thể trả về: res.data (string) hoặc res.data.token (object)
+      const token = typeof res.data === 'string' ? res.data : res.data?.token;
+      
+      console.log("📊 Google login response:", {
+        resData: res.data,
+        extractedToken: token,
+        tokenType: typeof token
+      });
+      
       if (!token || typeof token !== "string") {
-        message.error("Token không hợp lệ từ server!");
+        console.error("❌ Invalid token format:", { res, token });
+        toast.error("Token không hợp lệ từ server!");
         return;
       }
 
@@ -114,13 +124,13 @@ const LoginPage: React.FC = () => {
       );
 
       // 6. Thông báo và điều hướng
-      message.success(`Đăng nhập Google thành công! Xin chào ${userName} 👋`);
+      toast.success(`Đăng nhập Google thành công! Xin chào ${userName} 👋`);
       setTimeout(() => {
         navigate(normalizedRole === "admin" ? "/admin/dashboard" : "/");
       }, 500);
     } catch (error: any) {
       console.error("Google login error:", error);
-      message.error(
+      toast.error(
         error.message || "Đăng nhập Google thất bại. Vui lòng thử lại!"
       );
     } finally {
@@ -161,7 +171,7 @@ const LoginPage: React.FC = () => {
             className={styles["google-button"]}
             onClick={handleGoogleLogin}
           >
-            <FcGoogle className={styles["google-icon"]} />
+            <GoogleOutlined className={styles["google-icon"]} />
             Đăng nhập với Google
           </button>
 

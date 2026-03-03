@@ -101,7 +101,7 @@ const ChapterList: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
-      message.error("❌ Lỗi khi tải danh sách chương!");
+      message.error("Lỗi khi tải danh sách chương!");
     }
   }, [courseId, token]);
 
@@ -148,11 +148,11 @@ const ChapterList: React.FC = () => {
         setShowForm(false);
         fetchChapters();
       } else {
-        message.error(data.message || "❌ Lỗi khi lưu chương!");
+        message.error(data.message || "Lỗi khi lưu chương!");
       }
     } catch (err) {
       console.error(err);
-      message.error("❌ Lỗi khi lưu chương!");
+      message.error("Lỗi khi lưu chương!");
     } finally {
       setLoading(false);
     }
@@ -180,14 +180,14 @@ const ChapterList: React.FC = () => {
       );
       const data = await res.json();
       if (data.success) {
-        message.success("🗑️ Xóa chương thành công!");
+        message.success("Xóa chương thành công!");
         fetchChapters();
       } else {
-        message.error(data.message || "❌ Không thể xóa chương!");
+        message.error(data.message || "Không thể xóa chương!");
       }
     } catch (err) {
       console.error(err);
-      message.error("❌ Lỗi khi xóa chương!");
+      message.error("Lỗi khi xóa chương!");
     }
   };
 
@@ -237,7 +237,7 @@ const ChapterList: React.FC = () => {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
       <Space style={{ marginBottom: 16 }}>
-        <Button onClick={() => navigate("/admin/course")}>⬅️ Quay lại</Button>
+        <Button onClick={() => navigate("/admin/course")}>Quay lại</Button>
         <Title level={3}> Khóa học: {courseName || "Đang tải..."}</Title>
       </Space>
 
@@ -271,7 +271,7 @@ const ChapterList: React.FC = () => {
 
       {showForm && (
         <Card
-          title={editingId ? "✏️ Cập nhật chương" : "➕ Thêm chương mới"}
+          title={editingId ? "Cập nhật chương" : "Thêm chương mới"}
           style={{
             borderRadius: "1rem",
             boxShadow: "0 4px 20px rgba(0,0,0,0.06)",

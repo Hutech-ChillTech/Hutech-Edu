@@ -415,4 +415,42 @@ export const quizService = {
             throw error;
         }
     },
+
+    // ============ QUIZ SUBMISSION ============
+    
+    submitQuiz: async (chapterQuizId: string, answers: { [questionId: string]: string }) => {
+        try {
+            // Get userId from localStorage
+            const token = localStorage.getItem("token");
+            if (!token) {
+                throw new Error("User not authenticated");
+            }
+            
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            const userId = payload.userId;
+
+            const res = await fetch(`${API_URL}/submissions/submit`, {
+                method: "POST",
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    userId,
+                    chapterQuizId,
+                    answers
+                }),
+            });
+
+            const data = await res.json();
+            if (res.status === 401) {
+                throw new Error("Unauthorized");
+            }
+            if (!res.ok) {
+                throw new Error(data?.message || "Không thể nộp bài quiz.");
+            }
+
+            return data.data || data;
+        } catch (error) {
+            console.error("Error submitting quiz:", error);
+            throw error;
+        }
+    },
 };

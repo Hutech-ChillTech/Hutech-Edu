@@ -55,10 +55,10 @@ const UserAdmin: React.FC = () => {
       const result = await uploadService.uploadImage(file, "user-avatars");
       setImageUrl(result.url);
       form.setFieldsValue({ avatarURL: result.url });
-      message.success("✅ Upload ảnh thành công!");
+      message.success("Upload ảnh thành công!");
       return false;
     } catch (error) {
-      message.error("❌ Upload ảnh thất bại!");
+      message.error("Upload ảnh thất bại!");
       console.error(error);
       return false;
     } finally {
@@ -97,10 +97,10 @@ const UserAdmin: React.FC = () => {
 
       if (editingId) {
         await userService.updateUser(editingId, payloadUpdate);
-        message.success("✅ Cập nhật người dùng thành công!");
+        message.success("Cập nhật người dùng thành công!");
       } else {
         await authService.register(payloadRegister);
-        message.success("✅ Thêm người dùng mới thành công!");
+        message.success("Thêm người dùng mới thành công!");
       }
 
       form.resetFields();
@@ -113,9 +113,9 @@ const UserAdmin: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.message) {
-        message.error(`❌ ${err.response.data.message}`);
+        message.error(`${err.response.data.message}`);
       } else {
-        message.error("❌ Lỗi khi lưu người dùng!");
+        message.error("Lỗi khi lưu người dùng!");
       }
     }
   };
@@ -152,9 +152,9 @@ const UserAdmin: React.FC = () => {
         await userService.deleteUser(userIdToDelete);
 
         fetchUsers(); // Load lại bảng
-        message.success("🗑️ Xóa người dùng thành công!");
+        message.success("Xóa người dùng thành công!");
       } catch (err) {
-        message.error("❌ Không thể xóa người dùng!");
+        message.error("Không thể xóa người dùng!");
         console.error(err);
       }
     },
@@ -356,7 +356,7 @@ const UserAdmin: React.FC = () => {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
       <Title level={3} style={{ marginBottom: 24 }}>
-        👤 Quản lý Học viên
+        Quản lý Học viên
       </Title>
 
       <div style={{ textAlign: "right", marginBottom: 12 }}>
@@ -379,7 +379,7 @@ const UserAdmin: React.FC = () => {
       {showForm && (
         <Card
           title={
-            editingId ? "✏️ Chỉnh sửa người dùng" : "➕ Thêm người dùng mới"
+            editingId ? "Chỉnh sửa người dùng" : "Thêm người dùng mới"
           }
           variant="borderless"
           style={{

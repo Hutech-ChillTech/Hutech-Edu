@@ -607,3 +607,64 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+/* === PROGRESS SECTION === */
+.progressSection {
+  margin: 24px 0;
+  background: rgba(127, 127, 213, 0.05);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(127, 127, 213, 0.1);
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progressText {
+  font-weight: 600;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.completedBadge {
+  background: #52c41a;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.enrolledActions {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.certificateButton {
+  height: auto !important;
+  padding: 10px 24px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.certificateButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(24, 144, 255, 0.4) !important;
+}
+
+@media (max-width: 768px) {
+  .enrolledActions {
+    flex-direction: column;
+  }
+}

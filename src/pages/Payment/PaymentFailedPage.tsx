@@ -302,7 +302,7 @@ const PaymentFailedPage: React.FC = () => {
             )}
 
             <div className={styles.helpSection}>
-              <h3>💡 Gợi ý xử lý:</h3>
+              <h3>Gợi ý xử lý:</h3>
               <ul>
                 <li>Kiểm tra lại số dư tài khoản</li>
                 <li>Đảm bảo thông tin thanh toán chính xác</li>

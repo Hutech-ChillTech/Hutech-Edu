@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Header from "../components/User/Header";
 import Footer from "../components/User/Footer";
 import ChatBox from "../components/ChatBox/ChatBox";
+import PageTransition from "../components/PageTransition/PageTransition";
 
 const UserLayout: React.FC = () => {
   const location = useLocation();
@@ -14,7 +15,9 @@ const UserLayout: React.FC = () => {
     <div className="user-wrapper">
       <Header />
       <main>
-        <Outlet /> {/* Route con sẽ render ở đây */}
+        <PageTransition>
+          <Outlet /> {/* Route con sẽ render ở đây */}
+        </PageTransition>
       </main>
       {!hideFooter && <Footer />}
       <ChatBox />

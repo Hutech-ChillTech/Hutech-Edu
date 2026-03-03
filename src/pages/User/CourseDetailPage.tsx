@@ -11,11 +11,15 @@ import {
   StarFilled,
   EditOutlined,
   DeleteOutlined,
+  SafetyCertificateOutlined,
+  FileDoneOutlined,
 } from "@ant-design/icons";
-import { Rate, message } from "antd";
+import { Rate, message, Progress, Badge, Button } from "antd";
 import styles from "../../styles/UserCourseDetail.module.css";
 import { quizService } from "../../service/quiz.service";
 import { commentService } from "../../service/comment.service";
+import { progressService, type CourseProgress } from "../../service/progress.service";
+import { certificateService } from "../../service/certificate.service";
 import type { Comment, CourseRating } from "../../service/comment.service";
 
 interface Lesson {
@@ -67,6 +71,10 @@ const CourseDetailPage: React.FC = () => {
     null
   );
   const [replyContent, setReplyContent] = useState("");
+  const [courseProgress, setCourseProgress] = useState<CourseProgress | null>(
+    null
+  );
+  const [certificate, setCertificate] = useState<any>(null);
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
@@ -81,11 +89,17 @@ const CourseDetailPage: React.FC = () => {
           }
         );
         if (res.data.success) {
-          setCourse(res.data.data);
+          const courseData = res.data.data;
+          setCourse(courseData);
+
+          // If enrolled, fetch progress and certificate
+          if (courseData.isEnrolled && id) {
+            fetchProgressAndCertificate(id);
+          }
 
           // Fetch quizzes for each chapter
           const quizMap: { [key: string]: boolean } = {};
-          for (const chapter of res.data.data.chapters || []) {
+          for (const chapter of courseData.chapters || []) {
             try {
               const quizzes = await quizService.getQuizzesByChapter(
                 chapter.chapterId
@@ -130,12 +144,59 @@ const CourseDetailPage: React.FC = () => {
       }
     };
 
+    const fetchProgressAndCertificate = async (courseId: string) => {
+      try {
+        const [progressData, certificateData] = await Promise.all([
+          progressService.getCourseProgress(courseId),
+          certificateService.getUserCertificateInCourse(courseId),
+        ]);
+        setCourseProgress(progressData);
+        setCertificate(certificateData);
+      } catch (err) {
+        console.error("Lỗi khi tải tiến độ và chứng chỉ:", err);
+      }
+    };
+
     if (id) {
       fetchCourseDetail();
       fetchComments();
       fetchCurrentUser();
     }
   }, [id]);
+
+  const handleDownloadCertificate = () => {
+    // Priority: pdfUrl > viewUrl > certificateURL
+    const url = certificate?.pdfUrl || certificate?.viewUrl || certificate?.certificateURL;
+    
+    if (!url) {
+      message.info("Chứng chỉ đang được xử lý, vui lòng thử lại sau");
+      return;
+    }
+
+    let certUrl: string;
+    
+    if (certificate?.pdfUrl) {
+      // BEST: Cloudinary URL - use directly
+      certUrl = certificate.pdfUrl;
+    } else if (certificate?.viewUrl) {
+      // GOOD: Backend normalized URL
+      certUrl = `${import.meta.env.VITE_BACKEND_URL}${certificate.viewUrl}`;
+    } else if (certificate?.certificateURL) {
+      // FALLBACK: Legacy format
+      if (certificate.certificateURL.startsWith("http")) {
+        certUrl = certificate.certificateURL;
+      } else if (certificate.certificateURL.startsWith("/certificates/")) {
+        certUrl = `${import.meta.env.VITE_BACKEND_URL}${certificate.certificateURL}`;
+      } else {
+        certUrl = `${import.meta.env.VITE_BACKEND_URL}/certificates/view/${certificate.certificateURL}`;
+      }
+    } else {
+      message.error("URL chứng chỉ không hợp lệ");
+      return;
+    }
+    
+    window.open(certUrl, "_blank");
+  };
 
   const toggleChapter = (chapterId: string) => {
     setExpandedChapter((prev) => (prev === chapterId ? null : chapterId));
@@ -275,6 +336,9 @@ const CourseDetailPage: React.FC = () => {
 
   const totalLessons =
     course.chapters?.reduce((acc, ch) => acc + (ch.totalLesson || 0), 0) || 0;
+  
+  const totalQuizzes = Object.values(chapterQuizzes).filter(Boolean).length;
+  const totalItems = totalLessons + totalQuizzes;
 
   return (
     <div className={styles.container}>
@@ -302,7 +366,7 @@ const CourseDetailPage: React.FC = () => {
                 <BookOutlined /> {course.chapters?.length || 0} chương
               </div>
               <div>
-                <PlayCircleOutlined /> {totalLessons} bài học
+                <PlayCircleOutlined /> {totalItems} bài ({totalLessons} lessons + {totalQuizzes} quizzes)
               </div>
               {courseRating && (
                 <div>
@@ -322,14 +386,55 @@ const CourseDetailPage: React.FC = () => {
               )}
             </div>
 
+            {course.isEnrolled && courseProgress && (
+              <div className={styles.progressSection}>
+                <div className={styles.progressInfo}>
+                  <span className={styles.progressText}>
+                    Tiến độ học tập: {courseProgress.progress}%
+                  </span>
+                  {courseProgress.progress === 100 && (
+                    <Badge
+                      count={
+                        <span className={styles.completedBadge}>
+                          <FileDoneOutlined /> Đã hoàn thành khóa học
+                        </span>
+                      }
+                    />
+                  )}
+                </div>
+                <Progress
+                  percent={courseProgress.progress}
+                  status={
+                    courseProgress.progress === 100 ? "success" : "active"
+                  }
+                  strokeColor={{
+                    "0%": "#108ee9",
+                    "100%": "#87d068",
+                  }}
+                />
+              </div>
+            )}
+
             <div className={styles.buttonGroup}>
               {course.isEnrolled ? (
-                <button
-                  className={styles.continueButton}
-                  onClick={() => navigate(`/practice/${course.courseId}`)}
-                >
-                  Tiếp tục học
-                </button>
+                <div className={styles.enrolledActions}>
+                  <button
+                    className={styles.continueButton}
+                    onClick={() => navigate(`/practice/${course.courseId}`)}
+                  >
+                    Tiếp tục học
+                  </button>
+                  {certificate && (
+                    <Button
+                      type="primary"
+                      icon={<SafetyCertificateOutlined />}
+                      className={styles.certificateButton}
+                      onClick={handleDownloadCertificate}
+                    >
+                      Tải chứng chỉ
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <>
                   <button

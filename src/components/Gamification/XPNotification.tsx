@@ -37,14 +37,14 @@ const XPNotification: React.FC<XPNotificationProps> = ({
 
     if (leveledUp && newLevel) {
       message.success({
-        content: `🎉 Chúc mừng! Bạn đã lên ${newLevel}!`,
+        content: `Chúc mừng! Bạn đã lên ${newLevel}!`,
         duration: 5,
       });
     }
 
     if (achievementUnlocked) {
       message.success({
-        content: `🏆 Achievement Unlocked: ${achievementUnlocked.name}! +${achievementUnlocked.xpReward} XP`,
+        content: `Achievement Unlocked: ${achievementUnlocked.name}! +${achievementUnlocked.xpReward} XP`,
         duration: 5,
       });
     }
@@ -64,7 +64,7 @@ const XPNotification: React.FC<XPNotificationProps> = ({
       {leveledUp && newLevel && (
         <div className={styles.levelUpNotification}>
           <div className={styles.levelUpContent}>
-            <h3 className={styles.levelUpTitle}>🎉 Level Up!</h3>
+            <h3 className={styles.levelUpTitle}>Level Up!</h3>
             <p className={styles.levelUpText}>Bạn đã đạt cấp độ {newLevel}!</p>
           </div>
         </div>
@@ -77,7 +77,7 @@ const XPNotification: React.FC<XPNotificationProps> = ({
           </span>
           <div className={styles.achievementContent}>
             <h3 className={styles.achievementTitle}>
-              🏆 Achievement Unlocked!
+              Achievement Unlocked!
             </h3>
             <p className={styles.achievementName}>{achievementUnlocked.name}</p>
             <span className={styles.achievementXP}>

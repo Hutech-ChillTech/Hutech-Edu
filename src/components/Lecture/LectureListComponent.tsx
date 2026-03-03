@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { DownOutlined } from "@ant-design/icons";
 import { type Chapter } from "../../types/database.types";
 import styles from "../../styles/LectureList.module.css";
 import { quizService } from "../../service/quiz.service";
@@ -119,11 +120,11 @@ const LectureListComponent: React.FC<LectureListProps> = ({
                   <span>{chapter.chapterName}</span>
                 </h6>
                 <span className={styles.lessonCount}>{totalItems} bài học</span>
-                <i
-                  className={`bi bi-chevron-down ${styles.chapterIcon} ${
+                <DownOutlined 
+                  className={`${styles.chapterIcon} ${
                     isExpanded ? styles.expanded : ""
                   }`}
-                ></i>
+                />
               </div>
 
               {isExpanded && (

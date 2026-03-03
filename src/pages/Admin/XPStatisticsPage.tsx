@@ -8,7 +8,6 @@ import {
   Spin,
   Row,
   Col,
-  Typography,
   Progress,
   Tag,
   Space,
@@ -38,18 +37,25 @@ import {
   AreaChart,
 } from "recharts";
 import { gamificationService } from "../../service/gamification.service";
+import {
+  xpStatisticsService,
+  type XPOverview,
+  type XPPeriodData,
+  type TopUserXP,
+  type CourseXPStats,
+  type InstructorXPStats,
+} from "../../service/xpStatistics.service";
 import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
-const { Title } = Typography;
 
 const XPStatisticsPage: React.FC = () => {
   // Tổng quan XP
-  const [overview, setOverview] = useState<any>(null);
+  const [overview, setOverview] = useState<XPOverview | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
 
   // XP theo thời gian
-  const [periodData, setPeriodData] = useState<any[]>([]);
+  const [periodData, setPeriodData] = useState<XPPeriodData[]>([]);
   const [loadingPeriod, setLoadingPeriod] = useState(false);
   const [periodFilter, setPeriodFilter] = useState({
     startDate: dayjs().subtract(30, "day").format("YYYY-MM-DD"),
@@ -58,88 +64,63 @@ const XPStatisticsPage: React.FC = () => {
   });
 
   // Top user XP
-  const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [topUsers, setTopUsers] = useState<TopUserXP[]>([]);
   const [loadingTopUsers, setLoadingTopUsers] = useState(false);
 
   // XP theo khóa học
   const [courseId, setCourseId] = useState<string>("");
-  const [courseXP, setCourseXP] = useState<any>(null);
+  const [courseXP, setCourseXP] = useState<CourseXPStats | null>(null);
   const [loadingCourseXP, setLoadingCourseXP] = useState(false);
 
   // XP theo instructor
   const [instructorId, setInstructorId] = useState<string>("");
-  const [instructorXP, setInstructorXP] = useState<any>(null);
+  const [instructorXP, setInstructorXP] = useState<InstructorXPStats | null>(
+    null,
+  );
   const [loadingInstructorXP, setLoadingInstructorXP] = useState(false);
 
-  // Generate mock period data based on date range
-  const generateMockPeriodData = () => {
-    const start = dayjs(periodFilter.startDate);
-    const end = dayjs(periodFilter.endDate);
-    const data = [];
-    
-    let current = start;
-    while (current.isBefore(end) || current.isSame(end, 'day')) {
-      let period = "";
-      let next = current;
-      
-      if (periodFilter.groupBy === "day") {
-        period = current.format("DD/MM");
-        next = current.add(1, "day");
-      } else if (periodFilter.groupBy === "month") {
-        period = current.format("MM/YYYY");
-        next = current.add(1, "month");
-      } else {
-        period = current.format("YYYY");
-        next = current.add(1, "year");
-      }
-      
-      data.push({
-        period,
-        totalXP: Math.floor(Math.random() * 5000) + 1000,
-      });
-      
-      current = next;
-      if (data.length > 30) break; // Limit to 30 data points
-    }
-    
-    return data;
-  };
-
-  // Fetch tổng quan XP - Using real API + mock data
+  // Fetch tổng quan XP - Using real API
   const fetchOverview = async () => {
     setLoadingOverview(true);
     try {
-      // Get real data from gamification API
-      const [leaderboard, achievements] = await Promise.all([
-        gamificationService.getLeaderboard(100), // Get more users for total count
-        gamificationService.getAllAchievements(),
-      ]);
-
-      // Calculate total XP from all users
-      const totalXP = leaderboard.reduce((sum, user) => sum + user.totalXP, 0);
-      const avgXP = leaderboard.length > 0 ? Math.round(totalXP / leaderboard.length) : 0;
-
-      setOverview({
-        totalXP,
-        totalUsers: leaderboard.length,
-        totalAchievements: achievements.length,
-        avgXP,
-      });
+      const data = await xpStatisticsService.getOverviewXP();
+      setOverview(data);
     } catch (error) {
       message.error("Không thể tải thống kê tổng quan");
       console.error(error);
-      setOverview(null);
+      // Fallback to gamification service if statistics API fails
+      try {
+        const [leaderboard, achievements] = await Promise.all([
+          gamificationService.getLeaderboard(100),
+          gamificationService.getAllAchievements(),
+        ]);
+        const totalXP = leaderboard.reduce(
+          (sum, user) => sum + user.totalXP,
+          0,
+        );
+        const avgXP =
+          leaderboard.length > 0 ? Math.round(totalXP / leaderboard.length) : 0;
+        setOverview({
+          totalXP,
+          totalUsers: leaderboard.length,
+          totalAchievements: achievements.length,
+          avgXP,
+        });
+      } catch (fallbackError) {
+        console.error(fallbackError);
+        setOverview(null);
+      }
     } finally {
       setLoadingOverview(false);
     }
   };
 
-  // Fetch XP theo thời gian - Mock data for now
-  const fetchPeriodData = () => {
+  // Fetch XP theo thời gian - Using real API
+  const fetchPeriodData = async () => {
     setLoadingPeriod(true);
     try {
-      const mockData = generateMockPeriodData();
-      setPeriodData(mockData);
+      const data = await xpStatisticsService.getXPByPeriod(periodFilter);
+      setPeriodData(data);
     } catch (error) {
       message.error("Không thể tải dữ liệu XP theo thời gian");
       console.error(error);
@@ -153,12 +134,19 @@ const XPStatisticsPage: React.FC = () => {
   const fetchTopUsers = async () => {
     setLoadingTopUsers(true);
     try {
-      const leaderboard = await gamificationService.getLeaderboard(10);
-      setTopUsers(leaderboard);
+      const data = await xpStatisticsService.getTopUsers(10);
+      setTopUsers(data);
     } catch (error) {
       message.error("Không thể tải bảng xếp hạng");
       console.error(error);
-      setTopUsers([]);
+      try {
+        const leaderboard = await gamificationService.getLeaderboard(10);
+        setTopUsers(leaderboard);
+      } catch (fallbackError) {
+        message.error("Không thể tải bảng xếp hạng");
+        console.error(fallbackError);
+        setTopUsers([]);
+      }
     } finally {
       setLoadingTopUsers(false);
     }
@@ -180,32 +168,46 @@ const XPStatisticsPage: React.FC = () => {
     fetchPeriodData();
   }, [periodFilter]);
 
-  // Fetch XP theo khóa học - Mock for now
+  // Fetch XP theo khóa học - Using real API
   useEffect(() => {
     if (!courseId) return;
-    setLoadingCourseXP(true);
-    // Mock data
-    setTimeout(() => {
-      setCourseXP({
-        totalXP: Math.floor(Math.random() * 10000) + 5000,
-        count: Math.floor(Math.random() * 50) + 10,
-      });
-      setLoadingCourseXP(false);
-    }, 500);
+
+    const fetchCourseXP = async () => {
+      setLoadingCourseXP(true);
+      try {
+        const data = await xpStatisticsService.getCourseXP(courseId);
+        setCourseXP(data);
+      } catch (error) {
+        message.error("Không thể tải thống kê XP khóa học");
+        console.error(error);
+        setCourseXP(null);
+      } finally {
+        setLoadingCourseXP(false);
+      }
+    };
+
+    fetchCourseXP();
   }, [courseId]);
 
-  // Fetch XP theo instructor - Mock for now
+  // Fetch XP theo instructor - Using real API
   useEffect(() => {
     if (!instructorId) return;
-    setLoadingInstructorXP(true);
-    // Mock data
-    setTimeout(() => {
-      setInstructorXP({
-        totalXP: Math.floor(Math.random() * 15000) + 8000,
-        count: Math.floor(Math.random() * 100) + 20,
-      });
-      setLoadingInstructorXP(false);
-    }, 500);
+
+    const fetchInstructorXP = async () => {
+      setLoadingInstructorXP(true);
+      try {
+        const data = await xpStatisticsService.getInstructorXP(instructorId);
+        setInstructorXP(data);
+      } catch (error) {
+        message.error("Không thể tải thống kê XP giảng viên");
+        console.error(error);
+        setInstructorXP(null);
+      } finally {
+        setLoadingInstructorXP(false);
+      }
+    };
+
+    fetchInstructorXP();
   }, [instructorId]);
 
   // Format number with commas
@@ -245,7 +247,9 @@ const XPStatisticsPage: React.FC = () => {
               style={{ color: getMedalColor(rank), fontSize: 20 }}
             />
           ) : (
-            <span style={{ fontSize: 16, fontWeight: "bold", color: "#8c8c8c" }}>
+            <span
+              style={{ fontSize: 16, fontWeight: "bold", color: "#8c8c8c" }}
+            >
               #{rank}
             </span>
           )}
@@ -256,7 +260,7 @@ const XPStatisticsPage: React.FC = () => {
       title: "Người dùng",
       dataIndex: "userName",
       key: "userName",
-      render: (name: string, _record: any) => (
+      render: (name: string) => (
         <Space>
           <UserOutlined style={{ color: "#1890ff" }} />
           <span style={{ fontWeight: 500 }}>{name}</span>
@@ -291,7 +295,7 @@ const XPStatisticsPage: React.FC = () => {
       title: "Tiến độ",
       key: "progress",
       width: 200,
-      render: (record: any) => {
+      render: (record: TopUserXP) => {
         const maxXP = topUsers[0]?.totalXP || 1;
         const percent = (record.totalXP / maxXP) * 100;
         return (
@@ -313,7 +317,7 @@ const XPStatisticsPage: React.FC = () => {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>
-          🏆 Thống kê XP & Gamification
+          Quản lý học tập
         </h1>
       </div>
 
@@ -322,7 +326,7 @@ const XPStatisticsPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card bordered={true} loading={loadingOverview}>
             <Statistic
-              title="Tổng XP Hệ thống"
+              title="Tổng XP hệ thống"
               value={overview?.totalXP || 0}
               formatter={(value) => formatNumber(Number(value))}
               prefix={<FireOutlined />}
@@ -336,7 +340,7 @@ const XPStatisticsPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card bordered={true} loading={loadingOverview}>
             <Statistic
-              title="Tổng Người dùng"
+              title="Tổng người dùng"
               value={overview?.totalUsers || 0}
               prefix={<UserOutlined />}
               valueStyle={{ color: "#52c41a" }}
@@ -349,7 +353,7 @@ const XPStatisticsPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card bordered={true} loading={loadingOverview}>
             <Statistic
-              title="Thành tựu Mở khóa"
+              title="Thành tựu"
               value={overview?.totalAchievements || 0}
               prefix={<TrophyOutlined />}
               valueStyle={{ color: "#faad14" }}
@@ -362,7 +366,7 @@ const XPStatisticsPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card bordered={true} loading={loadingOverview}>
             <Statistic
-              title="XP Trung bình/User"
+              title="XP Trung bình/Người dùng"
               value={overview?.avgXP || 0}
               formatter={(value) => formatNumber(Number(value))}
               prefix={<RiseOutlined />}
@@ -421,7 +425,7 @@ const XPStatisticsPage: React.FC = () => {
         <Col xs={24} xl={16}>
           <Card
             bordered={true}
-            title="📈 Xu hướng XP theo thời gian"
+            title="Xu hướng XP theo thời gian"
             style={{ height: 400 }}
           >
             <Spin spinning={loadingPeriod}>
@@ -430,13 +434,31 @@ const XPStatisticsPage: React.FC = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={periodData}>
                       <defs>
-                        <linearGradient id="colorXP" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#1890ff" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#1890ff" stopOpacity={0} />
+                        <linearGradient
+                          id="colorXP"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#1890ff"
+                            stopOpacity={0.8}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#1890ff"
+                            stopOpacity={0}
+                          />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="period" stroke="#666" style={{ fontSize: 12 }} />
+                      <XAxis
+                        dataKey="period"
+                        stroke="#666"
+                        style={{ fontSize: 12 }}
+                      />
                       <YAxis stroke="#666" style={{ fontSize: 12 }} />
                       <Tooltip
                         contentStyle={{
@@ -458,7 +480,10 @@ const XPStatisticsPage: React.FC = () => {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <Empty description="Không có dữ liệu" style={{ paddingTop: 100 }} />
+                <Empty
+                  description="Không có dữ liệu"
+                  style={{ paddingTop: 100 }}
+                />
               )}
             </Spin>
           </Card>
@@ -500,7 +525,10 @@ const XPStatisticsPage: React.FC = () => {
                     />
                   </Space>
                 ) : (
-                  <Empty description="Chọn khóa học để xem thống kê" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Empty
+                    description="Chọn khóa học để xem thống kê"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
                 )}
               </Spin>
             </Card>
@@ -538,7 +566,10 @@ const XPStatisticsPage: React.FC = () => {
                     />
                   </Space>
                 ) : (
-                  <Empty description="Chọn giảng viên để xem thống kê" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Empty
+                    description="Chọn giảng viên để xem thống kê"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
                 )}
               </Spin>
             </Card>
@@ -555,9 +586,7 @@ const XPStatisticsPage: React.FC = () => {
             rowKey="userId"
             pagination={false}
             scroll={{ x: 800 }}
-            rowClassName={(_record, index) =>
-              index < 3 ? "top-user-row" : ""
-            }
+            rowClassName={(_record, index) => (index < 3 ? "top-user-row" : "")}
           />
         </Spin>
       </Card>

@@ -45,7 +45,7 @@ interface CreateTestCasePayload {
   description?: string;
   input?: string;
   expectedOutput?: string;
-  testCode?: string;
+  testCodes?: string;
 }
 
 const { Title } = Typography;
@@ -80,7 +80,7 @@ interface LessonFormValues {
   description?: string;
   input?: string;
   expectedOutput?: string;
-  testCode?: string;
+  testCodes?: string;
   question?: string;
   options?: string | string[];
   answer?: string;
@@ -534,7 +534,7 @@ const LessonList: React.FC = () => {
 
           <Form.Item
             label="Đoạn mã kiểm tra (Chỉ dành cho dạng bài HTML/CSS)"
-            name="testCode"
+            name="testCodes"
           >
             <Input.TextArea
               rows={3}
@@ -989,7 +989,7 @@ const LessonList: React.FC = () => {
           description: values.description,
           input: values.input,
           expectedOutput: values.expectedOutput,
-          testCode: values.testCode,
+          testCodes: values.testCodes,
         };
 
         await testCaseService.createTestCase(

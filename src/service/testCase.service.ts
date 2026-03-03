@@ -1,4 +1,5 @@
 import { type TestCase } from "../types/database.types";
+
 const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return {
@@ -10,18 +11,19 @@ const getAuthHeaders = () => {
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 // Interface cho payload
-interface CreateTestCasePayload {
-    lessonId: string,          // Bắt buộc: Để biết test case này của bài học nào
-    description?: string,    // Optional (?): Mô tả test case
-    input?: string,             // Optional: Dữ liệu đầu vào
-    expectedOutput?: string   // Optional: Kết quả mong đợi
+export interface CreateTestCasePayload {
+    lessonId: string;          // Bắt buộc: Để biết test case này của bài học nào
+    description?: string;      // Optional (?): Mô tả test case
+    input?: string;            // Optional: Dữ liệu đầu vào
+    expectedOutput?: string;   // Optional: Kết quả mong đợi
+    testCodes?: string;        // Optional: Code để test
 }
 
 export const testCaseService = {
 
     getAllTestCases: async (): Promise<TestCase[]> => {
         try {
-            const res = await fetch(`${API_URL}/testcases`, {
+            const res = await fetch(`${API_URL}/test-cases`, {
                 method: "GET",
                 headers: getAuthHeaders(),
             });
@@ -42,7 +44,7 @@ export const testCaseService = {
 
     getTestCaseById: async (testCaseId: string): Promise<TestCase> => {
         try {
-            const res = await fetch(`${API_URL}/testcases/${testCaseId}`, {
+            const res = await fetch(`${API_URL}/test-cases/${testCaseId}`, {
                 method: "GET",
                 headers: getAuthHeaders(),
             });
@@ -63,7 +65,7 @@ export const testCaseService = {
 
     getTestCaseByLessonId: async (lessonId: string): Promise<TestCase[]> => {
         try {
-            const res = await fetch(`${API_URL}/testcases/lesson/${lessonId}`, {
+            const res = await fetch(`${API_URL}/test-cases/lesson/${lessonId}`, {
                 method: "GET",
                 headers: getAuthHeaders(),
             });
@@ -84,7 +86,7 @@ export const testCaseService = {
 
     createTestCase: async (payload: CreateTestCasePayload) => {
         try {
-            const res = await fetch(`${API_URL}/testcases`, {
+            const res = await fetch(`${API_URL}/test-cases`, {
                 method: "POST",
                 headers: getAuthHeaders(),
                 body: JSON.stringify(payload),
@@ -108,7 +110,7 @@ export const testCaseService = {
 
     updateTestCase: async (testCaseId: string, payload: Partial<CreateTestCasePayload>) => {
         try {
-            const res = await fetch(`${API_URL}/testcases/${testCaseId}`, {
+            const res = await fetch(`${API_URL}/test-cases/${testCaseId}`, {
                 method: "PUT",
                 headers: getAuthHeaders(),
                 body: JSON.stringify(payload),
@@ -132,7 +134,7 @@ export const testCaseService = {
 
     deleteTestCase: async (testCaseId: string) => {
         try {
-            const res = await fetch(`${API_URL}/testcases/${testCaseId}`, {
+            const res = await fetch(`${API_URL}/test-cases/${testCaseId}`, {
                 method: "DELETE",
                 headers: getAuthHeaders(),
             });

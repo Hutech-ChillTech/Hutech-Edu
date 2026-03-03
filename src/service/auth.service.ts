@@ -8,7 +8,6 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const authService = {
   login: async (loginData: Login): Promise<LoginResponse> => {
-    // Đổi tên tham số thành loginData để tránh trùng
     try {
       const response = await fetch(`${API_URL}/users/login`, {
         method: "POST",
@@ -22,13 +21,10 @@ export const authService = {
       });
 
       const resData = await response.json();
-
       console.log("Dữ liệu chuẩn bị gửi về: ", resData);
-
       if (!response.ok) {
         throw new Error(resData.message || "Đăng nhập thất bại");
       }
-
       return resData;
     } catch (error) {
       console.error("Login error:", error);

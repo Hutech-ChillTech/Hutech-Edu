@@ -268,7 +268,7 @@ const DashboardPage: React.FC = () => {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>
-          📊 Admin Dashboard
+          Admin Dashboard
         </h2>
         <p style={{ margin: "8px 0 0", color: "#8c8c8c" }}>
           Tổng quan hệ thống - Cập nhật lúc {dayjs().format("HH:mm DD/MM/YYYY")}
@@ -339,7 +339,7 @@ const DashboardPage: React.FC = () => {
       {/* Main Content */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={16}>
-          <Card title="📈 Biểu đồ doanh thu 6 tháng" bordered={false}>
+          <Card title="Biểu đồ doanh thu 6 tháng" bordered={false}>
             <div style={{ height: 320 }}>
               <canvas ref={revenueChartRef}></canvas>
             </div>
@@ -347,7 +347,7 @@ const DashboardPage: React.FC = () => {
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card title="📊 Tổng quan hệ thống" bordered={false}>
+          <Card title="Tổng quan hệ thống" bordered={false}>
             <div style={{ marginBottom: 20 }}>
               <div
                 style={{
@@ -515,7 +515,7 @@ const DashboardPage: React.FC = () => {
       {/* Bottom Section */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24}>
-          <Card title="🏆 Top 5 khóa học bán chạy nhất" bordered={false}>
+          <Card title="Top 5 khóa học bán chạy nhất" bordered={false}>
             <Table
               dataSource={topCourses}
               columns={topCoursesColumns}

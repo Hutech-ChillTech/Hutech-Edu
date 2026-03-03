@@ -28,11 +28,14 @@ import {
   ClockCircleOutlined,
   CameraOutlined,
   UploadOutlined,
+  EyeOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import styles from "../../styles/UserProfile.module.css";
 import { courseService } from "../../service/course.service";
 import { uploadService } from "../../service/upload.service";
 import { userService } from "../../service/user.service";
+import { certificateService } from "../../service/certificate.service";
 
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -97,6 +100,8 @@ const UserProfile: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [certificates, setCertificates] = useState<any[]>([]);
+  const [certificatesLoading, setCertificatesLoading] = useState(false);
 
   const [editForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -170,6 +175,42 @@ const UserProfile: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
+  // ============ FETCH CERTIFICATES ============
+  const fetchCertificates = async () => {
+    if (!userId) return;
+    
+    setCertificatesLoading(true);
+    try {
+      const data = await certificateService.getUserCertificates();
+      console.log("📜 Certificates data:", data);
+      if (data.length > 0) {
+        console.log("📊 First certificate:", {
+          certificateId: data[0]?.certificateId,
+          certificateCode: data[0]?.certificateCode,
+          pdfUrl: data[0]?.pdfUrl,
+          viewUrl: data[0]?.viewUrl,
+          certificateURL: data[0]?.certificateURL,
+          qrCodeUrl: data[0]?.qrCodeUrl
+        });
+      }
+      setCertificates(data);
+    } catch (error) {
+      console.error("Error fetching certificates:", error);
+      message.error("Không thể tải danh sách chứng chỉ");
+    } finally {
+      setCertificatesLoading(false);
+    }
+  };
+
+  // Load certificates when "certificates" tab is active
+  useEffect(() => {
+    if (activeTab === "certificates" && certificates.length === 0) {
+      fetchCertificates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+
   // ============ UPDATE USER ============
   const handleUpdateUser = async (values: any) => {
     try {
@@ -185,7 +226,7 @@ const UserProfile: React.FC = () => {
       }
 
       setUser(data.data);
-      message.success("✅ Cập nhật thông tin thành công!");
+      message.success("Cập nhật thông tin thành công!");
       setIsEditModalVisible(false);
       editForm.resetFields();
     } catch (err: any) {
@@ -211,7 +252,7 @@ const UserProfile: React.FC = () => {
         throw new Error(data.message || "Đổi mật khẩu thất bại!");
       }
 
-      message.success("✅ Đổi mật khẩu thành công!");
+      message.success("Đổi mật khẩu thành công!");
       setIsChangePasswordVisible(false);
       passwordForm.resetFields();
     } catch (err: any) {
@@ -340,7 +381,7 @@ const UserProfile: React.FC = () => {
     return (
       <div className={styles.loadingContainer}>
         <p style={{ fontSize: 18, color: "#d32f2f" }}>
-          ⚠️ Vui lòng đăng nhập để xem hồ sơ cá nhân
+          Vui lòng đăng nhập để xem hồ sơ cá nhân
         </p>
         <Button
           type="primary"
@@ -414,6 +455,11 @@ const UserProfile: React.FC = () => {
                 icon: <BookOutlined />,
                 text: "Khóa học của tôi",
                 badge: enrolledCourses.length,
+              },
+              {
+                key: "certificates",
+                icon: <TrophyOutlined />,
+                text: "Chứng chỉ của tôi",
               },
               {
                 key: "roadmap",
@@ -698,13 +744,233 @@ const UserProfile: React.FC = () => {
               )}
             </TabPane>
 
-            {/* ========== TAB 3: Lộ trình học tập ========== */}
+            {/* ========== TAB 3: Chứng chỉ của tôi ========== */}
+            <TabPane
+              tab={`Chứng chỉ của tôi (${certificates.length})`}
+              key="certificates"
+            >
+              <div className={styles.tabHeader}>
+                <h2>🎓 Chứng chỉ đã đạt được</h2>
+              </div>
+
+              {certificatesLoading ? (
+                <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                  <Spin size="large" />
+                  <p style={{ marginTop: 16, color: "#888" }}>Đang tải chứng chỉ...</p>
+                </div>
+              ) : certificates.length > 0 ? (
+                <List
+                  grid={{
+                    gutter: 16,
+                    xs: 1,
+                    sm: 1,
+                    md: 2,
+                    lg: 2,
+                    xl: 3,
+                    xxl: 3,
+                  }}
+                  dataSource={certificates}
+                  renderItem={(cert: any) => (
+                    <List.Item>
+                      <Card
+                        hoverable
+                        className={styles.certificateCard}
+                        cover={
+                          <div style={{ 
+                            height: 200, 
+                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontSize: 48
+                          }}>
+                            🎓
+                          </div>
+                        }
+                        actions={[
+                          <Button
+                            key="view"
+                            type="link"
+                            icon={<EyeOutlined />}
+                            onClick={() => {
+                              console.log("🔍 Button clicked! Certificate:", cert);
+                              
+                              // Priority: pdfUrl > viewUrl > certificateURL
+                              // Fix: Backend trả về empty string ('') thay vì null
+                              const pdfUrl = cert.pdfUrl && cert.pdfUrl.trim() !== '' ? cert.pdfUrl : null;
+                              const viewUrl = cert.viewUrl && cert.viewUrl.trim() !== '' ? cert.viewUrl : null;
+                              const certificateURL = cert.certificateURL && cert.certificateURL.trim() !== '' ? cert.certificateURL : null;
+                              
+                              const url = pdfUrl || viewUrl || certificateURL;
+                              
+                              console.log("📊 URL priority check:", {
+                                pdfUrl: cert.pdfUrl,
+                                viewUrl: cert.viewUrl,
+                                certificateURL: cert.certificateURL,
+                                cleanedPdfUrl: pdfUrl,
+                                cleanedViewUrl: viewUrl,
+                                cleanedCertificateURL: certificateURL,
+                                selectedUrl: url
+                              });
+                              
+                              if (!url) {
+                                console.error("❌ No valid URL found!");
+                                message.warning("Chứng chỉ chưa có URL. Vui lòng liên hệ admin.");
+                                return;
+                              }
+
+                              let certUrl: string;
+                              if (pdfUrl) {
+                                certUrl = pdfUrl;
+                                console.log("✅ Using pdfUrl (Cloudinary):", certUrl);
+                              } else if (viewUrl) {
+                                certUrl = `${import.meta.env.VITE_BACKEND_URL}${viewUrl}`;
+                                console.log("✅ Using viewUrl:", certUrl);
+                              } else if (certificateURL?.startsWith("http")) {
+                                certUrl = certificateURL;
+                                console.log("✅ Using certificateURL (http):", certUrl);
+                              } else if (certificateURL?.startsWith("/certificates/")) {
+                                certUrl = `${import.meta.env.VITE_BACKEND_URL}${certificateURL}`;
+                                console.log("✅ Using certificateURL (/certificates/):", certUrl);
+                              } else if (certificateURL) {
+                                certUrl = `${import.meta.env.VITE_BACKEND_URL}/certificates/view/${certificateURL}`;
+                                console.log("✅ Using certificateURL (filename):", certUrl);
+                              } else {
+                                console.error("❌ Invalid certificate URL!");
+                                message.error("URL chứng chỉ không hợp lệ");
+                                return;
+                              }
+                              
+                              console.log("🚀 Opening URL:", certUrl);
+                              window.open(certUrl, '_blank');
+                            }}
+                          >
+                            Xem
+                          </Button>,
+                          <Button
+                            key="download"
+                            type="link"
+                            icon={<DownloadOutlined />}
+                            onClick={() => {
+                              // Priority: pdfUrl > viewUrl > certificateURL
+                              // Fix: Backend trả về empty string ('') thay vì null
+                              const pdfUrl = cert.pdfUrl && cert.pdfUrl.trim() !== '' ? cert.pdfUrl : null;
+                              const viewUrl = cert.viewUrl && cert.viewUrl.trim() !== '' ? cert.viewUrl : null;
+                              const certificateURL = cert.certificateURL && cert.certificateURL.trim() !== '' ? cert.certificateURL : null;
+                              
+                              const url = pdfUrl || viewUrl || certificateURL;
+                              
+                              if (!url) {
+                                message.warning("Chứng chỉ chưa có URL. Vui lòng liên hệ admin.");
+                                return;
+                              }
+
+                              let certUrl: string;
+                              if (pdfUrl) {
+                                certUrl = pdfUrl;
+                              } else if (viewUrl) {
+                                certUrl = `${import.meta.env.VITE_BACKEND_URL}${viewUrl}`;
+                              } else if (certificateURL?.startsWith("http")) {
+                                certUrl = certificateURL;
+                              } else if (certificateURL?.startsWith("/certificates/")) {
+                                certUrl = `${import.meta.env.VITE_BACKEND_URL}${certificateURL}`;
+                              } else if (certificateURL) {
+                                certUrl = `${import.meta.env.VITE_BACKEND_URL}/certificates/view/${certificateURL}`;
+                              } else {
+                                message.error("URL chứng chỉ không hợp lệ");
+                                return;
+                              }
+                              
+                              window.open(certUrl, '_blank');
+                            }}
+                          >
+                            Tải xuống
+                          </Button>,
+                        ]}
+                      >
+                        <Card.Meta
+                          title={cert.certificateTitle || "Certificate"}
+                          description={
+                            <div>
+                              <p style={{ margin: "8px 0", fontSize: 14 }}>
+                                <strong>Khóa học:</strong> {cert.course?.courseName || "N/A"}
+                              </p>
+                              <p style={{ margin: "8px 0", fontSize: 14 }}>
+                                <strong>Điểm số:</strong>{" "}
+                                <Tag color={cert.totalScore >= 90 ? "green" : cert.totalScore >= 70 ? "blue" : "orange"}>
+                                  {cert.totalScore}%
+                                </Tag>
+                              </p>
+                              <p style={{ margin: "8px 0", fontSize: 12, color: "#888" }}>
+                                <ClockCircleOutlined style={{ marginRight: 4 }} />
+                                Cấp ngày: {new Date(cert.issuedAt).toLocaleDateString("vi-VN")}
+                              </p>
+                              
+                              {/* QR Code Display */}
+                              {cert.qrCodeUrl && (
+                                <div style={{ 
+                                  textAlign: 'center', 
+                                  marginTop: 12, 
+                                  paddingTop: 12, 
+                                  borderTop: '1px solid #f0f0f0' 
+                                }}>
+                                  <img 
+                                    src={cert.qrCodeUrl} 
+                                    alt="QR Code" 
+                                    style={{ 
+                                      width: 80, 
+                                      height: 80, 
+                                      border: '2px solid #d4af37', 
+                                      borderRadius: 8,
+                                      padding: 4,
+                                      background: 'white'
+                                    }}
+                                  />
+                                  <p style={{ 
+                                    fontSize: 11, 
+                                    color: '#999', 
+                                    marginTop: 6,
+                                    marginBottom: 0
+                                  }}>
+                                    Quét để xác thực
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          }
+                        />
+                      </Card>
+                    </List.Item>
+                  )}
+                />
+              ) : (
+                <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                  <TrophyOutlined
+                    style={{ fontSize: 64, color: "#d9d9d9", marginBottom: 16 }}
+                  />
+                  <h3>Bạn chưa có chứng chỉ nào</h3>
+                  <p style={{ color: "#888", marginBottom: 24 }}>
+                    Hoàn thành các khóa học để nhận chứng chỉ!
+                  </p>
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={() => navigate("/all-courses")}
+                  >
+                    Khám phá khóa học
+                  </Button>
+                </div>
+              )}
+            </TabPane>
+
+            {/* ========== TAB 4: Lộ trình học tập ========== */}
             <TabPane tab="Lộ trình học tập" key="roadmap">
-              <h2>🏆 Lộ trình học tập của bạn</h2>
+              <h2>Lộ trình học tập của bạn</h2>
               <p className={styles.emptyText}>Tính năng đang phát triển...</p>
             </TabPane>
 
-            {/* ========== TAB 4: Thông báo ========== */}
+            {/* ========== TAB 5: Thông báo ========== */}
             <TabPane tab="Thông báo" key="messages">
               <h2>💬 Thông báo & Tin nhắn</h2>
               <p className={styles.emptyText}>Bạn chưa có thông báo mới.</p>

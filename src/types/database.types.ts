@@ -166,7 +166,7 @@ export interface TestCase {
   expectedOutput: string | null;
   lessonId: string;
 
-  testCode?: string;
+  testCodes?: string;
   created_at: Date | string;
   updated_at: Date | string;
 
@@ -228,13 +228,24 @@ export interface UserCoursePreview {
   payments?: Payment[];
 }
 
+/**
+ * Certificate Interface
+ *
+ * ⚠️ QUAN TRỌNG - Phân biệt 2 field:
+ * - certificateId: UUID duy nhất của certificate (dùng để gọi API /api/certificates/:certificateId)
+ * - certificateURL: Đường dẫn file PDF (dùng để hiển thị/download PDF)
+ *
+ * ❌ SAI: fetch(`/api/certificates/${certificate.certificateURL}`)
+ * ✅ ĐÚNG: fetch(`/api/certificates/${certificate.certificateId}`)
+ * ✅ ĐÚNG: window.open(certificate.certificateURL) // để mở PDF
+ */
 export interface Certificate {
-  certificateId: string;
+  certificateId: string; // UUID - dùng để gọi API
   submissionId: string | null;
   certificateTitle: string | null;
   userId: string;
   courseId: string;
-  certificateURL: string | null;
+  certificateURL: string | null; // Path to PDF file - dùng để hiển thị/download
   issuedAt: Date | string;
   created_at: Date | string;
   updated_at: Date | string;

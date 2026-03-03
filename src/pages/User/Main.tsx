@@ -59,24 +59,6 @@ const Main: React.FC = () => {
     fetchPopular();
   }, []);
 
-  // === Dữ liệu bài viết (giữ nguyên) ===
-  const posts = [
-    {
-      title: "Làm quen với Frontend: HTML, CSS, JS",
-      date: "01/05/2025",
-      desc: "Bài viết hướng dẫn cơ bản về HTML, CSS, JS.",
-      img: "/images/1.jpg",
-      link: "https://example.com/frontend",
-    },
-    {
-      title: "Hành trình trở thành Backend Developer",
-      date: "28/04/2025",
-      desc: "Khám phá công nghệ backend như Node.js, ASP.NET Core.",
-      img: "/images/1.jpg",
-      link: "https://example.com/backend",
-    },
-  ];
-
   return (
     <div className={styles["blog-main"]}>
       {/* === HERO SECTION === */}
@@ -241,41 +223,6 @@ const Main: React.FC = () => {
             ))}
           </div>
         )}
-      </div>
-
-      {/* === FEATURED POSTS === */}
-      <div className="container py-5">
-        <h2 className="text-center fw-bold mb-5">Bài Viết Nổi Bật</h2>
-        <div className="row justify-content-center">
-          {posts.map((post, index) => (
-            <div className="col-md-6 mb-4" key={index}>
-              <div className={`${styles["blog-card"]} d-flex shadow-sm`}>
-                <img
-                  src={post.img}
-                  className={styles["blog-img"]}
-                  alt={post.title}
-                />
-                <div
-                  className={`${styles["blog-content"]} p-3 d-flex flex-column justify-content-between`}
-                >
-                  <div>
-                    <h5 className="fw-bold">{post.title}</h5>
-                    <div className="text-muted mb-2">
-                      Ngày đăng: {post.date}
-                    </div>
-                    <p style={{ fontSize: "0.95rem" }}>{post.desc}</p>
-                  </div>
-                  <a
-                    href={post.link}
-                    className="btn btn-outline-primary btn-sm mt-2 align-self-start"
-                  >
-                    Đọc thêm
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

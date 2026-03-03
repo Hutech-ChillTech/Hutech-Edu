@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { message } from "antd";
 import styles from "../styles/RegisterPage.module.css";
+import { authService } from "../service/auth.service";
 
 interface RegisterForm {
   userName: string;
@@ -34,17 +34,14 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
 
     try {
-      await axios.post("http://localhost:3000/api/users/register", form);
-      message.success(
-        "Đăng ký thành công! Đang chuyển đến trang đăng nhập... 🎉"
-      );
+      await authService.register(form);
+      message.success("Đăng ký thành công! Đang chuyển đến trang đăng nhập...");
       setTimeout(() => {
         navigate("/login");
       }, 1000);
     } catch (err: any) {
       message.error(
-        err.response?.data?.message ||
-          "Đăng ký thất bại! Vui lòng kiểm tra lại thông tin."
+        err.message || "Đăng ký thất bại! Vui lòng kiểm tra lại thông tin."
       );
     }
   };

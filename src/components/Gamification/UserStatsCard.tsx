@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Spin, Progress, Card, Badge } from "antd";
+import { Spin, Progress, Card, Badge, Button, Modal } from "antd";
 import { TrophyOutlined, RocketOutlined } from "@ant-design/icons";
 import {
   gamificationService,
@@ -11,6 +11,8 @@ const UserStatsCard: React.FC = () => {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllAchievements, setShowAllAchievements] = useState(false);
+  const [showAllActivities, setShowAllActivities] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -19,11 +21,11 @@ const UserStatsCard: React.FC = () => {
   const loadStats = async () => {
     try {
       const data = await gamificationService.getUserStats();
-      console.log("✅ Gamification stats loaded:", data);
+      console.log("Gamification stats loaded:", data);
       setStats(data);
       setError(null);
     } catch (error: any) {
-      console.error("❌ Error loading gamification stats:", error);
+      console.error("Error loading gamification stats:", error);
       console.error("Error response:", error.response?.data);
       setError(
         error.response?.data?.message ||
@@ -63,6 +65,11 @@ const UserStatsCard: React.FC = () => {
     }
   };
 
+  // Helper function to remove emojis from text
+  const removeEmojis = (text: string): string => {
+    return text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}\u{20D0}-\u{20FF}\u{FE00}-\u{FE0F}]/gu, '').trim();
+  };
+
   if (loading) {
     return (
       <Card>
@@ -80,7 +87,7 @@ const UserStatsCard: React.FC = () => {
     return (
       <Card>
         <div style={{ textAlign: "center", padding: "2rem" }}>
-          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⚠️</div>
+
           <h3 style={{ color: "#f56565", marginBottom: "0.5rem" }}>
             Lỗi tải dữ liệu
           </h3>
@@ -108,13 +115,6 @@ const UserStatsCard: React.FC = () => {
               textAlign: "left",
             }}
           >
-            <strong>💡 Hướng dẫn khắc phục:</strong>
-            <ul style={{ marginTop: "0.5rem", paddingLeft: "1.5rem" }}>
-              <li>Kiểm tra backend đã chạy chưa (port 3000)</li>
-              <li>Kiểm tra API endpoint: /api/xp/stats</li>
-              <li>Mở Console (F12) xem lỗi chi tiết</li>
-              <li>Kiểm tra token trong localStorage</li>
-            </ul>
           </div>
         </div>
       </Card>
@@ -138,14 +138,35 @@ const UserStatsCard: React.FC = () => {
               className={styles.levelBadgeOverlay}
               style={{ backgroundColor: getLevelColor(stats.level) }}
             >
-              {stats.levelInfo.perks.badge}
+              {stats.levelInfo.perks.badge.startsWith('/') || 
+               stats.levelInfo.perks.badge.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i) ? (
+                <img 
+                  src={stats.levelInfo.perks.badge} 
+                  alt="Badge" 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover',
+                    borderRadius: '50%'
+                  }}
+                  onError={(e) => {
+                    // Fallback to text if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.textContent = '';
+                    }
+                  }}
+                />
+              ) : (
+                stats.levelInfo.perks.badge
+              )}
             </div>
           </div>
           <div className={styles.userInfo}>
             <h2 className={styles.userName}>{stats.userName}</h2>
             <div className={styles.levelTag}>
               <span className={styles.levelText}>{stats.level}</span>
-              <span className={styles.levelTitle}>{stats.levelInfo.title}</span>
             </div>
           </div>
         </div>
@@ -184,7 +205,7 @@ const UserStatsCard: React.FC = () => {
 
           {stats.levelInfo.perks.discount > 0 && (
             <div className={styles.perks}>
-              <p>🎁 {stats.levelInfo.perks.description}</p>
+              <p>{stats.levelInfo.perks.description}</p>
             </div>
           )}
         </div>
@@ -198,6 +219,13 @@ const UserStatsCard: React.FC = () => {
             <TrophyOutlined /> Thành tích
           </>
         }
+        extra={
+          stats.achievements.list.length > 3 && (
+            <Button type="link" onClick={() => setShowAllAchievements(true)}>
+              Xem tất cả
+            </Button>
+          )
+        }
       >
         <div className={styles.achievementsSection}>
           <p className={styles.achievementsSummary}>
@@ -208,7 +236,7 @@ const UserStatsCard: React.FC = () => {
           </p>
 
           <div className={styles.achievementGrid}>
-            {stats.achievements.list.slice(0, 6).map((userAchievement) => (
+            {stats.achievements.list.slice(0, 9).map((userAchievement) => (
               <div
                 key={userAchievement.id}
                 className={styles.achievementBadge}
@@ -216,11 +244,29 @@ const UserStatsCard: React.FC = () => {
               >
                 <div className={styles.achievementIconWrapper}>
                   <span className={styles.achievementIcon}>
-                    {userAchievement.achievement.icon}
+                    {userAchievement.achievement.icon.startsWith('/') || 
+                     userAchievement.achievement.icon.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i) ? (
+                      <img 
+                        src={userAchievement.achievement.icon} 
+                        alt={userAchievement.achievement.name}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'contain'
+                        }}
+                        onError={(e) => {
+                          // Fallback to trophy emoji if image fails to load
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            parent.textContent = '';
+                          }
+                        }}
+                      />
+                    ) : (
+                      userAchievement.achievement.icon
+                    )}
                   </span>
-                  {userAchievement.progress === 100 && (
-                    <span className={styles.unlockedBadge}>✅</span>
-                  )}
                 </div>
                 <p className={styles.achievementName}>
                   {userAchievement.achievement.name}
@@ -239,63 +285,88 @@ const UserStatsCard: React.FC = () => {
             ))}
           </div>
 
-          {stats.achievements.list.length > 6 && (
-            <p className={styles.moreAchievements}>
-              +{stats.achievements.list.length - 6} thành tích khác...
-            </p>
-          )}
+
         </div>
       </Card>
 
-      {/* Stats Summary */}
-      <Card className={styles.summaryCard}>
-        <div className={styles.statsSummary}>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>
-              {stats.totalCoursesCompleted}
-            </span>
-            <span className={styles.statLabel}>Khóa học hoàn thành</span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>
-              {stats.achievements.unlocked}
-            </span>
-            <span className={styles.statLabel}>Thành tích</span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>{stats.recentXP.length}</span>
-            <span className={styles.statLabel}>Hoạt động gần đây</span>
-          </div>
-        </div>
-      </Card>
-
-      {/* Recent XP */}
-      {stats.recentXP.length > 0 && (
-        <Card className={styles.recentXPCard} title="Hoạt động gần đây">
-          <div className={styles.xpHistory}>
-            {stats.recentXP.slice(0, 5).map((transaction) => (
-              <div
-                key={transaction.transactionId}
-                className={styles.xpTransaction}
-              >
-                <div className={styles.transactionInfo}>
-                  <span className={styles.transactionDescription}>
-                    {transaction.description}
-                  </span>
-                  <span className={styles.transactionDate}>
-                    {new Date(transaction.created_at).toLocaleDateString(
-                      "vi-VN"
-                    )}
-                  </span>
-                </div>
-                <span className={styles.transactionAmount}>
-                  +{transaction.amount} XP
+      {/* All Achievements Modal */}
+      <Modal
+        title={`Tất cả thành tích (${stats.achievements.unlocked}/${stats.achievements.total})`}
+        open={showAllAchievements}
+        onCancel={() => setShowAllAchievements(false)}
+        footer={null}
+        width={800}
+      >
+        <div className={styles.achievementGrid} style={{ maxHeight: '60vh', overflowY: 'auto', padding: '1rem' }}>
+          {stats.achievements.list.map((userAchievement) => (
+            <div
+              key={userAchievement.id}
+              className={styles.achievementBadge}
+              title={userAchievement.achievement.description}
+            >
+              <div className={styles.achievementIconWrapper}>
+                <span className={styles.achievementIcon}>
+                  {userAchievement.achievement.icon.startsWith('/') || 
+                   userAchievement.achievement.icon.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i) ? (
+                    <img 
+                      src={userAchievement.achievement.icon} 
+                      alt={userAchievement.achievement.name}
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'contain'
+                      }}
+                    />
+                  ) : (
+                    userAchievement.achievement.icon
+                  )}
                 </span>
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
+              <p className={styles.achievementName}>
+                {userAchievement.achievement.name}
+              </p>
+              <Badge
+                count={userAchievement.achievement.rarity}
+                style={{
+                  backgroundColor: getRarityColor(userAchievement.achievement.rarity),
+                  fontSize: "0.7rem",
+                  textTransform: "capitalize",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+      {/* All Activities Modal */}
+      <Modal
+        title={`Lịch sử hoạt động (${stats.recentXP.length})`}
+        open={showAllActivities}
+        onCancel={() => setShowAllActivities(false)}
+        footer={null}
+        width={700}
+      >
+        <div className={styles.xpHistory} style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          {stats.recentXP.map((transaction) => (
+            <div
+              key={transaction.transactionId}
+              className={styles.xpTransaction}
+            >
+              <div className={styles.transactionInfo}>
+                <span className={styles.transactionDescription}>
+                  {removeEmojis(transaction.description)}
+                </span>
+                <span className={styles.transactionDate}>
+                  {new Date(transaction.created_at).toLocaleDateString("vi-VN")}
+                </span>
+              </div>
+              <span className={styles.transactionAmount}>
+                +{transaction.amount} XP
+              </span>
+            </div>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 };

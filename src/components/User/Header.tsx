@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { UserOutlined, SearchOutlined } from "@ant-design/icons";
 import styles from "../../styles/UserHeader.module.css";
-import { FaUserCircle } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
 
 // 🧩 Kiểu dữ liệu payload trong JWT
 interface JWTPayload {
-  userId: string;
   email: string;
+  userId: string;
   userName: string;
   exp?: number;
 }
@@ -108,6 +108,11 @@ const UserHeader: React.FC = () => {
               </Link>
             </li>
             <li className="nav-item">
+              <Link className={`nav-link ${styles["nav-link"]}`} to="/blogs">
+                Blog
+              </Link>
+            </li>
+            <li className="nav-item">
               <Link className={`nav-link ${styles["nav-link"]}`} to="/contact">
                 Liên hệ
               </Link>
@@ -118,6 +123,17 @@ const UserHeader: React.FC = () => {
                 to="/gamification"
               >
                 Bảng xếp hạng
+              </Link>
+            </li>
+            
+            {/* Search Icon */}
+            <li className="nav-item">
+              <Link
+                className={`nav-link ${styles["nav-link"]}`}
+                to="/search"
+                title="Tìm kiếm"
+              >
+                <SearchOutlined style={{ fontSize: 18 }} />
               </Link>
             </li>
 
@@ -151,7 +167,7 @@ const UserHeader: React.FC = () => {
                   data-bs-toggle="dropdown"
                   style={{ borderColor: "white" }}
                 >
-                  <FaUserCircle className="me-2" />
+                  <UserOutlined className="me-2" />
                   {user.userName || user.email}
                 </button>
                 <ul className="dropdown-menu dropdown-menu-end">

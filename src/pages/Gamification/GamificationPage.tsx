@@ -1,56 +1,50 @@
 import React from "react";
 import { Tabs } from "antd";
-import { TrophyOutlined, RocketOutlined } from "@ant-design/icons";
 import UserStatsCard from "../../components/Gamification/UserStatsCard";
 import Leaderboard from "../../components/Gamification/Leaderboard";
-import styles from "./GamificationPage.module.css";
+import AllAchievements from "../../components/Gamification/AllAchievements";
+import AllActivities from "../../components/Gamification/AllActivities";
+import styles from "../../styles/GamificationPage.module.css";
 
 const GamificationPage: React.FC = () => {
   const items = [
     {
       key: "stats",
-      label: (
-        <span className={styles.tabLabel}>
-          <RocketOutlined />
-          Thống kê của tôi
-        </span>
-      ),
+      label: "Thống kê của tôi",
       children: <UserStatsCard />,
     },
     {
+      key: "achievements",
+      label: "Thành tích",
+      children: <AllAchievements />,
+    },
+    {
+      key: "activities",
+      label: "Hoạt động",
+      children: <AllActivities />,
+    },
+    {
       key: "leaderboard",
-      label: (
-        <span className={styles.tabLabel}>
-          <TrophyOutlined />
-          Bảng xếp hạng
-        </span>
-      ),
+      label: "Bảng xếp hạng",
       children: <Leaderboard />,
     },
   ];
 
   return (
-    <div className={styles.gamificationPage}>
-      <div className={styles.heroSection}>
-        <div className={styles.heroContent}>
-          <div className={styles.heroIcon}>
-            <TrophyOutlined />
-          </div>
-          <h1 className={styles.heroTitle}>Gamification</h1>
-          <p className={styles.heroSubtitle}>
-            Theo dõi tiến độ học tập và so sánh với các học viên khác
-          </p>
-          <div className={styles.heroDivider}></div>
-        </div>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.pageTitle}>Thành tích</h1>
+        <p className={styles.subtitle}>
+          Theo dõi tiến độ học tập và so sánh với các học viên khác
+        </p>
       </div>
 
-      <div className={styles.contentSection}>
+      <div className={styles.content}>
         <Tabs
           items={items}
           defaultActiveKey="stats"
           className={styles.gamificationTabs}
           size="large"
-          centered
         />
       </div>
     </div>
