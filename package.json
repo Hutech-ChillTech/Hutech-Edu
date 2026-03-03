@@ -4,9 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "postbuild": "prisma generate && prisma db push",
-    "start": "node dist/server.js",
+    "build": "tsc && prisma generate",
+    "start": "prisma migrate deploy && node dist/server.js",
     "migrate": "prisma migrate dev",
     "seed": "ts-node src/scripts/seed-roles.ts",
     "seed-data": "ts-node src/scripts/seed-data.ts && ts-node src/scripts/seed-learning-paths.ts && ts-node src/scripts/seed-gamification.ts && ts-node src/scripts/seed-tags.ts && ts-node src/scripts/seed-categories.ts"

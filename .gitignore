@@ -28,8 +28,8 @@ src/configs/*firebase*.json
 *.sublime-workspace
 *.sublime-project
 
-# Migration
-prisma/migrations/
+# Migration (cần commit để deploy production)
+# prisma/migrations/
 
 # Readme
 README.md
