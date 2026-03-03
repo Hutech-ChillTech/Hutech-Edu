@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "postbuild": "prisma generate && prisma db push",
     "start": "node dist/server.js",
     "migrate": "prisma migrate dev",
     "seed": "ts-node src/scripts/seed-roles.ts",

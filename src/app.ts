@@ -33,6 +33,10 @@ import {
 
 const app = express();
 
+// Bắt buộc khi deploy sau reverse proxy (Render, Vercel, Nginx...)
+// Giúp express-rate-limit đọc đúng IP từ X-Forwarded-For header
+app.set("trust proxy", 1);
+
 // Đọc CORS origin từ env var — hỗ trợ nhiều origin cách nhau bằng dấu phẩy
 // Ví dụ: CORS_ORIGIN=https://myapp.vercel.app,https://myapp.netlify.app
 const allowedOrigins = (
