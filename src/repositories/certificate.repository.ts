@@ -17,11 +17,17 @@ export class CertificateRepository extends BaseRepository<
   async createCertificate(data: {
     userId: string;
     courseId: string;
+    certificateCode: string;
+    userName: string;
+    courseName: string;
     certificateTitle?: string;
     averageScore: number;
     totalScore: number;
     maxScore: number;
     certificateURL?: string;
+    pdfUrl?: string;
+    qrCodeUrl?: string;
+    status?: string;
   }): Promise<Certificate> {
     return this.prisma.certificate.create({
       data,

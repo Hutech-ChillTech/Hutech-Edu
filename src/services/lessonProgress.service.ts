@@ -305,6 +305,9 @@ class LessonProgressService {
                 create: {
                   userId,
                   courseId: lesson.chapter.courseId,
+                  certificateCode: `CERT-${course.courseName.substring(0, 4).toUpperCase()}-${now.getFullYear()}-${Date.now().toString().slice(-6)}`,
+                  userName: user.userName,
+                  courseName: course.courseName,
                   certificateTitle: `Certificate of Completion - ${course.courseName}`,
                   certificateURL,
                   totalScore: parseFloat(totalScore.toFixed(2)),

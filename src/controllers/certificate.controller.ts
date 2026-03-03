@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { CertificateService } from "../services/certificate.service";
 import { sendSuccess, sendError } from "../utils/responseHelper";
+import path from "path";
+import fs from "fs";
 
 export class CertificateController {
   private certificateService: CertificateService;
@@ -224,6 +226,43 @@ export class CertificateController {
       const stats = await this.certificateService.getCertificateStats(userId);
 
       return sendSuccess(res, stats, "Lấy thống kê thành công");
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Xem/Tải PDF certificate
+   * GET /api/certificates/view/:filename
+   * Public route - không cần authentication
+   */
+  viewCertificatePDF = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const { filename } = req.params;
+
+      // Validate filename (security: prevent path traversal)
+      if (!filename || filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+        return sendError(res, "Invalid filename", 400);
+      }
+
+      // Check if file exists
+      const filePath = path.join(__dirname, "../../public/certificates", filename);
+      
+      if (!fs.existsSync(filePath)) {
+        return sendError(res, "Certificate file not found", 404);
+      }
+
+      // Set headers for PDF
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+
+      // Stream file to response
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
     } catch (error) {
       next(error);
     }

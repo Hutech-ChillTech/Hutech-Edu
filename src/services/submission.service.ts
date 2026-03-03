@@ -177,44 +177,77 @@ export class SubmissionService {
                   maxPoints > 0 ? (totalPoints / maxPoints) * 100 : 0;
               }
 
-              // Generate PDF
+              // Generate certificate code FIRST
+              const now = new Date();
+              const certificateCode = `CERT-${course.courseName.substring(0, 4).toUpperCase()}-${now.getFullYear()}-${Date.now().toString().slice(-6)}`;
+
+              // Generate PDF with Puppeteer (modern, supports Vietnamese)
               let certificateURL = "";
+              let pdfUrl = "";
+              let qrCodeUrl = "";
+              
               try {
-                certificateURL = await PDFGenerator.generateCertificatePDF(
-                  userId,
-                  courseId,
-                  {
-                    userName: user.userName,
-                    courseName: course.courseName,
-                    level: course.level || "Basic",
-                    subLevel: course.subLevel || "Low",
-                    totalScore,
-                    issuedDate: new Date(),
-                  }
-                );
+                const { PuppeteerPDFService } = await import("../utils/puppeteerPDF.service.js");
+                const { PDFGenerator } = await import("../utils/pdfGenerator.js");
+                
+                console.log(`🎨 Generating certificate PDF for: ${user.userName} - ${course.courseName}`);
+                
+                // Generate PDF buffer with Puppeteer
+                const pdfBuffer = await PuppeteerPDFService.generateCertificatePDF({
+                  userName: user.userName,
+                  courseName: course.courseName,
+                  certificateCode,
+                  issuedAt: now,
+                  averageScore: totalScore,
+                  companyName: "HUTECH EDUCATION",
+                  companySubtitle: "Online Learning Platform"
+                });
+                
+                console.log(`✅ PDF generated successfully, uploading to Cloudinary...`);
+                
+                // Upload to Cloudinary
+                pdfUrl = await PDFGenerator.uploadPDFToCloudinary(pdfBuffer, certificateCode);
+                certificateURL = pdfUrl; // Use Cloudinary URL
+                
+                // Generate and upload QR Code
+                const qrCodeDataUrl = await PDFGenerator.generateQRCode(certificateCode);
+                qrCodeUrl = await PDFGenerator.uploadQRCodeToCloudinary(qrCodeDataUrl, certificateCode);
+                
+                console.log(`🎓 Certificate generated successfully!`, {
+                  certificateCode,
+                  pdfUrl,
+                  qrCodeUrl
+                });
               } catch (pdfError) {
-                console.error("Error generating PDF:", pdfError);
+                console.error("❌ Error generating PDF:", pdfError);
+                // Continue to create certificate record even if PDF fails
+                // Frontend will show "Certificate not available" message
               }
 
-              // Tạo Certificate record
+              // Tạo Certificate record (chỉ sau khi đã TRY generate PDF)
               await prisma.certificate.create({
                 data: {
                   userId,
                   courseId,
+                  certificateCode,
+                  userName: user.userName,
+                  courseName: course.courseName,
                   certificateTitle: `Certificate of Completion - ${course.courseName}`,
-                  certificateURL,
+                  pdfUrl: pdfUrl || null, // null nếu generation failed
+                  qrCodeUrl: qrCodeUrl || null,
+                  certificateURL: certificateURL || null,
                   totalScore: parseFloat(totalScore.toFixed(2)),
                   averageScore: parseFloat(totalScore.toFixed(2)),
                   maxScore: 100,
-                  issuedAt: new Date(),
+                  issuedAt: now,
                 },
               });
 
               certificateCreated = true;
               console.log(
-                `🎓 Certificate created after quiz completion! User: ${userId}, Course: ${courseId}, Score: ${totalScore.toFixed(
+                `🎓 Certificate record created! User: ${userId}, Course: ${courseId}, Score: ${totalScore.toFixed(
                   2
-                )}%`
+                )}%, PDF: ${pdfUrl ? 'Available' : 'Failed'}`
               );
             }
           }

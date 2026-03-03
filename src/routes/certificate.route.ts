@@ -10,6 +10,18 @@ const router = Router();
 const certificateController = new CertificateController();
 
 /**
+ * Xem/Tải PDF certificate
+ * GET /api/certificates/view/:filename
+ * Public route - không cần authentication
+ * QUAN TRỌNG: Route này phải ĐẶT TRƯỚC các routes khác
+ */
+router.get(
+  "/view/:filename",
+  readLimiter,
+  certificateController.viewCertificatePDF
+);
+
+/**
  * Yêu cầu cấp certificate cho course
  * POST /api/certificates/issue/:courseId
  * Yêu cầu: Authenticated, hoàn thành tất cả quiz với điểm >= 70%
@@ -102,6 +114,33 @@ router.delete(
   "/:certificateId",
   createLimiter,
   certificateController.deleteCertificate
+);
+
+/**
+ * Re-generate PDF for certificate (Admin only)
+ * POST /api/certificates/regenerate/:certificateId
+ * Yêu cầu: Admin permission
+ */
+import { CertificateRegenerationController } from "../controllers/certificateRegeneration.controller";
+const regenerationController = new CertificateRegenerationController();
+
+router.post(
+  "/regenerate/:certificateId",
+  authenticate,
+  createLimiter,
+  regenerationController.regenerateCertificatePDF
+);
+
+/**
+ * Re-generate ALL missing PDFs (Admin only)
+ * POST /api/certificates/regenerate-all
+ * Yêu cầu: Admin permission
+ */
+router.post(
+  "/regenerate-all",
+  authenticate,
+  createLimiter,
+  regenerationController.regenerateAllMissingPDFs
 );
 
 export default router;
