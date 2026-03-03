@@ -1,57 +1,75 @@
-import Redis from 'ioredis';
+import Redis from "ioredis";
 
 /**
  * 🔴 REDIS CONFIGURATION
- * 
+ *
  * Redis là in-memory database dùng để cache dữ liệu.
  * Thay vì query PostgreSQL mỗi lần (chậm 100-500ms),
  * ta lưu kết quả vào Redis (nhanh 1-5ms).
- * 
+ *
  * Ví dụ:
  * - Request 1: Query DB → Lưu vào Redis → Trả về (200ms)
  * - Request 2-1000: Lấy từ Redis → Trả về (2ms) ⚡
  */
 
 // Tạo Redis client
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',  // Redis server address
-  port: parseInt(process.env.REDIS_PORT || '6379'), // Redis port (default: 6379)
-  password: process.env.REDIS_PASSWORD || undefined, // Password nếu có
-  db: parseInt(process.env.REDIS_DB || '0'), // Database number (0-15)
-  
-  // Retry strategy: Tự động kết nối lại nếu mất kết nối
-  retryStrategy: (times: number) => {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  
-  // Connection timeout
-  connectTimeout: 10000,
-  
-  // Tự động reconnect
-  enableReadyCheck: true,
-  maxRetriesPerRequest: 3,
-});
+// Ưu tiên REDIS_URL (Render Key Value / Upstash) nếu có, fallback về host/port riêng lẻ
+const redisOptions: any = process.env.REDIS_URL
+  ? {
+      // Kết nối qua URL (production: Render/Upstash)
+      // Upstash dùng TLS (rediss://), Render dùng redis://
+      lazyConnect: false,
+      tls: process.env.REDIS_URL.startsWith("rediss://") ? {} : undefined,
+    }
+  : {
+      host: process.env.REDIS_HOST || "localhost",
+      port: parseInt(process.env.REDIS_PORT || "6379"),
+      password: process.env.REDIS_PASSWORD || undefined,
+      db: parseInt(process.env.REDIS_DB || "0"),
+    };
 
+const redis = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL, {
+      // Retry strategy: Tự động kết nối lại nếu mất kết nối
+      retryStrategy: (times: number) => {
+        if (times > 10) return null; // Dừng retry sau 10 lần, tránh spam log
+        return Math.min(times * 100, 3000);
+      },
+      connectTimeout: 10000,
+      maxRetriesPerRequest: 3,
+      enableReadyCheck: true,
+      tls: process.env.REDIS_URL.startsWith("rediss://") ? {} : undefined,
+    })
+  : new Redis({
+      ...redisOptions,
+      // Retry strategy: Tự động kết nối lại nếu mất kết nối
+      retryStrategy: (times: number) => {
+        if (times > 10) return null;
+        return Math.min(times * 100, 3000);
+      },
+      connectTimeout: 10000,
+      enableReadyCheck: true,
+      maxRetriesPerRequest: 3,
+    });
 // Event listeners để theo dõi trạng thái Redis
-redis.on('connect', () => {
-  console.log('✅ Redis: Connected to Redis server');
+redis.on("connect", () => {
+  console.log("✅ Redis: Connected to Redis server");
 });
 
-redis.on('ready', () => {
-  console.log('✅ Redis: Ready to accept commands');
+redis.on("ready", () => {
+  console.log("✅ Redis: Ready to accept commands");
 });
 
-redis.on('error', (err: Error) => {
-  console.error('❌ Redis Error:', err.message);
+redis.on("error", (err: Error) => {
+  console.error("❌ Redis Error:", err.message);
 });
 
-redis.on('close', () => {
-  console.log('⚠️  Redis: Connection closed');
+redis.on("close", () => {
+  console.log("⚠️  Redis: Connection closed");
 });
 
-redis.on('reconnecting', () => {
-  console.log('🔄 Redis: Reconnecting...');
+redis.on("reconnecting", () => {
+  console.log("🔄 Redis: Reconnecting...");
 });
 
 /**
@@ -60,7 +78,6 @@ redis.on('reconnecting', () => {
  */
 
 export class CacheService {
-  
   /**
    * Lấy dữ liệu từ cache
    * @param key - Cache key (ví dụ: 'courses:all', 'user:123')
@@ -98,7 +115,7 @@ export class CacheService {
   static async delete(key: string): Promise<void> {
     try {
       // Nếu key có wildcard (*), xóa tất cả keys matching
-      if (key.includes('*')) {
+      if (key.includes("*")) {
         const keys = await redis.keys(key);
         if (keys.length > 0) {
           await redis.del(...keys);
@@ -118,9 +135,9 @@ export class CacheService {
   static async flush(): Promise<void> {
     try {
       await redis.flushdb();
-      console.log('🗑️  All cache cleared');
+      console.log("🗑️  All cache cleared");
     } catch (error) {
-      console.error('Cache FLUSH error:', error);
+      console.error("Cache FLUSH error:", error);
     }
   }
 
@@ -171,7 +188,11 @@ export class CacheService {
    * @param score - Điểm số
    * @param member - Thành viên (userId)
    */
-  static async addToSortedSet(key: string, score: number, member: string): Promise<void> {
+  static async addToSortedSet(
+    key: string,
+    score: number,
+    member: string,
+  ): Promise<void> {
     try {
       await redis.zadd(key, score, member);
     } catch (error) {
@@ -185,14 +206,17 @@ export class CacheService {
    * @param count - Số lượng top (mặc định: 10)
    * @returns Array of [member, score]
    */
-  static async getTopFromSortedSet(key: string, count: number = 10): Promise<Array<{ member: string; score: number }>> {
+  static async getTopFromSortedSet(
+    key: string,
+    count: number = 10,
+  ): Promise<Array<{ member: string; score: number }>> {
     try {
-      const results = await redis.zrevrange(key, 0, count - 1, 'WITHSCORES');
+      const results = await redis.zrevrange(key, 0, count - 1, "WITHSCORES");
       const formatted = [];
       for (let i = 0; i < results.length; i += 2) {
         formatted.push({
           member: results[i],
-          score: parseFloat(results[i + 1])
+          score: parseFloat(results[i + 1]),
         });
       }
       return formatted;

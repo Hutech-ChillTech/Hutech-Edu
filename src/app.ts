@@ -26,16 +26,34 @@ import { errorHandler } from "./middlewares/errorHandler.middleware";
 import { generalLimiter } from "./middlewares/rateLimiter.middleware";
 
 // 📊 Metrics middleware
-import { metricsMiddleware, metricsEndpoint } from "./middlewares/metrics.middleware";
+import {
+  metricsMiddleware,
+  metricsEndpoint,
+} from "./middlewares/metrics.middleware";
 
 const app = express();
 
+// Đọc CORS origin từ env var — hỗ trợ nhiều origin cách nhau bằng dấu phẩy
+// Ví dụ: CORS_ORIGIN=https://myapp.vercel.app,https://myapp.netlify.app
+const allowedOrigins = (
+  process.env.CORS_ORIGIN ||
+  process.env.FRONTEND_URL ||
+  "http://localhost:5173"
+)
+  .split(",")
+  .map((o) => o.trim());
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Cho phép requests không có origin (mobile app, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS policy: origin ${origin} not allowed`));
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
