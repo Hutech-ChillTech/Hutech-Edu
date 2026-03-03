@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc && prisma generate",
-    "start": "prisma migrate deploy && node dist/server.js",
+    "start": "prisma migrate deploy && node dist/scripts/seed-roles.js && node dist/server.js",
     "migrate": "prisma migrate dev",
     "seed": "ts-node src/scripts/seed-roles.ts",
     "seed-data": "ts-node src/scripts/seed-data.ts && ts-node src/scripts/seed-learning-paths.ts && ts-node src/scripts/seed-gamification.ts && ts-node src/scripts/seed-tags.ts && ts-node src/scripts/seed-categories.ts"
