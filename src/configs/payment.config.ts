@@ -12,9 +12,10 @@ export const PaymentConfig = {
       "https://test-payment.momo.vn/v2/gateway/api/create",
     redirectUrl:
       process.env.MOMO_REDIRECT_URL ||
-      "http://localhost:3000/api/payment/momo/callback",
+      `${process.env.BASE_URL || "http://localhost:3000"}/api/payment/momo/callback`,
     ipnUrl:
-      process.env.MOMO_IPN_URL || "http://localhost:3000/api/payment/momo/ipn",
+      process.env.MOMO_IPN_URL ||
+      `${process.env.BASE_URL || "http://localhost:3000"}/api/payment/momo/ipn`,
   },
   vnpay: {
     tmnCode: process.env.VNPAY_TMN_CODE || "",
@@ -24,7 +25,7 @@ export const PaymentConfig = {
       "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
     returnUrl:
       process.env.VNPAY_RETURN_URL ||
-      "http://localhost:3000/api/payment/vnpay/callback",
+      `${process.env.BASE_URL || "http://localhost:3000"}/api/payment/vnpay/callback`,
     apiUrl:
       process.env.VNPAY_API_URL ||
       "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction",

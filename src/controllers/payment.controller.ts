@@ -44,14 +44,14 @@ export class PaymentController {
       let paymentUrl;
       if (paymentMethod.toUpperCase() === "MOMO") {
         const momoResult = await this.paymentService.createMoMoPayment(
-          payment.paymentId
+          payment.paymentId,
         );
         paymentUrl = momoResult.payUrl;
       } else if (paymentMethod.toUpperCase() === "VNPAY") {
         const vnpayResult = await this.paymentService.createVNPayPayment(
           payment.paymentId,
           ipAddr,
-          bankCode
+          bankCode,
         );
         paymentUrl = vnpayResult.paymentUrl;
       } else {
@@ -67,7 +67,7 @@ export class PaymentController {
           paymentUrl,
         },
         "Tạo thanh toán thành công",
-        201
+        201,
       );
     } catch (error: any) {
       sendError(res, error.message, 400);
@@ -213,7 +213,7 @@ export class PaymentController {
 
         const failedUrl = `${
           process.env.FRONTEND_FAILED_URL ||
-          "http://localhost:5173/payment/failed"
+          `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment/failed`
         }?message=${encodeURIComponent(result.message)}`;
 
         console.log("Redirecting to failed page:", failedUrl);
@@ -226,7 +226,7 @@ export class PaymentController {
 
       const redirectUrl = `${
         process.env.FRONTEND_FAILED_URL ||
-        "http://localhost:5173/payment/failed"
+        `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment/failed`
       }?message=${encodeURIComponent(error.message)}`;
 
       console.log("Redirecting to error page:", redirectUrl);
@@ -266,15 +266,14 @@ export class PaymentController {
     try {
       const callbackData = req.query;
 
-      const result = await this.paymentService.handleVNPayCallback(
-        callbackData
-      );
+      const result =
+        await this.paymentService.handleVNPayCallback(callbackData);
 
       // Redirect trực tiếp với query params
       if (result.success) {
         const frontendUrl =
           process.env.FRONTEND_SUCCESS_URL ||
-          "http://localhost:5173/payment/success";
+          `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment/success`;
 
         const redirectUrl = `${frontendUrl}?paymentId=${
           result.paymentId
@@ -384,14 +383,14 @@ export class PaymentController {
         // Thất bại - redirect với message
         const failedUrl = `${
           process.env.FRONTEND_FAILED_URL ||
-          "http://localhost:5173/payment/failed"
+          `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment/failed`
         }?message=${encodeURIComponent(result.message)}`;
 
         return res.redirect(failedUrl);
       }
     } catch (error: any) {
       const redirectUrl = `${
-        process.env.FRONTEND_URL || "http://localhost:3001"
+        process.env.FRONTEND_URL || "http://localhost:5173"
       }/payment/error?message=${encodeURIComponent(error.message)}`;
       res.redirect(redirectUrl);
     }
@@ -404,7 +403,7 @@ export class PaymentController {
   getPaymentHistory = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const userId = (req as any).user?.userId;
@@ -428,7 +427,7 @@ export class PaymentController {
   getPaymentDetail = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { paymentId } = req.params;
@@ -465,7 +464,7 @@ export class PaymentController {
   getStatisticsOverview = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const stats = await this.paymentService.getStatisticsOverview();
@@ -482,7 +481,7 @@ export class PaymentController {
   getRevenueByPeriod = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { startDate, endDate, groupBy } = req.query;
@@ -507,7 +506,7 @@ export class PaymentController {
       const revenue = await this.paymentService.getRevenueByPeriod(
         start,
         end,
-        group
+        group,
       );
       sendSuccess(res, revenue, "Lấy thống kê doanh thu thành công");
     } catch (error: any) {
@@ -522,7 +521,7 @@ export class PaymentController {
   getTopSellingCourses = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       // Dashboard admin: trả về toàn bộ top courses, không giới hạn số lượng
@@ -540,7 +539,7 @@ export class PaymentController {
   getRevenueByCourse = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { courseId } = req.params;
@@ -559,7 +558,7 @@ export class PaymentController {
   getRevenueByInstructor = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { userId } = req.params;
@@ -616,7 +615,7 @@ export class PaymentController {
 
       const result = await this.paymentService.confirmPayment(
         paymentId,
-        adminUserId
+        adminUserId,
       );
       sendSuccess(res, result, "Xác nhận thanh toán thành công");
     } catch (error: any) {
@@ -641,7 +640,7 @@ export class PaymentController {
       const result = await this.paymentService.rejectPayment(
         paymentId,
         adminUserId,
-        reason
+        reason,
       );
       sendSuccess(res, result, "Từ chối thanh toán thành công");
     } catch (error: any) {
@@ -656,7 +655,7 @@ export class PaymentController {
   verifyPaymentStatus = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { paymentId } = req.params;
@@ -668,7 +667,7 @@ export class PaymentController {
 
       const result = await this.paymentService.verifyPaymentStatus(
         paymentId,
-        userId
+        userId,
       );
       sendSuccess(res, result, "Lấy trạng thái thanh toán thành công");
     } catch (error: any) {
@@ -683,15 +682,14 @@ export class PaymentController {
   getTopSpendingStudents = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { limit } = req.query;
       const studentLimit = limit ? parseInt(limit as string) : 10;
 
-      const topSpenders = await this.paymentService.getTopSpendingStudents(
-        studentLimit
-      );
+      const topSpenders =
+        await this.paymentService.getTopSpendingStudents(studentLimit);
       sendSuccess(res, topSpenders, "Lấy top học viên chi tiêu thành công");
     } catch (error: any) {
       sendError(res, error.message, 500);
