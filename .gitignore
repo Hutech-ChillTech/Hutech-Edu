@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 build/
+docs/
 
 # Logs
 logs/
@@ -35,4 +36,3 @@ src/configs/*firebase*.json
 README.md
 
 
-docs/
