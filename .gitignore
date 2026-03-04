@@ -4,7 +4,6 @@ node_modules/
 # Build output
 dist/
 build/
-docs/
 
 # Logs
 logs/
@@ -28,11 +27,5 @@ src/configs/*firebase*.json
 .idea/
 *.sublime-workspace
 *.sublime-project
-
-# Migration (cần commit để deploy production)
-# prisma/migrations/
-
-# Readme
-README.md
 
 
