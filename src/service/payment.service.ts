@@ -119,6 +119,7 @@ export interface PaymentVerification {
   amount: number;
   paymentMethod: string;
   paymentStatus: string;
+  orderInfo?: string;
   paidAt: string | null;
   created_at: string;
   course: {
@@ -157,7 +158,7 @@ export const paymentService = {
   getRevenueByPeriod: async (
     startDate: string,
     endDate: string,
-    groupBy: "day" | "month" | "year" = "day"
+    groupBy: "day" | "month" | "year" = "day",
   ): Promise<RevenueByPeriod[]> => {
     try {
       const res = await fetch(
@@ -165,7 +166,7 @@ export const paymentService = {
         {
           method: "GET",
           headers: getAuthHeaders(),
-        }
+        },
       );
       const data = await res.json();
       if (res.status === 401) {
@@ -189,7 +190,7 @@ export const paymentService = {
         {
           method: "GET",
           headers: getAuthHeaders(),
-        }
+        },
       );
       const data = await res.json();
       if (res.status === 401) {
@@ -213,7 +214,7 @@ export const paymentService = {
         {
           method: "GET",
           headers: getAuthHeaders(),
-        }
+        },
       );
       const data = await res.json();
       if (res.status === 401) {
@@ -231,7 +232,7 @@ export const paymentService = {
 
   // 5. Thống kê doanh thu theo giảng viên
   getRevenueByInstructor: async (
-    userId: string
+    userId: string,
   ): Promise<InstructorRevenue> => {
     try {
       const res = await fetch(
@@ -239,7 +240,7 @@ export const paymentService = {
         {
           method: "GET",
           headers: getAuthHeaders(),
-        }
+        },
       );
       const data = await res.json();
       if (res.status === 401) {
@@ -278,7 +279,7 @@ export const paymentService = {
         {
           method: "GET",
           headers: getAuthHeaders(),
-        }
+        },
       );
       const data = await res.json();
       if (res.status === 401) {
@@ -296,7 +297,7 @@ export const paymentService = {
 
   // 7. Admin xác nhận thanh toán thủ công (ADMIN only)
   confirmPayment: async (
-    paymentId: string
+    paymentId: string,
   ): Promise<{ success: boolean; message: string }> => {
     try {
       const res = await fetch(`${API_URL}/payment/admin/confirm/${paymentId}`, {
@@ -320,7 +321,7 @@ export const paymentService = {
   // 8. Admin từ chối thanh toán (ADMIN only)
   rejectPayment: async (
     paymentId: string,
-    reason: string
+    reason: string,
   ): Promise<{ success: boolean; message: string }> => {
     try {
       const res = await fetch(`${API_URL}/payment/admin/reject/${paymentId}`, {
@@ -344,7 +345,7 @@ export const paymentService = {
 
   // 9. User kiểm tra trạng thái thanh toán
   verifyPaymentStatus: async (
-    paymentId: string
+    paymentId: string,
   ): Promise<PaymentVerification> => {
     try {
       const res = await fetch(`${API_URL}/payment/verify/${paymentId}`, {
@@ -360,7 +361,7 @@ export const paymentService = {
       }
       if (!res.ok) {
         throw new Error(
-          data?.error || "Không thể kiểm tra trạng thái thanh toán."
+          data?.error || "Không thể kiểm tra trạng thái thanh toán.",
         );
       }
       return data.data;
@@ -378,7 +379,7 @@ export const paymentService = {
         {
           method: "GET",
           headers: getAuthHeaders(),
-        }
+        },
       );
       const data = await res.json();
       if (res.status === 401) {

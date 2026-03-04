@@ -32,7 +32,7 @@ export const useHtmlGrader = () => {
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
         if (!doc) {
           throw new Error(
-            "Không thể khởi tạo môi trường kiểm tra (Sandbox Error)"
+            "Không thể khởi tạo môi trường kiểm tra (Sandbox Error)",
           );
         }
 
@@ -48,7 +48,8 @@ export const useHtmlGrader = () => {
         const checkResults: CheckResult[] = testCases.map((tc) => {
           // Lấy script kiểm tra từ trường 'input' (do đã map ở LessonList)
           // Fallback sang 'testCodes' nếu có (cho dữ liệu cũ)
-          const validationScript = tc.input || (tc as any).testCodes;
+          const validationScript =
+            tc.input || (tc as TestCase & { testCodes?: string }).testCodes;
 
           if (!validationScript) {
             return {
@@ -83,12 +84,12 @@ export const useHtmlGrader = () => {
                     : "Chưa thỏa mãn yêu cầu",
               };
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error("Lỗi kịch bản test:", err);
             return {
               testCaseId: tc.testCaseId,
               pass: false,
-              message: `Lỗi cú pháp trong bài kiểm tra: ${err.message}`,
+              message: `Lỗi cú pháp trong bài kiểm tra: ${err instanceof Error ? err.message : "Unknown error"}`,
             };
           }
         });
@@ -109,7 +110,7 @@ export const useHtmlGrader = () => {
         }
       }
     },
-    []
+    [],
   );
 
   // Trả về những gì Component cần

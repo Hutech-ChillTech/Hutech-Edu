@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Spin, Alert, message } from "antd";
-import { progressService } from "../../service/progress.service";
+import {
+  progressService,
+  type CompleteLessonResponse,
+} from "../../service/progress.service";
 
 interface VideoLessonPlayerProps {
   videoUrl: string;
   lessonId?: string;
   lessonTitle?: string;
   autoPlay?: boolean;
-  onCompleted?: (result?: any) => void;
+  onCompleted?: (result?: CompleteLessonResponse) => void;
 }
 
 const VideoLessonPlayer: React.FC<VideoLessonPlayerProps> = ({
@@ -50,7 +53,7 @@ const VideoLessonPlayer: React.FC<VideoLessonPlayerProps> = ({
     }
   };
 
-  const handleError = (e: any) => {
+  const handleError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error("VideoLessonPlayer: onError", e);
     setIsLoading(false);
     setIsError(true);
@@ -77,14 +80,17 @@ const VideoLessonPlayer: React.FC<VideoLessonPlayerProps> = ({
         // Hiển thị message nhỏ để confirm
         message.success(
           `✅ Hoàn thành bài học! Tiến độ: ${result.courseProgress.toFixed(
-            1
+            1,
           )}%`,
-          3
+          3,
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error completing lesson:", error);
         // Chỉ hiện lỗi nếu không phải lỗi "đã hoàn thành rồi"
-        if (!error.response?.data?.message?.includes("đã hoàn thành")) {
+        const axiosError = error as {
+          response?: { data?: { message?: string } };
+        };
+        if (!axiosError.response?.data?.message?.includes("đã hoàn thành")) {
           message.warning("Không thể đánh dấu hoàn thành. Vui lòng thử lại.");
         } else {
           // Nếu đã hoàn thành rồi, vẫn gọi callback

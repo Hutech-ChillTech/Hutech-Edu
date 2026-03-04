@@ -13,10 +13,13 @@ import {
 } from "@ant-design/icons";
 import { Spin } from "antd";
 import styles from "../../styles/PaymentResult.module.css";
-import { paymentService } from "../../service/payment.service";
+import {
+  paymentService,
+  type PaymentVerification,
+} from "../../service/payment.service";
 import { courseService } from "../../service/course.service";
 import { userService } from "../../service/user.service";
-import type { Course } from "../../types/database.types";
+import type { Course, User } from "../../types/database.types";
 
 const PaymentFailedPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,9 +36,10 @@ const PaymentFailedPage: React.FC = () => {
   const resultCode = searchParams.get("resultCode");
 
   const [course, setCourse] = useState<Course | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [paymentDetails, setPaymentDetails] =
+    useState<PaymentVerification | null>(null);
 
   // Debug: Log tất cả query params (DISABLED)
   // useEffect(() => {
@@ -74,29 +78,28 @@ const PaymentFailedPage: React.FC = () => {
         if (pendingPaymentId) {
           try {
             // 3. Gọi API verify để lấy thông tin payment (nếu có)
-            const paymentData = await paymentService.verifyPaymentStatus(
-              pendingPaymentId
-            );
+            const paymentData =
+              await paymentService.verifyPaymentStatus(pendingPaymentId);
 
             setPaymentDetails(paymentData);
 
             // 4. Lấy thông tin khóa học
             if (paymentData.course?.courseId) {
               const courseData = await courseService.getCourseById(
-                paymentData.course.courseId
+                paymentData.course.courseId,
               );
               setCourse(courseData);
             }
 
             // 5. Xóa pendingPaymentId vì đã thất bại
             localStorage.removeItem("pendingPaymentId");
-          } catch (error: unknown) {
+          } catch {
             // Fallback: Thử lấy thông tin từ extraData (courseId)
             if (extraData) {
               try {
                 const courseData = await courseService.getCourseById(extraData);
                 setCourse(courseData);
-              } catch (err) {
+              } catch {
                 // Error fetching course
               }
             }
@@ -106,11 +109,11 @@ const PaymentFailedPage: React.FC = () => {
           try {
             const courseData = await courseService.getCourseById(extraData);
             setCourse(courseData);
-          } catch (err) {
+          } catch {
             // Error fetching course
           }
         }
-      } catch (error: unknown) {
+      } catch {
         // Error in failed page
       } finally {
         setLoading(false);

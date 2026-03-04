@@ -30,6 +30,9 @@ import { uploadService } from "../../service/upload.service";
 const { Title } = Typography;
 const { Option } = Select;
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
+
 interface Course {
   courseId: string;
   courseName: string;
@@ -71,7 +74,7 @@ const CourseAdmin: React.FC = () => {
   //  Lấy danh sách khóa học
   const fetchCourses = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/courses", {
+      const res = await fetch(`${API_URL}/api/courses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -79,9 +82,12 @@ const CourseAdmin: React.FC = () => {
       if (data.success) {
         //  Sắp xếp tăng dần theo ngày tạo (nếu có)
         const sorted = [...data.data].sort(
-          (a: any, b: any) =>
+          (
+            a: Course & { created_at?: string },
+            b: Course & { created_at?: string },
+          ) =>
             new Date(a.created_at || 0).getTime() -
-            new Date(b.created_at || 0).getTime()
+            new Date(b.created_at || 0).getTime(),
         );
         setCourses(sorted);
       } else {
@@ -106,7 +112,7 @@ const CourseAdmin: React.FC = () => {
       form.setFieldsValue({ avatarURL: result.url });
       message.success("Upload hình ảnh thành công!");
       return false; // Prevent default upload behavior
-    } catch (error) {
+    } catch {
       message.error("Upload hình ảnh thất bại!");
       return false;
     } finally {
@@ -115,7 +121,20 @@ const CourseAdmin: React.FC = () => {
   };
 
   //  Thêm / Cập nhật khóa học
-  const handleFinish = async (values: any) => {
+  interface CourseFormValues {
+    courseName: string;
+    courseDescription: string;
+    coursePrice: number;
+    discount?: number;
+    avatarURL?: string;
+    level: string;
+    subLevel?: string;
+    estimatedDuration?: number;
+    specialization?: string;
+    tag?: string;
+  }
+
+  const handleFinish = async (values: CourseFormValues) => {
     try {
       const payload = {
         courseName: values.courseName,
@@ -131,11 +150,11 @@ const CourseAdmin: React.FC = () => {
         createdBy: adminId,
       };
 
-      let url = "http://localhost:3000/api/courses/create";
+      let url = `${API_URL}/api/courses/create`;
       let method = "POST";
 
       if (editingId) {
-        url = `http://localhost:3000/api/courses/update/${editingId}`;
+        url = `${API_URL}/api/courses/update/${editingId}`;
         method = "PUT";
       }
 
@@ -152,7 +171,7 @@ const CourseAdmin: React.FC = () => {
         // Xử lý lỗi HTTP
         if (res.status === 404) {
           message.error(
-            "API endpoint không tồn tại. Vui lòng kiểm tra backend!"
+            "API endpoint không tồn tại. Vui lòng kiểm tra backend!",
           );
           return;
         }
@@ -168,7 +187,7 @@ const CourseAdmin: React.FC = () => {
         message.success(
           editingId
             ? "Cập nhật khóa học thành công!"
-            : "Thêm khóa học thành công!"
+            : "Thêm khóa học thành công!",
         );
         form.resetFields();
         setEditingId(null);
@@ -186,7 +205,16 @@ const CourseAdmin: React.FC = () => {
 
   //  Sửa khóa học
   const handleEdit = useCallback(
-    (record: any) => {
+    (
+      record: Course & {
+        avatarURL?: string;
+        discount?: number;
+        subLevel?: string;
+        estimatedDuration?: number;
+        specialization?: string;
+        tag?: string;
+      },
+    ) => {
       setShowForm(true);
       setImageUrl(record.avatarURL || "");
       form.setFieldsValue({
@@ -203,19 +231,16 @@ const CourseAdmin: React.FC = () => {
       });
       setEditingId(record.courseId);
     },
-    [form]
+    [form],
   );
   //  Xóa khóa học
   const handleDelete = useCallback(
     async (courseId: string) => {
       try {
-        const res = await fetch(
-          `http://localhost:3000/api/courses/delete/${courseId}`,
-          {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await fetch(`${API_URL}/api/courses/delete/${courseId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await res.json();
 
         if (data.success) {
@@ -229,7 +254,7 @@ const CourseAdmin: React.FC = () => {
         message.error("Không thể xóa khóa học!");
       }
     },
-    [fetchCourses, token]
+    [fetchCourses, token],
   );
 
   //  Cấu hình bảng hiển thị
@@ -288,7 +313,7 @@ const CourseAdmin: React.FC = () => {
       {
         title: "Giá bán",
         width: 120,
-        render: (_: unknown, record: any) => {
+        render: (_: unknown, record: Course & { discount?: number }) => {
           const finalPrice = record.coursePrice * (1 - (record.discount || 0));
           return (
             <span style={{ fontWeight: "bold", color: "#52c41a" }}>
@@ -301,7 +326,7 @@ const CourseAdmin: React.FC = () => {
         title: "Cấp độ",
         dataIndex: "level",
         width: 120,
-        render: (level: string, record: any) => (
+        render: (level: string, record: Course & { subLevel?: string }) => (
           <span>
             {level}
             {record.subLevel && (
@@ -364,7 +389,7 @@ const CourseAdmin: React.FC = () => {
         ),
       },
     ],
-    [handleEdit, handleDelete, navigate]
+    [handleEdit, handleDelete, navigate],
   );
 
   return (

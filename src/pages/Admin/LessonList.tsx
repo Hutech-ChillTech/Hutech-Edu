@@ -65,7 +65,7 @@ interface QuizQuestion {
 //   quiz?: QuizQuestion[];
 // }
 
-const normFile = (e: any) => {
+const normFile = (e: { fileList?: unknown[] } | unknown[]) => {
   if (Array.isArray(e)) {
     return e;
   }
@@ -122,7 +122,16 @@ const LessonList: React.FC = () => {
 
   const [form] = Form.useForm();
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [quizzes, setQuizzes] = useState<
+    {
+      chapterQuizId: string;
+      quizTitle?: string;
+      description?: string;
+      chapterId?: string;
+      totalQuestions?: number;
+      created_at?: string;
+    }[]
+  >([]);
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<LessonType>("normal");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -213,12 +222,12 @@ const LessonList: React.FC = () => {
   const updateQuestion = (
     questionId: string,
     field: keyof QuizQuestion,
-    value: any
+    value: string | number | boolean | string[] | null,
   ) => {
     setQuizData({
       ...quizData,
       questions: quizData.questions.map((q) =>
-        q.id === questionId ? { ...q, [field]: value } : q
+        q.id === questionId ? { ...q, [field]: value } : q,
       ),
     });
   };
@@ -234,7 +243,7 @@ const LessonList: React.FC = () => {
 
   const duplicateQuestion = (questionId: string) => {
     const questionToDuplicate = quizData.questions.find(
-      (q) => q.id === questionId
+      (q) => q.id === questionId,
     );
     if (questionToDuplicate) {
       const newQuestion = {
@@ -269,7 +278,7 @@ const LessonList: React.FC = () => {
   const updateOption = (
     questionId: string,
     optionIndex: number,
-    value: string
+    value: string,
   ) => {
     setQuizData({
       ...quizData,
@@ -301,8 +310,22 @@ const LessonList: React.FC = () => {
     });
   };
 
-  const handleEdit = async (record: any, type: LessonType) => {
-    setEditingId(type === "quiz" ? record.chapterQuizId : record.lessonId);
+  const handleEdit = async (
+    record:
+      | Lesson
+      | {
+          chapterQuizId: string;
+          quizTitle?: string;
+          description?: string;
+          totalQuestions?: number;
+        },
+    type: LessonType,
+  ) => {
+    setEditingId(
+      type === "quiz"
+        ? (record as { chapterQuizId: string }).chapterQuizId
+        : (record as Lesson).lessonId,
+    );
     setEditingType(type);
     setActiveTab(type);
 
@@ -311,7 +334,7 @@ const LessonList: React.FC = () => {
       try {
         // Lấy chi tiết questions của quiz
         const questions = await quizService.getQuestionsByQuiz(
-          record.chapterQuizId
+          (record as { chapterQuizId: string }).chapterQuizId,
         );
 
         let formattedQuestions: QuizQuestion[] = [];
@@ -319,21 +342,31 @@ const LessonList: React.FC = () => {
         if (Array.isArray(questions) && questions.length > 0) {
           // Với mỗi question, lấy options
           const questionsWithOpts = await Promise.all(
-            questions.map(async (q: any) => {
-              const options = await quizService.getOptionsByQuestion(
-                q.quizQuestionId
-              );
-              const optsText = options.map((o: any) => o.optionText);
-              const correctIndex = options.findIndex((o: any) => o.isCorrect);
+            questions.map(
+              async (q: {
+                quizQuestionId: string;
+                questionText: string;
+                required?: boolean;
+              }) => {
+                const options = await quizService.getOptionsByQuestion(
+                  q.quizQuestionId,
+                );
+                const optsText = options.map(
+                  (o: { optionText: string }) => o.optionText,
+                );
+                const correctIndex = options.findIndex(
+                  (o: { isCorrect: boolean }) => o.isCorrect,
+                );
 
-              return {
-                id: q.quizQuestionId,
-                question: q.questionText,
-                options: optsText.length > 0 ? optsText : ["Tùy chọn 1"],
-                correctAnswer: correctIndex !== -1 ? correctIndex : null,
-                required: q.required || false,
-              };
-            })
+                return {
+                  id: q.quizQuestionId,
+                  question: q.questionText,
+                  options: optsText.length > 0 ? optsText : ["Tùy chọn 1"],
+                  correctAnswer: correctIndex !== -1 ? correctIndex : null,
+                  required: q.required || false,
+                };
+              },
+            ),
           );
           formattedQuestions = questionsWithOpts;
         } else {
@@ -349,8 +382,8 @@ const LessonList: React.FC = () => {
         }
 
         setQuizData({
-          title: record.title || "",
-          description: record.description || "",
+          title: (record as { quizTitle?: string }).quizTitle || "",
+          description: (record as { description?: string }).description || "",
           questions: formattedQuestions,
         });
       } catch (error) {
@@ -375,7 +408,7 @@ const LessonList: React.FC = () => {
         message.success("Xóa thành công!");
         fetchLessons();
       }
-    } catch (error) {
+    } catch {
       message.error("Xóa thất bại");
     }
   };
@@ -392,12 +425,13 @@ const LessonList: React.FC = () => {
       ...quiz,
       type: "quiz" as const,
       key: `quiz-${quiz.chapterQuizId}`,
-      lessonName: quiz.title,
+      lessonName: quiz.quizTitle,
     }));
 
     return [...lessonsWithType, ...quizzesWithType];
   }, [lessons, quizzes]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnsType<any> = useMemo(
     () => [
       { title: "#", render: (_record, _row, i) => i + 1, width: 50 },
@@ -439,7 +473,7 @@ const LessonList: React.FC = () => {
                   record.type === "quiz"
                     ? record.chapterQuizId
                     : record.lessonId,
-                  record.type === "quiz" ? "quiz" : "normal"
+                  record.type === "quiz" ? "quiz" : "normal",
                 )
               }
               okText="Xóa"
@@ -453,7 +487,7 @@ const LessonList: React.FC = () => {
         ),
       },
     ],
-    []
+    [],
   );
 
   const renderFormFields = useCallback(() => {
@@ -749,7 +783,7 @@ const LessonList: React.FC = () => {
     try {
       if (!chapterId || chapterId === "undefined") {
         message.error(
-          "Lỗi: Không tìm thấy ID chương! Vui lòng quay lại và chọn chương đúng."
+          "Lỗi: Không tìm thấy ID chương! Vui lòng quay lại và chọn chương đúng.",
         );
         return;
       }
@@ -765,7 +799,7 @@ const LessonList: React.FC = () => {
 
         // Validate questions
         const hasInvalidQuestion = quizData.questions.some(
-          (q) => !q.question || q.question === "Câu hỏi không có tiêu đề"
+          (q) => !q.question || q.question === "Câu hỏi không có tiêu đề",
         );
         if (hasInvalidQuestion) {
           message.error("Vui lòng nhập nội dung cho tất cả câu hỏi!");
@@ -775,7 +809,7 @@ const LessonList: React.FC = () => {
 
         // Validate correct answers
         const hasNoCorrectAnswer = quizData.questions.some(
-          (q) => q.correctAnswer === null
+          (q) => q.correctAnswer === null,
         );
         if (hasNoCorrectAnswer) {
           message.error("Vui lòng chọn đáp án đúng cho tất cả câu hỏi!");
@@ -792,9 +826,8 @@ const LessonList: React.FC = () => {
 
           // 2. Xóa tất cả câu hỏi cũ để tạo lại
           try {
-            const oldQuestions = await quizService.getQuestionsByQuiz(
-              editingId
-            );
+            const oldQuestions =
+              await quizService.getQuestionsByQuiz(editingId);
             if (Array.isArray(oldQuestions)) {
               for (const q of oldQuestions) {
                 await quizService.deleteQuestion(q.quizQuestionId);
@@ -803,7 +836,7 @@ const LessonList: React.FC = () => {
           } catch (e) {
             console.warn(
               "Không thể xóa câu hỏi cũ hoặc không có câu hỏi cũ",
-              e
+              e,
             );
           }
 
@@ -817,8 +850,8 @@ const LessonList: React.FC = () => {
             });
 
             const questionId =
-              (createdQuestion as any).quizQuestionId ||
-              (createdQuestion as any).id;
+              (createdQuestion as Record<string, string>).quizQuestionId ||
+              (createdQuestion as Record<string, string>).id;
 
             // Create options
             for (let i = 0; i < question.options.length; i++) {
@@ -840,7 +873,8 @@ const LessonList: React.FC = () => {
           });
 
           const quizId =
-            (createdQuiz as any).chapterQuizId || (createdQuiz as any).id;
+            (createdQuiz as Record<string, string>).chapterQuizId ||
+            (createdQuiz as Record<string, string>).id;
 
           // Create questions
           for (const question of quizData.questions) {
@@ -852,8 +886,8 @@ const LessonList: React.FC = () => {
             });
 
             const questionId =
-              (createdQuestion as any).quizQuestionId ||
-              (createdQuestion as any).id;
+              (createdQuestion as Record<string, string>).quizQuestionId ||
+              (createdQuestion as Record<string, string>).id;
 
             // Create options
             for (let i = 0; i < question.options.length; i++) {
@@ -896,7 +930,7 @@ const LessonList: React.FC = () => {
 
       if (!newLessonId) {
         // ✅ Chuyển sang JSON object thay vì FormData
-        const lessonData: any = {
+        const lessonData: Record<string, string | boolean> = {
           lessonName: values.lessonName?.trim() || "",
           chapterId: chapterId || "",
           isPreview: values.isPreview || false,
@@ -909,7 +943,7 @@ const LessonList: React.FC = () => {
           }
 
           if (!hasTestCase) {
-            const fileList = values.videoFile as any[];
+            const fileList = values.videoFile as { originFileObj?: File }[];
 
             // ✅ Kiểm tra bắt buộc có video
             if (!fileList || fileList.length === 0) {
@@ -933,7 +967,7 @@ const LessonList: React.FC = () => {
               });
 
               const cloudData = await uploadService.uploadVideo(
-                fileObj.originFileObj
+                fileObj.originFileObj,
               );
 
               // ✅ Sử dụng đúng tên field từ uploadService (url, publicId)
@@ -962,12 +996,13 @@ const LessonList: React.FC = () => {
         if (!createdLesson) throw new Error("Không tạo được bài học");
 
         newLessonId =
-          (createdLesson as any).lessonId || (createdLesson as any).id;
+          (createdLesson as Record<string, string>).lessonId ||
+          (createdLesson as Record<string, string>).id;
 
         // Nếu có Test Case, chuyển tab để nhập tiếp
         if (activeTab === "normal" && hasTestCase) {
           message.success(
-            "Đã lưu bài học video. Vui lòng nhập thông tin Test Case."
+            "Đã lưu bài học video. Vui lòng nhập thông tin Test Case.",
           );
           setTempLessonId(newLessonId);
           setActiveTab("testcode");
@@ -993,7 +1028,7 @@ const LessonList: React.FC = () => {
         };
 
         await testCaseService.createTestCase(
-          testCasePayload as CreateTestCasePayload
+          testCasePayload as CreateTestCasePayload,
         );
         message.success("Thêm Test Case thành công!");
 

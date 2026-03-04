@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DownOutlined } from "@ant-design/icons";
-import { type Chapter } from "../../types/database.types";
+import { type Chapter, type Lesson } from "../../types/database.types";
 import styles from "../../styles/LectureList.module.css";
 import { quizService } from "../../service/quiz.service";
 import { progressService } from "../../service/progress.service";
@@ -31,7 +31,7 @@ const LectureListComponent: React.FC<LectureListProps> = ({
     [key: string]: boolean;
   }>({});
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   useEffect(() => {
@@ -40,7 +40,7 @@ const LectureListComponent: React.FC<LectureListProps> = ({
       for (const chapter of safeChapters) {
         try {
           const quizzes = await quizService.getQuizzesByChapter(
-            chapter.chapterId
+            chapter.chapterId,
           );
           quizMap[chapter.chapterId] = quizzes && quizzes.length > 0;
         } catch {
@@ -81,7 +81,7 @@ const LectureListComponent: React.FC<LectureListProps> = ({
 
   const toggleChapter = (index: number) => {
     setExpandedChapters((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
     );
   };
 
@@ -120,7 +120,7 @@ const LectureListComponent: React.FC<LectureListProps> = ({
                   <span>{chapter.chapterName}</span>
                 </h6>
                 <span className={styles.lessonCount}>{totalItems} bài học</span>
-                <DownOutlined 
+                <DownOutlined
                   className={`${styles.chapterIcon} ${
                     isExpanded ? styles.expanded : ""
                   }`}
@@ -149,9 +149,14 @@ const LectureListComponent: React.FC<LectureListProps> = ({
                         <span className={styles.lessonName}>
                           {lesson.lessonName}
                         </span>
-                        {(lesson as any).lessonDuration && (
+                        {(lesson as Lesson & { lessonDuration?: string })
+                          .lessonDuration && (
                           <span className={styles.lessonDuration}>
-                            ⏱ {(lesson as any).lessonDuration}
+                            ⏱{" "}
+                            {
+                              (lesson as Lesson & { lessonDuration?: string })
+                                .lessonDuration
+                            }
                           </span>
                         )}
                       </li>

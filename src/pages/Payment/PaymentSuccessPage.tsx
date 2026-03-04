@@ -14,8 +14,11 @@ import { Spin, message } from "antd";
 import styles from "../../styles/PaymentResult.module.css";
 import { courseService } from "../../service/course.service";
 import { userService } from "../../service/user.service";
-import { paymentService } from "../../service/payment.service";
-import type { Course } from "../../types/database.types";
+import {
+  paymentService,
+  type PaymentVerification,
+} from "../../service/payment.service";
+import type { Course, User } from "../../types/database.types";
 
 const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,8 +33,9 @@ const PaymentSuccessPage: React.FC = () => {
   const orderInfo = searchParams.get("orderInfo");
 
   const [course, setCourse] = useState<Course | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [paymentDetails, setPaymentDetails] =
+    useState<PaymentVerification | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Debug: Log tất cả query params (DISABLED)
@@ -106,9 +110,8 @@ const PaymentSuccessPage: React.FC = () => {
           return;
         }
 
-        const paymentData = await paymentService.verifyPaymentStatus(
-          currentPaymentId
-        );
+        const paymentData =
+          await paymentService.verifyPaymentStatus(currentPaymentId);
 
         setPaymentDetails(paymentData);
 
@@ -117,19 +120,19 @@ const PaymentSuccessPage: React.FC = () => {
           if (!paymentDataStr) {
             // Chỉ hiện message nếu chưa hiện từ sessionStorage
             message.success(
-              "Thanh toán thành công! Bạn đã được ghi danh vào khóa học."
+              "Thanh toán thành công! Bạn đã được ghi danh vào khóa học.",
             );
           }
         } else {
           message.warning(
-            "Thanh toán thành công nhưng chưa tìm thấy thông tin ghi danh. Vui lòng liên hệ hỗ trợ."
+            "Thanh toán thành công nhưng chưa tìm thấy thông tin ghi danh. Vui lòng liên hệ hỗ trợ.",
           );
         }
 
         // 5. Lấy thông tin khóa học
         if (paymentData.course?.courseId) {
           const courseData = await courseService.getCourseById(
-            paymentData.course.courseId
+            paymentData.course.courseId,
           );
           setCourse(courseData);
         }
@@ -152,7 +155,7 @@ const PaymentSuccessPage: React.FC = () => {
           message.error("Bạn không có quyền truy cập thanh toán này.");
         } else {
           message.error(
-            "Có lỗi xảy ra khi tải thông tin thanh toán. Vui lòng liên hệ hỗ trợ."
+            "Có lỗi xảy ra khi tải thông tin thanh toán. Vui lòng liên hệ hỗ trợ.",
           );
         }
       } finally {
@@ -200,8 +203,8 @@ const PaymentSuccessPage: React.FC = () => {
           {paymentDetails?.enrollment
             ? "Cảm ơn bạn đã đăng ký. Khóa học đã được kích hoạt và bạn có thể bắt đầu học ngay."
             : loading
-            ? "Đang tải thông tin thanh toán..."
-            : "Thanh toán đã được xác nhận."}
+              ? "Đang tải thông tin thanh toán..."
+              : "Thanh toán đã được xác nhận."}
         </p>
 
         {loading ? (
@@ -227,7 +230,7 @@ const PaymentSuccessPage: React.FC = () => {
                 </span>
                 <span className={styles.value}>
                   {getPaymentMethodName(
-                    paymentDetails?.paymentMethod || partnerCode
+                    paymentDetails?.paymentMethod || partnerCode,
                   )}
                 </span>
               </div>

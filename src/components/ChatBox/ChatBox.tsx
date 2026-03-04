@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import styles from "../../styles/ChatBox.module.css";
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
+
 interface Message {
   sender: "user" | "ai" | "system";
   text: string;
@@ -69,7 +72,7 @@ const ChatBox: React.FC = () => {
 
     try {
       // Sử dụng Groq Chat API endpoint
-      const res = await fetch("http://localhost:5000/api/chat", {
+      const res = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,7 +102,10 @@ const ChatBox: React.FC = () => {
       console.error("Chat API Error:", err);
       const errorMessage: Message = {
         sender: "ai",
-        text: "⚠️ Không thể kết nối tới server AI. Vui lòng kiểm tra:\n• Server đang chạy tại http://localhost:5000\n• GROQ_API_KEY đã được cấu hình trong .env\n• Container đã rebuild với code mới nhất",
+        text:
+          "⚠️ Không thể kết nối tới server AI. Vui lòng kiểm tra:\n• Server đang chạy tại " +
+          API_URL +
+          "\n• GROQ_API_KEY đã được cấu hình trong .env\n• Container đã rebuild với code mới nhất",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -151,7 +157,11 @@ const ChatBox: React.FC = () => {
 
       {/* Chatbox */}
       {open && (
-        <div className={styles.chatBox} role="dialog" aria-label="AI Tutor Chat">
+        <div
+          className={styles.chatBox}
+          role="dialog"
+          aria-label="AI Tutor Chat"
+        >
           <div className={styles.chatHeader}>
             <span>🤖 AI Tutor</span>
             <div className={styles.headerActions}>
@@ -182,8 +192,8 @@ const ChatBox: React.FC = () => {
                   msg.sender === "user"
                     ? styles.userMessage
                     : msg.sender === "system"
-                    ? styles.systemMessage
-                    : styles.aiMessage
+                      ? styles.systemMessage
+                      : styles.aiMessage
                 }
               >
                 <div className={styles.messageContent}>

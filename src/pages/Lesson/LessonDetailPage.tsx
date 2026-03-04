@@ -22,6 +22,18 @@ import { certificateService } from "../../service/certificate.service";
 import XPNotification from "../../components/Gamification/XPNotification";
 import { useCourseTracking } from "../../hooks/useCourseTracking";
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
+
+interface RecommendedCourse {
+  courseId: string;
+  courseName: string;
+  courseDescription?: string;
+  coursePrice?: number;
+  avatarURL?: string;
+  level?: string;
+}
+
 const PracticePage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
 
@@ -31,7 +43,9 @@ const PracticePage: React.FC = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [recommendedCourses, setRecommendedCourses] = useState<any[]>([]);
+  const [recommendedCourses, setRecommendedCourses] = useState<
+    RecommendedCourse[]
+  >([]);
   const [learningSpeed, setLearningSpeed] = useState<string>("");
   const [recommendationReason, setRecommendationReason] = useState<string>("");
   const [certificateURL, setCertificateURL] = useState<string>("");
@@ -74,7 +88,7 @@ const PracticePage: React.FC = () => {
         // Dynamically import quizService to avoid circular dependency
         const { quizService } = await import("../../service/quiz.service");
         const quizzes = await quizService.getQuizzesByChapter(
-          currentChapter.chapterId
+          currentChapter.chapterId,
         );
         setHasQuiz(quizzes && quizzes.length > 0);
       } catch (error) {
@@ -109,7 +123,7 @@ const PracticePage: React.FC = () => {
         if (!userId || !courseId) return;
 
         const res = await fetch(
-          `http://localhost:3001/api/learning-speed/recommendations/${userId}/${courseId}`
+          `${API_URL}/api/learning-speed/recommendations/${userId}/${courseId}`,
         );
         const data = await res.json();
 
@@ -142,7 +156,7 @@ const PracticePage: React.FC = () => {
 
         // Check if lesson is already completed
         const lessonProgress = await progressService.getLessonProgress(
-          activeLesson.lessonId
+          activeLesson.lessonId,
         );
         setLessonCompleted(lessonProgress?.isCompleted || false);
       } catch (error) {
@@ -163,18 +177,18 @@ const PracticePage: React.FC = () => {
       console.log(
         "LessonDetailPage: Fetching test cases for lesson:",
         activeLesson.lessonId,
-        activeLesson.lessonName
+        activeLesson.lessonName,
       );
       setLessonTestCases([]);
 
       try {
         const res = await lessonService.getTestCaseByLessonId(
-          activeLesson.lessonId
+          activeLesson.lessonId,
         );
         console.log("LessonDetailPage: Test cases response:", res);
 
         if (res && res.length > 0) {
-          setLessonTestCases(res as any as TestCase[]);
+          setLessonTestCases(res as unknown as TestCase[]);
         } else {
           console.log("LessonDetailPage: No test cases found (empty array)");
         }
@@ -188,7 +202,8 @@ const PracticePage: React.FC = () => {
 
   useEffect(() => {
     if (activeLesson) {
-      const defaultCode = (activeLesson as any).starterCode || "";
+      const defaultCode =
+        (activeLesson as Lesson & { starterCode?: string }).starterCode || "";
       setCode(defaultCode);
       setOutput("Kết quả sẽ hiển thị ở đây");
     }
@@ -268,7 +283,7 @@ const PracticePage: React.FC = () => {
     setCompletingLesson(true);
     try {
       const result = await progressService.completeLesson(
-        activeLesson.lessonId
+        activeLesson.lessonId,
       );
       setLessonCompleted(true);
 
@@ -297,8 +312,8 @@ const PracticePage: React.FC = () => {
       } else {
         message.success(
           `Đã hoàn thành bài học! Tiến độ khóa học: ${result.courseProgress.toFixed(
-            1
-          )}%`
+            1,
+          )}%`,
         );
       }
 
@@ -414,7 +429,7 @@ const PracticePage: React.FC = () => {
                     console.log(
                       "📊 Course progress after quiz:",
                       courseProgress.progress,
-                      "%"
+                      "%",
                     );
 
                     // Nếu đã hoàn thành 100% course
@@ -431,7 +446,7 @@ const PracticePage: React.FC = () => {
                           const recommendations =
                             await learningSpeedService.onCourseCompleted(
                               userId,
-                              courseId
+                              courseId,
                             );
 
                           console.log("📚 Recommendations:", recommendations);
@@ -463,7 +478,7 @@ const PracticePage: React.FC = () => {
                             setRecommendationReason(
                               speedMap[recommendations.learningSpeed] ||
                                 recommendations.reason ||
-                                "Gợi ý khóa học phù hợp"
+                                "Gợi ý khóa học phù hợp",
                             );
                           }
                         }
@@ -480,35 +495,37 @@ const PracticePage: React.FC = () => {
                           try {
                             console.log(
                               "🔄 Attempting to issue certificate for course:",
-                              courseId
+                              courseId,
                             );
                             certificate =
                               await certificateService.issueCertificate(
-                                courseId
+                                courseId,
                               );
                             console.log("✅ Certificate created:", certificate);
-                          } catch (issueError: any) {
+                          } catch (issueError: unknown) {
+                            const err = issueError as Error;
                             console.log(
                               "⚠️ Certificate issue failed:",
-                              issueError.message
+                              err.message,
                             );
                             console.log(
-                              "Certificate already exists, fetching..."
+                              "Certificate already exists, fetching...",
                             );
                             // Nếu đã tồn tại, lấy certificate
                             try {
                               certificate =
                                 await certificateService.getUserCertificateInCourse(
-                                  courseId
+                                  courseId,
                                 );
                               console.log(
                                 "✅ Certificate retrieved:",
-                                certificate
+                                certificate,
                               );
-                            } catch (fetchError: any) {
+                            } catch (fetchError: unknown) {
+                              const err = fetchError as Error;
                               console.error(
                                 "❌ Failed to fetch certificate:",
-                                fetchError.message
+                                err.message,
                               );
                             }
                           }
@@ -516,7 +533,10 @@ const PracticePage: React.FC = () => {
                           if (certificate?.pdfUrl) {
                             // Backend đã trả về full URL từ Cloudinary
                             setCertificateURL(certificate.pdfUrl);
-                            console.log("✅ Certificate PDF URL:", certificate.pdfUrl);
+                            console.log(
+                              "✅ Certificate PDF URL:",
+                              certificate.pdfUrl,
+                            );
                           } else {
                             console.log("ℹ️ No certificate URL available yet");
                           }
@@ -610,17 +630,17 @@ const PracticePage: React.FC = () => {
                           try {
                             const lessonProgress =
                               await progressService.getLessonProgress(
-                                activeLesson.lessonId
+                                activeLesson.lessonId,
                               );
                             setLessonCompleted(
-                              lessonProgress?.isCompleted || false
+                              lessonProgress?.isCompleted || false,
                             );
 
                             // Reload course để update danh sách lessons với dấu tick
                             if (courseId) {
                               const updatedCourse =
                                 await courseService.getCourseByIdContent(
-                                  courseId
+                                  courseId,
                                 );
                               if (updatedCourse) setCourse(updatedCourse);
                             }
@@ -651,8 +671,8 @@ const PracticePage: React.FC = () => {
                       {completingLesson
                         ? "Đang xử lý..."
                         : lessonCompleted
-                        ? "Đã hoàn thành"
-                        : "Đánh dấu hoàn thành"}
+                          ? "Đã hoàn thành"
+                          : "Đánh dấu hoàn thành"}
                     </button>
                   </div>
                 )}
@@ -731,10 +751,10 @@ const PracticePage: React.FC = () => {
                             {learningSpeed === "Very Fast"
                               ? "⚡ Rất Nhanh"
                               : learningSpeed === "Fast"
-                              ? "🚀 Nhanh"
-                              : learningSpeed === "Normal"
-                              ? "✅ Bình Thường"
-                              : "🐢 Chậm"}
+                                ? "🚀 Nhanh"
+                                : learningSpeed === "Normal"
+                                  ? "✅ Bình Thường"
+                                  : "🐢 Chậm"}
                           </span>
                         </div>
                         <div className={styles.speedReason}>
@@ -761,7 +781,7 @@ const PracticePage: React.FC = () => {
                         className={styles.carouselContainer}
                         id="course-carousel"
                       >
-                        {recommendedCourses.map((course: any) => (
+                        {recommendedCourses.map((course: RecommendedCourse) => (
                           <div
                             key={course.courseId}
                             className={styles.recommendCard}
@@ -887,13 +907,20 @@ const PracticePage: React.FC = () => {
           {/* Learning Speed & Recommendations */}
           {learningSpeed && (
             <div style={{ marginTop: "20px", textAlign: "left" }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "10px",
+                }}
+              >
                 <h3 style={{ color: "white", fontSize: "20px", margin: 0 }}>
                   📊 Tốc độ học: <strong>{learningSpeed}</strong>
                 </h3>
                 {certificateURL && (
                   <button
-                    onClick={() => window.open(certificateURL, '_blank')}
+                    onClick={() => window.open(certificateURL, "_blank")}
                     style={{
                       padding: "6px 16px",
                       background: "#f9b115",
@@ -904,7 +931,7 @@ const PracticePage: React.FC = () => {
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: "6px"
+                      gap: "6px",
                     }}
                   >
                     🎓 Tải chứng chỉ
@@ -935,63 +962,65 @@ const PracticePage: React.FC = () => {
                   gap: "10px",
                 }}
               >
-                {recommendedCourses.slice(0, 3).map((course: any) => (
-                  <div
-                    key={course.courseId}
-                    style={{
-                      background: "rgba(255,255,255,0.15)",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                    onClick={() => {
-                      setShowCompletionModal(false);
-                      window.location.href = `/course/${course.courseId}`;
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background =
-                        "rgba(255,255,255,0.25)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background =
-                        "rgba(255,255,255,0.15)";
-                    }}
-                  >
+                {recommendedCourses
+                  .slice(0, 3)
+                  .map((course: RecommendedCourse) => (
                     <div
+                      key={course.courseId}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
+                        background: "rgba(255,255,255,0.15)",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onClick={() => {
+                        setShowCompletionModal(false);
+                        window.location.href = `/course/${course.courseId}`;
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.25)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.15)";
                       }}
                     >
-                      <div style={{ flex: 1 }}>
-                        <p
-                          style={{
-                            margin: 0,
-                            fontWeight: "600",
-                            color: "white",
-                            fontSize: "15px",
-                          }}
-                        >
-                          {course.courseName}
-                        </p>
-                        <p
-                          style={{
-                            margin: "4px 0 0 0",
-                            fontSize: "13px",
-                            color: "rgba(255,255,255,0.8)",
-                          }}
-                        >
-                          Cấp độ: {course.level}
-                        </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontWeight: "600",
+                              color: "white",
+                              fontSize: "15px",
+                            }}
+                          >
+                            {course.courseName}
+                          </p>
+                          <p
+                            style={{
+                              margin: "4px 0 0 0",
+                              fontSize: "13px",
+                              color: "rgba(255,255,255,0.8)",
+                            }}
+                          >
+                            Cấp độ: {course.level}
+                          </p>
+                        </div>
+                        <span style={{ color: "white", fontSize: "18px" }}>
+                          →
+                        </span>
                       </div>
-                      <span style={{ color: "white", fontSize: "18px" }}>
-                        →
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           )}

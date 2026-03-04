@@ -23,6 +23,9 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 const { Title } = Typography;
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
+
 interface Chapter {
   chapterId: string;
   chapterName: string;
@@ -39,7 +42,7 @@ const ChapterList: React.FC = () => {
   const [form] = Form.useForm();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [courseName, setCourseName] = useState<string>(
-    location.state?.courseName || ""
+    location.state?.courseName || "",
   );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,7 +62,7 @@ const ChapterList: React.FC = () => {
   const fetchCourseName = useCallback(async () => {
     if (!courseId || courseName) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/courses/${courseId}`, {
+      const res = await fetch(`${API_URL}/api/courses/${courseId}`, {
         // headers: { Authorization: `Bearer ${token}` },
         //update
         method: "GET",
@@ -80,7 +83,7 @@ const ChapterList: React.FC = () => {
   const fetchChapters = useCallback(async () => {
     if (!courseId) return;
     try {
-      const res = await fetch("http://localhost:3000/api/chapters", {
+      const res = await fetch(`${API_URL}/api/chapters`, {
         // headers: { Authorization: `Bearer ${token}` },
         method: "GET",
         headers: getAuthHeaders(),
@@ -111,7 +114,10 @@ const ChapterList: React.FC = () => {
   }, [fetchCourseName, fetchChapters]);
 
   //Thêm hoặc cập nhật chương
-  const handleFinish = async (values: any) => {
+  const handleFinish = async (values: {
+    chapterName: string;
+    totalLesson: number;
+  }) => {
     if (!courseId) return message.warning("Thiếu mã khóa học!");
     setLoading(true);
 
@@ -123,8 +129,8 @@ const ChapterList: React.FC = () => {
       };
 
       const url = editingId
-        ? `http://localhost:3000/api/chapters/${editingId}`
-        : "http://localhost:3000/api/chapters";
+        ? `${API_URL}/api/chapters/${editingId}`
+        : `${API_URL}/api/chapters`;
       const method = editingId ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -141,7 +147,7 @@ const ChapterList: React.FC = () => {
         message.success(
           editingId
             ? "Cập nhật chương thành công!"
-            : "Thêm chương mới thành công!"
+            : "Thêm chương mới thành công!",
         );
         form.resetFields();
         setEditingId(null);
@@ -171,13 +177,10 @@ const ChapterList: React.FC = () => {
   //Xóa chương
   const handleDelete = async (chapterId: string) => {
     try {
-      const res = await fetch(
-        `http://localhost:3000/api/chapters/${chapterId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_URL}/api/chapters/${chapterId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (data.success) {
         message.success("Xóa chương thành công!");
@@ -192,7 +195,11 @@ const ChapterList: React.FC = () => {
   };
 
   const columns = [
-    { title: "#", render: (_: any, __: any, i: number) => i + 1, width: 60 },
+    {
+      title: "#",
+      render: (_: unknown, __: unknown, i: number) => i + 1,
+      width: 60,
+    },
     { title: "Tên chương", dataIndex: "chapterName" },
     { title: "Tổng số bài học", dataIndex: "totalLesson", align: "center" },
     {

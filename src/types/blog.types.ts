@@ -2,9 +2,9 @@
 // Based on backend documentation: BLOG_TAG_CATEGORY_API.md
 // Last updated: 2025-12-07
 
-export type TagType = 'COURSE' | 'BLOG' | 'GENERAL';
+export type TagType = "COURSE" | "BLOG" | "GENERAL";
 
-export type BlogStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED';
+export type BlogStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "SCHEDULED";
 
 /**
  * Tag interface - matches backend schema
@@ -42,24 +42,24 @@ export interface Category {
  */
 export interface BlogPost {
   blogPostId: string;
-  
+
   // Content
   title: string;
   slug: string;
   content: string;
   excerpt?: string;
   coverImage?: string;
-  
+
   // SEO Fields
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
-  
+
   // Status & Publishing
   status: BlogStatus;
   publishedAt?: string;
   scheduledAt?: string;
-  
+
   // Stats
   viewCount: number;
   likeCount: number;
@@ -67,18 +67,18 @@ export interface BlogPost {
   bookmarkCount: number;
   shareCount: number;
   readingTime?: number;
-  
+
   // Author
   authorId: string;
-  
+
   // Featured
   isFeatured: boolean;
   isPinned: boolean;
-  
+
   // Timestamps
   created_at: string;
   updated_at: string;
-  
+
   // Relations
   author?: {
     userId: string;
@@ -124,24 +124,24 @@ export interface BlogBookmark {
 // Request/Response Types
 export interface CreateBlogPostRequest {
   title: string;
-  slug?: string;  // Optional, auto-generated from title if not provided
+  slug?: string; // Optional, auto-generated from title if not provided
   content: string;
   excerpt?: string;
   coverImage?: string;
-  
+
   // SEO Fields
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
-  
+
   // Status & Publishing
   status?: BlogStatus;
   scheduledAt?: string;
-  
+
   // Relations
   categoryIds?: string[];
   tagIds?: string[];
-  
+
   // Featured
   isFeatured?: boolean;
   isPinned?: boolean;
@@ -162,9 +162,21 @@ export interface BlogListResponse {
 
 export interface SearchByTagResponse {
   tag: Tag;
-  courses?: any[];
+  courses?: CourseSearchResult[];
   blogs?: BlogPost[];
   total: number;
+}
+
+export interface CourseSearchResult {
+  courseId: string;
+  courseName: string;
+  courseDescription?: string;
+  coursePrice?: number;
+  avatarURL?: string;
+  level?: string;
+  _count?: {
+    enrollments?: number;
+  };
 }
 
 export interface AdvancedSearchRequest {
@@ -183,8 +195,8 @@ export interface LearningPathRequest {
 
 export interface LearningPathResponse {
   [tagSlug: string]: {
-    basic: any[];
-    intermediate: any[];
-    advanced: any[];
+    basic: CourseSearchResult[];
+    intermediate: CourseSearchResult[];
+    advanced: CourseSearchResult[];
   };
 }

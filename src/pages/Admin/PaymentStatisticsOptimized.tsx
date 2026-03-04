@@ -44,7 +44,7 @@ const { RangePicker } = DatePicker;
 const PaymentStatisticsOptimized: React.FC = () => {
   // State
   const [overview, setOverview] = useState<PaymentStatisticsOverview | null>(
-    null
+    null,
   );
   const [revenueData, setRevenueData] = useState<RevenueByPeriod[]>([]);
   const [topCourses, setTopCourses] = useState<TopCourse[]>([]);
@@ -78,7 +78,7 @@ const PaymentStatisticsOptimized: React.FC = () => {
   // Modal state
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(
-    null
+    null,
   );
   const [rejectReason, setRejectReason] = useState("");
 
@@ -99,7 +99,7 @@ const PaymentStatisticsOptimized: React.FC = () => {
       const data = await paymentService.getRevenueByPeriod(
         dateRange[0].format("YYYY-MM-DD"),
         dateRange[1].format("YYYY-MM-DD"),
-        groupBy
+        groupBy,
       );
       setRevenueData(data);
     } catch (error) {
@@ -256,7 +256,7 @@ const PaymentStatisticsOptimized: React.FC = () => {
               label: function (context) {
                 return `${context.dataset.label}: ${new Intl.NumberFormat(
                   "vi-VN",
-                  { style: "currency", currency: "VND" }
+                  { style: "currency", currency: "VND" },
                 ).format(context.parsed.y)}`;
               },
             },
@@ -392,36 +392,36 @@ const PaymentStatisticsOptimized: React.FC = () => {
   // Helper function to remove Vietnamese diacritics for PDF
   const removeVietnameseTones = (str: string): string => {
     return str
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/Đ/g, 'D');
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
   };
 
   // Format currency for PDF (without special characters)
   const formatCurrencyForPDF = (amount: number): string => {
-    return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+    return new Intl.NumberFormat("vi-VN").format(amount) + " VND";
   };
 
   // Export data to PDF
   const handleExportData = async () => {
     try {
       // Dynamic import
-      const { default: jsPDF } = await import('jspdf');
-      const { default: autoTable } = await import('jspdf-autotable');
+      const { default: jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
 
       const doc = new jsPDF();
-      
+
       // Title
       doc.setFontSize(18);
-      doc.text('BAO CAO GIAO DICH', 14, 20);
-      
+      doc.text("BAO CAO GIAO DICH", 14, 20);
+
       // Date range
       doc.setFontSize(11);
       doc.text(
-        `Thoi gian: ${dateRange[0].format('DD/MM/YYYY')} - ${dateRange[1].format('DD/MM/YYYY')}`,
+        `Thoi gian: ${dateRange[0].format("DD/MM/YYYY")} - ${dateRange[1].format("DD/MM/YYYY")}`,
         14,
-        30
+        30,
       );
 
       let currentY = 45;
@@ -429,31 +429,33 @@ const PaymentStatisticsOptimized: React.FC = () => {
       // Overview statistics
       if (overview) {
         doc.setFontSize(14);
-        doc.text('TONG QUAN', 14, 40);
-        
+        doc.text("TONG QUAN", 14, 40);
+
         const overviewData = [
-          ['Tong doanh thu', formatCurrencyForPDF(overview.totalRevenue)],
-          ['Tong giao dich', overview.totalTransactions.toString()],
-          ['Giao dich thanh cong', overview.successfulTransactions.toString()],
-          ['Giao dich that bai', overview.failedTransactions.toString()],
-          ['Giao dich cho xu ly', overview.pendingTransactions.toString()],
+          ["Tong doanh thu", formatCurrencyForPDF(overview.totalRevenue)],
+          ["Tong giao dich", overview.totalTransactions.toString()],
+          ["Giao dich thanh cong", overview.successfulTransactions.toString()],
+          ["Giao dich that bai", overview.failedTransactions.toString()],
+          ["Giao dich cho xu ly", overview.pendingTransactions.toString()],
         ];
 
         autoTable(doc, {
           startY: currentY,
-          head: [['CHI TIEU', 'GIA TRI']],
+          head: [["CHI TIEU", "GIA TRI"]],
           body: overviewData,
-          theme: 'grid',
+          theme: "grid",
           headStyles: { fillColor: [24, 144, 255] },
         });
 
-        currentY = (doc as any).lastAutoTable.finalY + 15;
+        currentY =
+          (doc as unknown as Record<string, { finalY: number }>).lastAutoTable
+            .finalY + 15;
       }
 
       // Top courses
       if (topCourses.length > 0) {
         doc.setFontSize(14);
-        doc.text('TOP 10 KHOA HOC BAN CHAY', 14, currentY);
+        doc.text("TOP 10 KHOA HOC BAN CHAY", 14, currentY);
 
         const coursesData = topCourses.map((course, index) => [
           (index + 1).toString(),
@@ -465,9 +467,9 @@ const PaymentStatisticsOptimized: React.FC = () => {
 
         autoTable(doc, {
           startY: currentY + 5,
-          head: [['STT', 'KHOA HOC', 'GIANG VIEN', 'DOANH THU', 'LUOT BAN']],
+          head: [["STT", "KHOA HOC", "GIANG VIEN", "DOANH THU", "LUOT BAN"]],
           body: coursesData,
-          theme: 'grid',
+          theme: "grid",
           headStyles: { fillColor: [24, 144, 255] },
         });
       }
@@ -476,35 +478,50 @@ const PaymentStatisticsOptimized: React.FC = () => {
       if (payments.length > 0) {
         doc.addPage();
         doc.setFontSize(14);
-        doc.text('DANH SACH GIAO DICH', 14, 20);
+        doc.text("DANH SACH GIAO DICH", 14, 20);
 
         const paymentsData = payments.map((payment) => [
-          payment.transactionId || payment.orderId || payment.paymentId.slice(0, 8),
-          removeVietnameseTones(payment.user?.userName || 'N/A'),
-          removeVietnameseTones(payment.course?.courseName || 'N/A'),
+          payment.transactionId ||
+            payment.orderId ||
+            payment.paymentId.slice(0, 8),
+          removeVietnameseTones(payment.user?.userName || "N/A"),
+          removeVietnameseTones(payment.course?.courseName || "N/A"),
           formatCurrencyForPDF(payment.amount),
           payment.paymentMethod,
-          payment.paymentStatus === 'COMPLETED' ? 'Thanh cong' : 
-          payment.paymentStatus === 'PENDING' ? 'Cho xu ly' : 'That bai',
-          dayjs(payment.created_at).format('DD/MM/YYYY'),
+          payment.paymentStatus === "COMPLETED"
+            ? "Thanh cong"
+            : payment.paymentStatus === "PENDING"
+              ? "Cho xu ly"
+              : "That bai",
+          dayjs(payment.created_at).format("DD/MM/YYYY"),
         ]);
 
         autoTable(doc, {
           startY: 25,
-          head: [['MA GD', 'NGUOI DUNG', 'KHOA HOC', 'SO TIEN', 'PT', 'TRANG THAI', 'NGAY']],
+          head: [
+            [
+              "MA GD",
+              "NGUOI DUNG",
+              "KHOA HOC",
+              "SO TIEN",
+              "PT",
+              "TRANG THAI",
+              "NGAY",
+            ],
+          ],
           body: paymentsData,
-          theme: 'grid',
+          theme: "grid",
           headStyles: { fillColor: [24, 144, 255] },
           styles: { fontSize: 8 },
         });
       }
 
       // Save PDF
-      doc.save(`bao-cao-giao-dich-${dayjs().format('YYYY-MM-DD')}.pdf`);
-      message.success('Xuat du lieu thanh cong!');
+      doc.save(`bao-cao-giao-dich-${dayjs().format("YYYY-MM-DD")}.pdf`);
+      message.success("Xuat du lieu thanh cong!");
     } catch (error) {
-      console.error('Error exporting PDF:', error);
-      message.error('Khong the xuat du lieu. Vui long thu lai!');
+      console.error("Error exporting PDF:", error);
+      message.error("Khong the xuat du lieu. Vui long thu lai!");
     }
   };
 
@@ -909,7 +926,7 @@ const PaymentStatisticsOptimized: React.FC = () => {
                     render: (
                       _: unknown,
                       __: UserPaymentStats,
-                      index: number
+                      index: number,
                     ) => <span style={{ fontWeight: 500 }}>{index + 1}</span>,
                   },
                   {

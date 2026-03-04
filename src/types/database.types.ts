@@ -18,6 +18,7 @@ export type Json =
 export interface User {
   userId: string;
   userName: string;
+  fullName?: string;
   password?: string; // Nên để optional vì thường không trả về FE
   firebaseUid?: string;
   email: string;
@@ -26,6 +27,7 @@ export interface User {
   region: string | null;
   dateOfBirth: Date | string | null;
   level: Level | null;
+  specialization?: string;
   created_at: Date | string;
   updated_at: Date | string;
 
@@ -246,6 +248,8 @@ export interface Certificate {
   userId: string;
   courseId: string;
   certificateURL: string | null; // Path to PDF file - dùng để hiển thị/download
+  pdfUrl?: string; // Cloudinary PDF URL
+  viewUrl?: string; // Cloudinary view URL
   issuedAt: Date | string;
   created_at: Date | string;
   updated_at: Date | string;

@@ -1,11 +1,13 @@
-import axios from 'axios';
+import axios from "axios";
 import type {
   SearchByTagResponse,
   AdvancedSearchRequest,
-  LearningPathResponse
-} from '../types/blog.types';
+  LearningPathResponse,
+  CourseSearchResult,
+} from "../types/blog.types";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
 
 export const searchService = {
   /**
@@ -14,7 +16,7 @@ export const searchService = {
    */
   searchCoursesByTag: async (tagSlug: string): Promise<SearchByTagResponse> => {
     const response = await axios.get(
-      `${API_URL}/api/search/courses/by-tag/${tagSlug}`
+      `${API_URL}/api/search/courses/by-tag/${tagSlug}`,
     );
     return response.data.data;
   },
@@ -23,9 +25,9 @@ export const searchService = {
    * Tìm courses theo nhiều tags (AND logic)
    * @param tags - Mảng các tag slugs
    */
-  searchCoursesByTags: async (tags: string[]): Promise<any> => {
+  searchCoursesByTags: async (tags: string[]): Promise<SearchByTagResponse> => {
     const response = await axios.post(`${API_URL}/api/search/courses/by-tags`, {
-      tags
+      tags,
     });
     return response.data.data;
   },
@@ -36,7 +38,7 @@ export const searchService = {
    */
   searchAllByTag: async (tagSlug: string): Promise<SearchByTagResponse> => {
     const response = await axios.get(
-      `${API_URL}/api/search/all/by-tag/${tagSlug}`
+      `${API_URL}/api/search/all/by-tag/${tagSlug}`,
     );
     return response.data.data;
   },
@@ -48,11 +50,11 @@ export const searchService = {
    */
   getRecommendedCourses: async (
     courseId: string,
-    limit: number = 5
-  ): Promise<any[]> => {
+    limit: number = 5,
+  ): Promise<CourseSearchResult[]> => {
     const response = await axios.get(
       `${API_URL}/api/search/courses/${courseId}/recommended`,
-      { params: { limit } }
+      { params: { limit } },
     );
     return response.data.data;
   },
@@ -61,7 +63,9 @@ export const searchService = {
    * Tìm kiếm nâng cao với nhiều filters
    * @param params - Các tham số tìm kiếm
    */
-  advancedSearch: async (params: AdvancedSearchRequest): Promise<any> => {
+  advancedSearch: async (
+    params: AdvancedSearchRequest,
+  ): Promise<SearchByTagResponse> => {
     const response = await axios.post(`${API_URL}/api/search/advanced`, params);
     return response.data.data;
   },
@@ -70,12 +74,10 @@ export const searchService = {
    * Lấy lộ trình học theo tags (grouped by level)
    * @param tags - Mảng các tag slugs
    */
-  getLearningPath: async (
-    tags: string[]
-  ): Promise<LearningPathResponse> => {
+  getLearningPath: async (tags: string[]): Promise<LearningPathResponse> => {
     const response = await axios.post(`${API_URL}/api/search/learning-path`, {
-      tags
+      tags,
     });
     return response.data.data;
-  }
+  },
 };

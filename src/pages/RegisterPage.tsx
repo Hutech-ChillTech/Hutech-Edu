@@ -24,7 +24,7 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -39,9 +39,10 @@ const RegisterPage: React.FC = () => {
       setTimeout(() => {
         navigate("/login");
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       message.error(
-        err.message || "Đăng ký thất bại! Vui lòng kiểm tra lại thông tin."
+        error.message || "Đăng ký thất bại! Vui lòng kiểm tra lại thông tin.",
       );
     }
   };

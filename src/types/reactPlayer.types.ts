@@ -24,7 +24,7 @@ export interface ExtendedReactPlayerProps {
   pip?: boolean;
   stopOnUnmount?: boolean;
   fallback?: React.ReactElement;
-  wrapper?: React.ComponentType<any>;
+  wrapper?: React.ComponentType<Record<string, unknown>>;
   onReady?: () => void;
   onStart?: () => void;
   onPlay?: () => void;
@@ -32,7 +32,7 @@ export interface ExtendedReactPlayerProps {
   onBuffer?: () => void;
   onBufferEnd?: () => void;
   onEnded?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: unknown) => void;
   onProgress?: (state: {
     played: number;
     playedSeconds: number;
@@ -51,6 +51,7 @@ export interface ExtendedReactPlayerProps {
       forceFLV?: boolean;
     };
     // Cho phép thêm các key khác (youtube, facebook...) nếu cần, tránh lỗi thiếu thuộc tính
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   };
 }

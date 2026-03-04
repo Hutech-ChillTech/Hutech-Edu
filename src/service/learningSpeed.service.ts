@@ -32,15 +32,18 @@ interface RecommendationResponse {
   reason?: string;
   speedResult?: LearningSpeedResult;
   recommendations?: {
-    currentLevel: any;
-    recommendedLevel: any;
+    currentLevel: string;
+    recommendedLevel: string;
     courses: CourseRecommendation[];
   };
 }
 
 export const learningSpeedService = {
   // Tính Learning Speed + Gợi ý khi hoàn thành khóa học
-  onCourseCompleted: async (userId: string, courseId: string): Promise<RecommendationResponse> => {
+  onCourseCompleted: async (
+    userId: string,
+    courseId: string,
+  ): Promise<RecommendationResponse> => {
     try {
       const res = await fetch(`${API_URL}/learning-speed/on-course-completed`, {
         method: "POST",

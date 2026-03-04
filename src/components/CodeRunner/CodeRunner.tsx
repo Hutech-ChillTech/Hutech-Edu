@@ -11,11 +11,37 @@ import {
 } from "../../service/codeExecution.service";
 import type { TestCase } from "../../types/database.types";
 
+interface CodeRunResult {
+  passed?: number;
+  total?: number;
+  results?: TestResult[];
+  stdout?: string | null;
+  status?: { id: number; description: string };
+  time?: string | null;
+  memory?: number | null;
+  stderr?: string | null;
+  compile_output?: string | null;
+}
+
+interface TestResult {
+  testCaseIndex?: number;
+  description?: string | null;
+  input?: string | null;
+  expectedOutput?: string | null;
+  actualOutput: string | null;
+  isPassed?: boolean;
+  status: { id: number; description: string };
+  time: string | null;
+  memory: number | null;
+  stderr: string | null;
+  compile_output: string | null;
+}
+
 interface CodeRunnerProps {
   code: string;
   languageId: number;
   testCases?: TestCase[];
-  onResult?: (result: any) => void;
+  onResult?: (result: CodeRunResult) => void;
 }
 
 /**
@@ -29,7 +55,7 @@ const CodeRunner: React.FC<CodeRunnerProps> = ({
   onResult,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<TestResult[]>([]);
 
   const runCode = async () => {
     if (!code.trim()) {
@@ -124,12 +150,14 @@ const CodeRunner: React.FC<CodeRunnerProps> = ({
         }
 
         if (onResult) {
-          onResult(result);
+          onResult(result as unknown as CodeRunResult);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error running code:", error);
-      message.error(error.message || "Lỗi khi chạy code");
+      message.error(
+        error instanceof Error ? error.message : "Lỗi khi chạy code",
+      );
     } finally {
       setLoading(false);
     }

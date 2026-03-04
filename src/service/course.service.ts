@@ -116,7 +116,8 @@ export const courseService = {
   // Lấy danh sách khóa học đã mua (cho trang Profile)
   getEnrolledCourses: async (
     skip: number = 0,
-    take: number = 100
+    take: number = 100,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any[]> => {
     try {
       const res = await fetch(
@@ -124,7 +125,7 @@ export const courseService = {
         {
           method: "GET",
           headers: getAuthHeaders(),
-        }
+        },
       );
       const data = await res.json();
       if (res.status === 401) {
@@ -132,7 +133,7 @@ export const courseService = {
       }
       if (!res.ok) {
         throw new Error(
-          data?.message || "Không thể lấy danh sách khóa học đã mua."
+          data?.message || "Không thể lấy danh sách khóa học đã mua.",
         );
       }
       return data.data || [];

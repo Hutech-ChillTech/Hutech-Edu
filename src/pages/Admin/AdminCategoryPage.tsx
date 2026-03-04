@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -11,18 +11,18 @@ import {
   message,
   Popconfirm,
   TreeSelect,
-} from 'antd';
+} from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   FolderOutlined,
   FolderOpenOutlined,
-} from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
-import { categoryService } from '../../service/category.service';
-import type { Category } from '../../types/blog.types';
-import '../../styles/AdminCategoryPage.css';
+} from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
+import { categoryService } from "../../service/category.service";
+import type { Category } from "../../types/blog.types";
+import "../../styles/AdminCategoryPage.css";
 
 const AdminCategoryPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,8 +40,8 @@ const AdminCategoryPage: React.FC = () => {
       setLoading(true);
       const data = await categoryService.getAllCategories();
       setCategories(data);
-    } catch (error) {
-      message.error('Không thể tải danh sách categories');
+    } catch {
+      message.error("Không thể tải danh sách categories");
     } finally {
       setLoading(false);
     }
@@ -67,33 +67,51 @@ const AdminCategoryPage: React.FC = () => {
   const handleDelete = async (categoryId: string) => {
     try {
       await categoryService.deleteCategory(categoryId);
-      message.success('Đã xóa category');
+      message.success("Đã xóa category");
       fetchCategories();
-    } catch (error: any) {
-      message.error(
-        error.response?.data?.message || 'Không thể xóa category'
-      );
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || "Không thể xóa category");
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: {
+    name: string;
+    description?: string;
+    parentId?: string;
+    orderIndex?: number;
+  }) => {
     try {
       if (editingCategory) {
-        await categoryService.updateCategory(editingCategory.categoryId, values);
-        message.success('Đã cập nhật category');
+        await categoryService.updateCategory(
+          editingCategory.categoryId,
+          values,
+        );
+        message.success("Đã cập nhật category");
       } else {
         await categoryService.createCategory(values);
-        message.success('Đã tạo category mới');
+        message.success("Đã tạo category mới");
       }
       setModalVisible(false);
       fetchCategories();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || "Có lỗi xảy ra");
     }
   };
 
   // Build tree data for parent selection
-  const buildTreeData = (categories: Category[], parentId: string | null = null): any[] => {
+  interface TreeNode {
+    title: string;
+    value: string;
+    children: TreeNode[];
+    disabled: boolean;
+  }
+
+  const buildTreeData = (
+    categories: Category[],
+    parentId: string | null = null,
+  ): TreeNode[] => {
     return categories
       .filter((cat) => cat.parentId === parentId)
       .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
@@ -106,7 +124,11 @@ const AdminCategoryPage: React.FC = () => {
   };
 
   // Build hierarchical table data
-  const buildTableData = (categories: Category[], parentId: string | null = null, level: number = 0): any[] => {
+  const buildTableData = (
+    categories: Category[],
+    parentId: string | null = null,
+    level: number = 0,
+  ): (Category & { level: number })[] => {
     return categories
       .filter((cat) => cat.parentId === parentId)
       .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
@@ -120,20 +142,18 @@ const AdminCategoryPage: React.FC = () => {
 
   const columns: ColumnsType<Category & { level: number }> = [
     {
-      title: 'Tên danh mục',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Tên danh mục",
+      dataIndex: "name",
+      key: "name",
       width: 300,
       render: (text, record) => (
         <div style={{ paddingLeft: record.level * 30 }}>
           <Space>
-            {record.level > 0 && (
-              <span style={{ color: '#ccc' }}>└─</span>
-            )}
+            {record.level > 0 && <span style={{ color: "#ccc" }}>└─</span>}
             {record.parentId ? (
-              <FolderOutlined style={{ color: '#1890ff' }} />
+              <FolderOutlined style={{ color: "#1890ff" }} />
             ) : (
-              <FolderOpenOutlined style={{ color: '#52c41a' }} />
+              <FolderOpenOutlined style={{ color: "#52c41a" }} />
             )}
             <strong>{text}</strong>
           </Space>
@@ -141,38 +161,38 @@ const AdminCategoryPage: React.FC = () => {
       ),
     },
     {
-      title: 'Slug',
-      dataIndex: 'slug',
-      key: 'slug',
+      title: "Slug",
+      dataIndex: "slug",
+      key: "slug",
       width: 200,
       render: (text) => <code>{text}</code>,
     },
     {
-      title: 'Mô tả',
-      dataIndex: 'description',
-      key: 'description',
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
       ellipsis: true,
-      render: (text) => text || <span style={{ color: '#ccc' }}>-</span>,
+      render: (text) => text || <span style={{ color: "#ccc" }}>-</span>,
     },
     {
-      title: 'Thứ tự',
-      dataIndex: 'orderIndex',
-      key: 'orderIndex',
+      title: "Thứ tự",
+      dataIndex: "orderIndex",
+      key: "orderIndex",
       width: 100,
       render: (order) => <Tag>{order || 0}</Tag>,
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      title: "Ngày tạo",
+      dataIndex: "created_at",
+      key: "created_at",
       width: 150,
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
+      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
     },
     {
-      title: 'Hành động',
-      key: 'actions',
+      title: "Hành động",
+      key: "actions",
       width: 150,
-      fixed: 'right',
+      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
@@ -202,9 +222,7 @@ const AdminCategoryPage: React.FC = () => {
   return (
     <div className="admin-category-page">
       <div className="page-header">
-        <h1>
-           Quản Lý Danh mục
-        </h1>
+        <h1>Quản Lý Danh mục</h1>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -221,11 +239,11 @@ const AdminCategoryPage: React.FC = () => {
             <strong>Tổng Danh mục:</strong> {categories.length}
           </div>
           <div>
-            <strong>Danh mục gốc:</strong>{' '}
+            <strong>Danh mục gốc:</strong>{" "}
             {categories.filter((c) => !c.parentId).length}
           </div>
           <div>
-            <strong>Danh mục con:</strong>{' '}
+            <strong>Danh mục con:</strong>{" "}
             {categories.filter((c) => c.parentId).length}
           </div>
         </Space>
@@ -244,45 +262,35 @@ const AdminCategoryPage: React.FC = () => {
       />
 
       <Modal
-        title={editingCategory ? 'Chỉnh Sửa Danh mục' : 'Tạo Danh mục Mới'}
+        title={editingCategory ? "Chỉnh Sửa Danh mục" : "Tạo Danh mục Mới"}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
         width={600}
-        okText={editingCategory ? 'Cập nhật' : 'Tạo'}
+        okText={editingCategory ? "Cập nhật" : "Tạo"}
         cancelText="Hủy"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="name"
             label="Tên Danh mục"
-            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}
+            rules={[{ required: true, message: "Vui lòng nhập tên danh mục" }]}
           >
-            <Input placeholder="VD: Tutorial, News, Best Practices" size="large" />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Mô tả"
-          >
-            <Input.TextArea
-              placeholder="Mô tả ngắn về category"
-              rows={3}
+            <Input
+              placeholder="VD: Tutorial, News, Best Practices"
+              size="large"
             />
           </Form.Item>
 
-          <Form.Item
-            name="parentId"
-            label="Parent Category"
-          >
+          <Form.Item name="description" label="Mô tả">
+            <Input.TextArea placeholder="Mô tả ngắn về category" rows={3} />
+          </Form.Item>
+
+          <Form.Item name="parentId" label="Parent Category">
             <TreeSelect
               placeholder="Chọn parent (để trống = root)"
               treeData={[
-                { title: '(Root - Không có parent)', value: null },
+                { title: "(Root - Không có parent)", value: "" },
                 ...buildTreeData(categories),
               ]}
               allowClear
@@ -290,14 +298,10 @@ const AdminCategoryPage: React.FC = () => {
             />
           </Form.Item>
 
-          <Form.Item
-            name="orderIndex"
-            label="Thứ tự"
-            initialValue={0}
-          >
+          <Form.Item name="orderIndex" label="Thứ tự" initialValue={0}>
             <InputNumber
               min={0}
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
               size="large"
               placeholder="0"
             />

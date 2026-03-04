@@ -1,7 +1,8 @@
-import axios from 'axios';
-import type { Category } from '../types/blog.types';
+import axios from "axios";
+import type { Category } from "../types/blog.types";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
 
 export const categoryService = {
   /**
@@ -26,7 +27,7 @@ export const categoryService = {
    */
   getPopularCategories: async (limit: number = 10): Promise<Category[]> => {
     const response = await axios.get(`${API_URL}/api/categories/popular`, {
-      params: { limit }
+      params: { limit },
     });
     return response.data.data;
   },
@@ -45,9 +46,7 @@ export const categoryService = {
    * @param slug - Slug của category
    */
   getCategoryBySlug: async (slug: string): Promise<Category> => {
-    const response = await axios.get(
-      `${API_URL}/api/categories/slug/${slug}`
-    );
+    const response = await axios.get(`${API_URL}/api/categories/slug/${slug}`);
     return response.data.data;
   },
 
@@ -57,7 +56,7 @@ export const categoryService = {
    */
   getChildCategories: async (parentId: string): Promise<Category[]> => {
     const response = await axios.get(
-      `${API_URL}/api/categories/${parentId}/children`
+      `${API_URL}/api/categories/${parentId}/children`,
     );
     return response.data.data;
   },
@@ -88,11 +87,11 @@ export const categoryService = {
       description: string;
       parentId: string;
       orderIndex: number;
-    }>
+    }>,
   ): Promise<Category> => {
     const response = await axios.put(
       `${API_URL}/api/categories/${categoryId}`,
-      data
+      data,
     );
     return response.data.data;
   },
@@ -103,5 +102,5 @@ export const categoryService = {
    */
   deleteCategory: async (categoryId: string): Promise<void> => {
     await axios.delete(`${API_URL}/api/categories/${categoryId}`);
-  }
+  },
 };

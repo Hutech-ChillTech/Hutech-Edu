@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Typography,
   Space,
@@ -10,19 +10,19 @@ import {
   Col,
   message,
   Spin,
-} from 'antd';
+} from "antd";
 import {
   LikeOutlined,
   LikeFilled,
   BookOutlined,
   BookFilled,
-} from '@ant-design/icons';
-import { blogService } from '../../service/blog.service';
+} from "@ant-design/icons";
+import { blogService } from "../../service/blog.service";
 // import { commentService } from '../../service/comment.service';
-import TableOfContents from '../../components/TableOfContents/TableOfContents';
-import type { BlogPost } from '../../types/blog.types';
+import TableOfContents from "../../components/TableOfContents/TableOfContents";
+import type { BlogPost } from "../../types/blog.types";
 // import type { Comment } from '../../service/comment.service';
-import '../../styles/BlogDetailPage.css';
+import "../../styles/BlogDetailPage.css";
 
 const { Title, Paragraph } = Typography;
 
@@ -51,8 +51,8 @@ const BlogDetailPage: React.FC = () => {
       // Increment view count (optional - don't fail if endpoint doesn't exist)
       try {
         await blogService.incrementViewCount(blogData.blogPostId);
-      } catch (error) {
-        console.log('View count increment not available');
+      } catch {
+        console.log("View count increment not available");
       }
 
       // Load comments (optional) - Commented out for now
@@ -75,9 +75,9 @@ const BlogDetailPage: React.FC = () => {
       //   setRelatedBlogs([]);
       // }
     } catch (error) {
-      console.error('Error loading blog:', error);
-      message.error('Không thể tải bài viết');
-      navigate('/blogs');
+      console.error("Error loading blog:", error);
+      message.error("Không thể tải bài viết");
+      navigate("/blogs");
     } finally {
       setLoading(false);
     }
@@ -85,62 +85,68 @@ const BlogDetailPage: React.FC = () => {
 
   const handleLike = async () => {
     if (!blog) return;
-    
+
     // Check if feature is available
     if (blog.isLiked === undefined) {
-      message.info('Tính năng Like đang được phát triển');
+      message.info("Tính năng Like đang được phát triển");
       return;
     }
-    
+
     try {
-      console.log('Like button clicked, isLiked:', blog.isLiked);
+      console.log("Like button clicked, isLiked:", blog.isLiked);
       if (blog.isLiked) {
         await blogService.unlikeBlogPost(blog.blogPostId);
-        message.success('Đã bỏ thích');
+        message.success("Đã bỏ thích");
       } else {
         await blogService.likeBlogPost(blog.blogPostId);
-        message.success('Đã thích bài viết');
+        message.success("Đã thích bài viết");
       }
       loadBlog();
-    } catch (error: any) {
-      console.error('Like error:', error);
-      if (error.response?.status === 401) {
-        message.error('Vui lòng đăng nhập để thích bài viết');
-      } else if (error.response?.status === 404) {
-        message.warning('Tính năng Like đang được phát triển');
+    } catch (error: unknown) {
+      const err = error as Error & {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      console.error("Like error:", err);
+      if (err.response?.status === 401) {
+        message.error("Vui lòng đăng nhập để thích bài viết");
+      } else if (err.response?.status === 404) {
+        message.warning("Tính năng Like đang được phát triển");
       } else {
-        message.error('Có lỗi xảy ra: ' + (error.message || 'Unknown error'));
+        message.error("Có lỗi xảy ra: " + (err.message || "Unknown error"));
       }
     }
   };
 
   const handleBookmark = async () => {
     if (!blog) return;
-    
+
     // Check if feature is available
     if (blog.isBookmarked === undefined) {
-      message.info('Tính năng Lưu bài viết đang được phát triển');
+      message.info("Tính năng Lưu bài viết đang được phát triển");
       return;
     }
-    
+
     try {
-      console.log('Bookmark button clicked, isBookmarked:', blog.isBookmarked);
+      console.log("Bookmark button clicked, isBookmarked:", blog.isBookmarked);
       if (blog.isBookmarked) {
         await blogService.removeBookmark(blog.blogPostId);
-        message.success('Đã xóa khỏi danh sách lưu');
+        message.success("Đã xóa khỏi danh sách lưu");
       } else {
         await blogService.bookmarkBlogPost(blog.blogPostId);
-        message.success('Đã lưu bài viết');
+        message.success("Đã lưu bài viết");
       }
       loadBlog();
-    } catch (error: any) {
-      console.error('Bookmark error:', error);
-      if (error.response?.status === 401) {
-        message.error('Vui lòng đăng nhập để lưu bài viết');
-      } else if (error.response?.status === 404) {
-        message.warning('Tính năng Lưu bài viết đang được phát triển');
+    } catch (error: unknown) {
+      const err = error as Error & {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      console.error("Bookmark error:", err);
+      if (err.response?.status === 401) {
+        message.error("Vui lòng đăng nhập để lưu bài viết");
+      } else if (err.response?.status === 404) {
+        message.warning("Tính năng Lưu bài viết đang được phát triển");
       } else {
-        message.error('Có lỗi xảy ra: ' + (error.message || 'Unknown error'));
+        message.error("Có lỗi xảy ra: " + (err.message || "Unknown error"));
       }
     }
   };
@@ -165,13 +171,12 @@ const BlogDetailPage: React.FC = () => {
   //   }
   // };
 
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -202,11 +207,12 @@ const BlogDetailPage: React.FC = () => {
 
           {/* Tags & Date */}
           <div className="blog-meta-tags">
-            {blog.tags && blog.tags.map(t => (
-              <Tag key={t.tag.tagId} color="red">
-                {t.tag.name}
-              </Tag>
-            ))}
+            {blog.tags &&
+              blog.tags.map((t) => (
+                <Tag key={t.tag.tagId} color="red">
+                  {t.tag.name}
+                </Tag>
+              ))}
             <Tag color="blue">
               {formatDate(blog.publishedAt || blog.created_at)}
             </Tag>
@@ -222,7 +228,7 @@ const BlogDetailPage: React.FC = () => {
           )}
 
           {/* Content */}
-          <div 
+          <div
             className="blog-content"
             dangerouslySetInnerHTML={{ __html: blog.content }}
           />
@@ -231,18 +237,18 @@ const BlogDetailPage: React.FC = () => {
           <Divider />
           <Space size="large" className="blog-actions">
             <Button
-              type={blog.isLiked ? 'primary' : 'default'}
+              type={blog.isLiked ? "primary" : "default"}
               icon={blog.isLiked ? <LikeFilled /> : <LikeOutlined />}
               onClick={handleLike}
             >
               {blog.likeCount} Thích
             </Button>
             <Button
-              type={blog.isBookmarked ? 'primary' : 'default'}
+              type={blog.isBookmarked ? "primary" : "default"}
               icon={blog.isBookmarked ? <BookFilled /> : <BookOutlined />}
               onClick={handleBookmark}
             >
-              {blog.isBookmarked ? 'Đã lưu' : 'Lưu'}
+              {blog.isBookmarked ? "Đã lưu" : "Lưu"}
             </Button>
           </Space>
         </Col>

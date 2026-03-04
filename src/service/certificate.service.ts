@@ -8,16 +8,16 @@ const getAuthHeaders = () => {
   };
 };
 
-interface Certificate {
+export interface Certificate {
   certificateId: string;
   userId: string;
   courseId: string;
-  certificateCode?: string;      // Mã chứng chỉ (new format)
+  certificateCode?: string; // Mã chứng chỉ (new format)
   certificateTitle: string;
-  pdfUrl?: string;               // URL PDF từ Cloudinary (new format)
-  viewUrl?: string;              // Backend-generated view URL (normalized)
-  certificateURL?: string;       // Legacy format (fallback)
-  qrCodeUrl?: string;            // QR code URL (optional)
+  pdfUrl?: string; // URL PDF từ Cloudinary (new format)
+  viewUrl?: string; // Backend-generated view URL (normalized)
+  certificateURL?: string; // Legacy format (fallback)
+  qrCodeUrl?: string; // QR code URL (optional)
   totalScore: number;
   averageScore: number;
   maxScore: number;
@@ -39,7 +39,7 @@ export const certificateService = {
   // - certificateURL (string): Đường dẫn file PDF (có thể null nếu chưa generate)
   // - userId, courseId, averageScore, issueDate, etc.
   getUserCertificateInCourse: async (
-    courseId: string
+    courseId: string,
   ): Promise<Certificate | null> => {
     try {
       const res = await fetch(`${API_URL}/certificates/course/${courseId}`, {
@@ -106,7 +106,7 @@ export const certificateService = {
 
   // Lấy certificate theo ID (cho verification)
   getCertificateById: async (
-    certificateId: string
+    certificateId: string,
   ): Promise<Certificate | null> => {
     try {
       const res = await fetch(`${API_URL}/certificates/${certificateId}`, {

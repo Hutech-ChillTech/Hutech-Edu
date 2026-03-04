@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import styles from "../../styles/UserCoursePage.module.css";
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
+
 interface Course {
   courseId: string;
   courseName: string;
@@ -23,7 +26,7 @@ const AllCourses: React.FC = () => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:3000/api/courses", {
+        const response = await axios.get(`${API_URL}/api/courses`, {
           params: { page: 1, limit: 20 },
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),

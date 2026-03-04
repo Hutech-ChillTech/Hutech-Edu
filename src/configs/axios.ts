@@ -1,6 +1,7 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
 
 // Create axios instance with interceptors
 const axiosInstance = axios.create({
@@ -10,7 +11,7 @@ const axiosInstance = axios.create({
 // Request interceptor to add Authorization header
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -18,7 +19,7 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for error handling
@@ -27,11 +28,11 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem("token");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

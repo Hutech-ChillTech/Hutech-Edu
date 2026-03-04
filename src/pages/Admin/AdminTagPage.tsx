@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -10,17 +10,17 @@ import {
   Select,
   message,
   Popconfirm,
-} from 'antd';
+} from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
-} from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
-import { tagService } from '../../service/tag.service';
-import type { Tag } from '../../types/blog.types';
-import '../../styles/AdminTagPage.css';
+} from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
+import { tagService } from "../../service/tag.service";
+import type { Tag } from "../../types/blog.types";
+import "../../styles/AdminTagPage.css";
 
 const { Option } = Select;
 
@@ -30,7 +30,7 @@ const AdminTagPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [typeFilter, setTypeFilter] = useState<string | undefined>();
   const [form] = Form.useForm();
 
@@ -47,8 +47,8 @@ const AdminTagPage: React.FC = () => {
       setLoading(true);
       const data = await tagService.getAllTags();
       setTags(data);
-    } catch (error) {
-      message.error('Không thể tải danh sách tags');
+    } catch {
+      message.error("Không thể tải danh sách tags");
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ const AdminTagPage: React.FC = () => {
         (tag) =>
           tag.name.toLowerCase().includes(searchText.toLowerCase()) ||
           tag.slug.toLowerCase().includes(searchText.toLowerCase()) ||
-          tag.description?.toLowerCase().includes(searchText.toLowerCase())
+          tag.description?.toLowerCase().includes(searchText.toLowerCase()),
       );
     }
 
@@ -94,85 +94,92 @@ const AdminTagPage: React.FC = () => {
   const handleDelete = async (tagId: string) => {
     try {
       await tagService.deleteTag(tagId);
-      message.success('Đã xóa tag');
+      message.success("Đã xóa tag");
       fetchTags();
-    } catch (error) {
-      message.error('Không thể xóa tag');
+    } catch {
+      message.error("Không thể xóa tag");
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: {
+    name: string;
+    description?: string;
+    type: string;
+  }) => {
     try {
+      const submitValues = {
+        ...values,
+        type: values.type as "COURSE" | "BLOG" | "GENERAL",
+      };
       if (editingTag) {
-        await tagService.updateTag(editingTag.tagId, values);
-        message.success('Đã cập nhật tag');
+        await tagService.updateTag(editingTag.tagId, submitValues);
+        message.success("Đã cập nhật tag");
       } else {
-        await tagService.createTag(values);
-        message.success('Đã tạo tag mới');
+        await tagService.createTag(submitValues);
+        message.success("Đã tạo tag mới");
       }
       setModalVisible(false);
       fetchTags();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || "Có lỗi xảy ra");
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'COURSE':
-        return 'blue';
-      case 'BLOG':
-        return 'green';
-      case 'GENERAL':
-        return 'purple';
+      case "COURSE":
+        return "blue";
+      case "BLOG":
+        return "green";
+      case "GENERAL":
+        return "purple";
       default:
-        return 'default';
+        return "default";
     }
   };
 
   const columns: ColumnsType<Tag> = [
     {
-      title: 'Tên nhãn',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Tên nhãn",
+      dataIndex: "name",
+      key: "name",
       width: 200,
       render: (text) => <strong>{text}</strong>,
     },
     {
-      title: 'Slug',
-      dataIndex: 'slug',
-      key: 'slug',
+      title: "Slug",
+      dataIndex: "slug",
+      key: "slug",
       width: 150,
       render: (text) => <code>{text}</code>,
     },
     {
-      title: 'Mô tả',
-      dataIndex: 'description',
-      key: 'description',
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
       ellipsis: true,
-      render: (text) => text || <span style={{ color: '#ccc' }}>-</span>,
+      render: (text) => text || <span style={{ color: "#ccc" }}>-</span>,
     },
     {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
       width: 120,
-      render: (type) => (
-        <AntTag color={getTypeColor(type)}>{type}</AntTag>
-      ),
+      render: (type) => <AntTag color={getTypeColor(type)}>{type}</AntTag>,
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      title: "Ngày tạo",
+      dataIndex: "created_at",
+      key: "created_at",
       width: 150,
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
+      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
     },
     {
-      title: 'Hành động',
-      key: 'actions',
+      title: "Hành động",
+      key: "actions",
       width: 150,
-      fixed: 'right',
+      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
@@ -202,9 +209,7 @@ const AdminTagPage: React.FC = () => {
   return (
     <div className="admin-tag-page">
       <div className="page-header">
-        <h1>
-          Quản Lý Nhãn
-        </h1>
+        <h1>Quản Lý Nhãn</h1>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -237,7 +242,7 @@ const AdminTagPage: React.FC = () => {
             <Option value="BLOG">BLOG</Option>
             <Option value="GENERAL">GENERAL</Option>
           </Select>
-          <div style={{ color: '#666' }}>
+          <div style={{ color: "#666" }}>
             Tổng: <strong>{filteredTags.length}</strong> nhãn
           </div>
         </Space>
@@ -257,42 +262,32 @@ const AdminTagPage: React.FC = () => {
       />
 
       <Modal
-        title={editingTag ? 'Chỉnh Sửa Nhãn' : 'Tạo Nhãn Mới'}
+        title={editingTag ? "Chỉnh Sửa Nhãn" : "Tạo Nhãn Mới"}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
         width={600}
-        okText={editingTag ? 'Cập nhật' : 'Tạo'}
+        okText={editingTag ? "Cập nhật" : "Tạo"}
         cancelText="Hủy"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="name"
             label="Tên Nhãn"
-            rules={[{ required: true, message: 'Vui lòng nhập tên nhãn' }]}
+            rules={[{ required: true, message: "Vui lòng nhập tên nhãn" }]}
           >
             <Input placeholder="VD: Node.js, React, Python" size="large" />
           </Form.Item>
 
-          <Form.Item
-            name="description"
-            label="Mô tả"
-          >
-            <Input.TextArea
-              placeholder="Mô tả ngắn về nhãn"  
-              rows={3}
-            />
+          <Form.Item name="description" label="Mô tả">
+            <Input.TextArea placeholder="Mô tả ngắn về nhãn" rows={3} />
           </Form.Item>
 
           <Form.Item
             name="type"
             label="Type"
             initialValue="GENERAL"
-            rules={[{ required: true, message: 'Vui lòng chọn type' }]}
+            rules={[{ required: true, message: "Vui lòng chọn type" }]}
           >
             <Select size="large">
               <Option value="COURSE">COURSE - Dành cho khóa học</Option>
@@ -302,8 +297,8 @@ const AdminTagPage: React.FC = () => {
           </Form.Item>
 
           <div className="form-hint">
-            <strong>Lưu ý:</strong> Slug sẽ được tự động tạo từ tên tag.
-            VD: "Node.js" → "nodejs"
+            <strong>Lưu ý:</strong> Slug sẽ được tự động tạo từ tên tag. VD:
+            "Node.js" → "nodejs"
           </div>
         </Form>
       </Modal>

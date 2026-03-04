@@ -52,7 +52,7 @@ const LoginPage: React.FC = () => {
           email: decoded.email,
           role: normalizedRole,
           userName,
-        })
+        }),
       );
 
       // 6. Thông báo và điều hướng
@@ -60,11 +60,14 @@ const LoginPage: React.FC = () => {
       setTimeout(() => {
         navigate(normalizedRole === "admin" ? "/admin/dashboard" : "/");
       }, 500);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error & {
+        response?: { data?: { message?: string } };
+      };
       toast.error(
-        error.message ||
-          error.response?.data?.message ||
-          "Email hoặc mật khẩu không đúng!"
+        err.message ||
+          err.response?.data?.message ||
+          "Email hoặc mật khẩu không đúng!",
       );
     } finally {
       setLoading(false);
@@ -84,14 +87,14 @@ const LoginPage: React.FC = () => {
 
       // 3. Lấy token từ backend response
       // Backend có thể trả về: res.data (string) hoặc res.data.token (object)
-      const token = typeof res.data === 'string' ? res.data : res.data?.token;
-      
+      const token = typeof res.data === "string" ? res.data : res.data?.token;
+
       console.log("📊 Google login response:", {
         resData: res.data,
         extractedToken: token,
-        tokenType: typeof token
+        tokenType: typeof token,
       });
-      
+
       if (!token || typeof token !== "string") {
         console.error("❌ Invalid token format:", { res, token });
         toast.error("Token không hợp lệ từ server!");
@@ -120,7 +123,7 @@ const LoginPage: React.FC = () => {
           email: decoded.email,
           role: normalizedRole,
           userName,
-        })
+        }),
       );
 
       // 6. Thông báo và điều hướng
@@ -128,10 +131,11 @@ const LoginPage: React.FC = () => {
       setTimeout(() => {
         navigate(normalizedRole === "admin" ? "/admin/dashboard" : "/");
       }, 500);
-    } catch (error: any) {
-      console.error("Google login error:", error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Google login error:", err);
       toast.error(
-        error.message || "Đăng nhập Google thất bại. Vui lòng thử lại!"
+        err.message || "Đăng nhập Google thất bại. Vui lòng thử lại!",
       );
     } finally {
       setLoading(false);

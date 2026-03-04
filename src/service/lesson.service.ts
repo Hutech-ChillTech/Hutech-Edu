@@ -63,7 +63,7 @@ export const lessonService = {
       // Filter lessons by chapterId
       if (Array.isArray(allLessons)) {
         return allLessons.filter(
-          (lesson: Lesson) => lesson.chapterId === chapterId
+          (lesson: Lesson) => lesson.chapterId === chapterId,
         );
       }
 
@@ -74,7 +74,7 @@ export const lessonService = {
     }
   },
 
-  createLesson: async (lessonData: any) => {
+  createLesson: async (lessonData: Record<string, unknown>) => {
     try {
       const token = localStorage.getItem("token");
 
@@ -107,7 +107,10 @@ export const lessonService = {
     }
   },
 
-  updateLesson: async (lessonId: string, lessonData: any) => {
+  updateLesson: async (
+    lessonId: string,
+    lessonData: Record<string, unknown>,
+  ) => {
     try {
       const token = localStorage.getItem("token");
 

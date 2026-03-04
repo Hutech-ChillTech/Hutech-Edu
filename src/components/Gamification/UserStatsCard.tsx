@@ -24,13 +24,17 @@ const UserStatsCard: React.FC = () => {
       console.log("Gamification stats loaded:", data);
       setStats(data);
       setError(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
       console.error("Error loading gamification stats:", error);
-      console.error("Error response:", error.response?.data);
+      console.error("Error response:", err.response?.data);
       setError(
-        error.response?.data?.message ||
-          error.message ||
-          "Không thể tải dữ liệu gamification"
+        err.response?.data?.message ||
+          err.message ||
+          "Không thể tải dữ liệu gamification",
       );
     } finally {
       setLoading(false);
@@ -67,7 +71,13 @@ const UserStatsCard: React.FC = () => {
 
   // Helper function to remove emojis from text
   const removeEmojis = (text: string): string => {
-    return text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}\u{20D0}-\u{20FF}\u{FE00}-\u{FE0F}]/gu, '').trim();
+    return text
+      .replace(
+        // eslint-disable-next-line no-misleading-character-class
+        /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}\u{20D0}-\u{20FF}\u{FE00}-\u{FE0F}]/gu,
+        "",
+      )
+      .trim();
   };
 
   if (loading) {
@@ -87,7 +97,6 @@ const UserStatsCard: React.FC = () => {
     return (
       <Card>
         <div style={{ textAlign: "center", padding: "2rem" }}>
-
           <h3 style={{ color: "#f56565", marginBottom: "0.5rem" }}>
             Lỗi tải dữ liệu
           </h3>
@@ -114,8 +123,7 @@ const UserStatsCard: React.FC = () => {
               borderRadius: "8px",
               textAlign: "left",
             }}
-          >
-          </div>
+          ></div>
         </div>
       </Card>
     );
@@ -138,23 +146,25 @@ const UserStatsCard: React.FC = () => {
               className={styles.levelBadgeOverlay}
               style={{ backgroundColor: getLevelColor(stats.level) }}
             >
-              {stats.levelInfo.perks.badge.startsWith('/') || 
-               stats.levelInfo.perks.badge.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i) ? (
-                <img 
-                  src={stats.levelInfo.perks.badge} 
-                  alt="Badge" 
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover',
-                    borderRadius: '50%'
+              {stats.levelInfo.perks.badge.startsWith("/") ||
+              stats.levelInfo.perks.badge.match(
+                /\.(png|jpg|jpeg|gif|svg|webp)$/i,
+              ) ? (
+                <img
+                  src={stats.levelInfo.perks.badge}
+                  alt="Badge"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "50%",
                   }}
                   onError={(e) => {
                     // Fallback to text if image fails to load
-                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.style.display = "none";
                     const parent = e.currentTarget.parentElement;
                     if (parent) {
-                      parent.textContent = '';
+                      parent.textContent = "";
                     }
                   }}
                 />
@@ -244,22 +254,24 @@ const UserStatsCard: React.FC = () => {
               >
                 <div className={styles.achievementIconWrapper}>
                   <span className={styles.achievementIcon}>
-                    {userAchievement.achievement.icon.startsWith('/') || 
-                     userAchievement.achievement.icon.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i) ? (
-                      <img 
-                        src={userAchievement.achievement.icon} 
+                    {userAchievement.achievement.icon.startsWith("/") ||
+                    userAchievement.achievement.icon.match(
+                      /\.(png|jpg|jpeg|gif|svg|webp)$/i,
+                    ) ? (
+                      <img
+                        src={userAchievement.achievement.icon}
                         alt={userAchievement.achievement.name}
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          objectFit: 'contain'
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
                         }}
                         onError={(e) => {
                           // Fallback to trophy emoji if image fails to load
-                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.style.display = "none";
                           const parent = e.currentTarget.parentElement;
                           if (parent) {
-                            parent.textContent = '';
+                            parent.textContent = "";
                           }
                         }}
                       />
@@ -275,7 +287,7 @@ const UserStatsCard: React.FC = () => {
                   count={userAchievement.achievement.rarity}
                   style={{
                     backgroundColor: getRarityColor(
-                      userAchievement.achievement.rarity
+                      userAchievement.achievement.rarity,
                     ),
                     fontSize: "0.7rem",
                     textTransform: "capitalize",
@@ -284,8 +296,6 @@ const UserStatsCard: React.FC = () => {
               </div>
             ))}
           </div>
-
-
         </div>
       </Card>
 
@@ -297,7 +307,10 @@ const UserStatsCard: React.FC = () => {
         footer={null}
         width={800}
       >
-        <div className={styles.achievementGrid} style={{ maxHeight: '60vh', overflowY: 'auto', padding: '1rem' }}>
+        <div
+          className={styles.achievementGrid}
+          style={{ maxHeight: "60vh", overflowY: "auto", padding: "1rem" }}
+        >
           {stats.achievements.list.map((userAchievement) => (
             <div
               key={userAchievement.id}
@@ -306,15 +319,17 @@ const UserStatsCard: React.FC = () => {
             >
               <div className={styles.achievementIconWrapper}>
                 <span className={styles.achievementIcon}>
-                  {userAchievement.achievement.icon.startsWith('/') || 
-                   userAchievement.achievement.icon.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i) ? (
-                    <img 
-                      src={userAchievement.achievement.icon} 
+                  {userAchievement.achievement.icon.startsWith("/") ||
+                  userAchievement.achievement.icon.match(
+                    /\.(png|jpg|jpeg|gif|svg|webp)$/i,
+                  ) ? (
+                    <img
+                      src={userAchievement.achievement.icon}
                       alt={userAchievement.achievement.name}
-                      style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        objectFit: 'contain'
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
                       }}
                     />
                   ) : (
@@ -328,7 +343,9 @@ const UserStatsCard: React.FC = () => {
               <Badge
                 count={userAchievement.achievement.rarity}
                 style={{
-                  backgroundColor: getRarityColor(userAchievement.achievement.rarity),
+                  backgroundColor: getRarityColor(
+                    userAchievement.achievement.rarity,
+                  ),
                   fontSize: "0.7rem",
                   textTransform: "capitalize",
                 }}
@@ -346,7 +363,10 @@ const UserStatsCard: React.FC = () => {
         footer={null}
         width={700}
       >
-        <div className={styles.xpHistory} style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+        <div
+          className={styles.xpHistory}
+          style={{ maxHeight: "60vh", overflowY: "auto" }}
+        >
           {stats.recentXP.map((transaction) => (
             <div
               key={transaction.transactionId}

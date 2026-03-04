@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Row,
   Col,
@@ -11,14 +11,18 @@ import {
   Spin,
   Empty,
   message,
-} from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { searchService } from '../../service/search.service';
-import { tagService } from '../../service/tag.service';
-import BlogCard from '../../components/BlogCard/BlogCard';
-import type { Tag as TagType, BlogPost } from '../../types/blog.types';
-import '../../styles/SearchPage.css';
+} from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { searchService } from "../../service/search.service";
+import { tagService } from "../../service/tag.service";
+import BlogCard from "../../components/BlogCard/BlogCard";
+import type {
+  Tag as TagType,
+  BlogPost,
+  CourseSearchResult,
+} from "../../types/blog.types";
+import "../../styles/SearchPage.css";
 
 const { Title, Text } = Typography;
 
@@ -26,12 +30,12 @@ const SearchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [selectedTags, setSelectedTags] = useState<string[]>(
-    searchParams.get('tag')?.split(',').filter(Boolean) || []
+    searchParams.get("tag")?.split(",").filter(Boolean) || [],
   );
   const [allTags, setAllTags] = useState<TagType[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<CourseSearchResult[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
 
   useEffect(() => {
@@ -39,7 +43,7 @@ const SearchPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const tag = searchParams.get('tag');
+    const tag = searchParams.get("tag");
     if (tag) {
       setSelectedTags([tag]);
       handleSearch();
@@ -51,7 +55,7 @@ const SearchPage: React.FC = () => {
       const tags = await tagService.getITTags();
       setAllTags(tags);
     } catch (error) {
-      console.error('Error fetching tags:', error);
+      console.error("Error fetching tags:", error);
     }
   };
 
@@ -79,8 +83,8 @@ const SearchPage: React.FC = () => {
         setBlogs([]);
       }
     } catch (error) {
-      console.error('Error searching:', error);
-      message.error('Có lỗi xảy ra khi tìm kiếm');
+      console.error("Error searching:", error);
+      message.error("Có lỗi xảy ra khi tìm kiếm");
     } finally {
       setLoading(false);
     }
@@ -93,11 +97,11 @@ const SearchPage: React.FC = () => {
   };
 
   const removeTag = (tagSlug: string) => {
-    setSelectedTags(selectedTags.filter(t => t !== tagSlug));
+    setSelectedTags(selectedTags.filter((t) => t !== tagSlug));
   };
 
   const clearAll = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setSelectedTags([]);
     setCourses([]);
     setBlogs([]);
@@ -110,7 +114,7 @@ const SearchPage: React.FC = () => {
       {/* Header */}
       <div className="search-header-clean">
         <Title level={2}>🔍 Tìm Kiếm Khóa Học & Blog</Title>
-        
+
         {/* Search Bar */}
         <div className="search-bar-container">
           <Input.Search
@@ -123,12 +127,12 @@ const SearchPage: React.FC = () => {
             enterButton="Tìm kiếm"
             loading={loading}
           />
-          
+
           {/* Selected Tags */}
           {selectedTags.length > 0 && (
             <Space wrap style={{ marginTop: 16 }}>
-              {selectedTags.map(tagSlug => {
-                const tag = allTags.find(t => t.slug === tagSlug);
+              {selectedTags.map((tagSlug) => {
+                const tag = allTags.find((t) => t.slug === tagSlug);
                 return (
                   <Tag
                     key={tagSlug}
@@ -147,7 +151,7 @@ const SearchPage: React.FC = () => {
 
         {/* Results Count */}
         {totalResults > 0 && (
-          <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>
+          <Text type="secondary" style={{ display: "block", marginTop: 16 }}>
             {totalResults} kết quả
           </Text>
         )}
@@ -155,16 +159,18 @@ const SearchPage: React.FC = () => {
 
       {/* Popular Tags */}
       {allTags.length > 0 && (
-        <div style={{ maxWidth: 1200, margin: '0 auto 40px', textAlign: 'center' }}>
-          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+        <div
+          style={{ maxWidth: 1200, margin: "0 auto 40px", textAlign: "center" }}
+        >
+          <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
             Tags phổ biến:
           </Text>
           <Space wrap>
-            {allTags.slice(0, 15).map(tag => (
+            {allTags.slice(0, 15).map((tag) => (
               <Tag
                 key={tag.tagId}
-                color={selectedTags.includes(tag.slug) ? 'blue' : 'default'}
-                style={{ cursor: 'pointer' }}
+                color={selectedTags.includes(tag.slug) ? "blue" : "default"}
+                style={{ cursor: "pointer" }}
                 onClick={() => handleTagSelect(tag.slug)}
               >
                 {tag.name}
@@ -176,14 +182,14 @@ const SearchPage: React.FC = () => {
 
       {/* Loading */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+        <div style={{ textAlign: "center", padding: "80px 20px" }}>
           <Spin size="large" />
         </div>
       )}
 
       {/* Results */}
       {!loading && totalResults > 0 && (
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
           {/* Courses */}
           {courses.length > 0 && (
             <div style={{ marginBottom: 48 }}>
@@ -203,39 +209,55 @@ const SearchPage: React.FC = () => {
                             height: 180,
                             background: course.avatarURL
                               ? `url(${course.avatarURL}) center/cover`
-                              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
+                              : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
                             fontSize: 24,
                             fontWeight: 700,
                           }}
                         >
-                          {!course.avatarURL && (course.courseName?.substring(0, 2) || 'CO')}
+                          {!course.avatarURL &&
+                            (course.courseName?.substring(0, 2) || "CO")}
                         </div>
                       }
                     >
-                      <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                        <Title level={4} ellipsis={{ tooltip: course.courseName }} style={{ margin: 0 }}>
+                      <Space
+                        direction="vertical"
+                        size={8}
+                        style={{ width: "100%" }}
+                      >
+                        <Title
+                          level={4}
+                          ellipsis={{ tooltip: course.courseName }}
+                          style={{ margin: 0 }}
+                        >
                           {course.courseName}
                         </Title>
-                        <Text strong style={{ color: '#1890ff', fontSize: 16 }}>
-                          {course.coursePrice > 0 
-                            ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.coursePrice)
-                            : 'Miễn phí'}
+                        <Text strong style={{ color: "#1890ff", fontSize: 16 }}>
+                          {(course.coursePrice ?? 0) > 0
+                            ? new Intl.NumberFormat("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              }).format(course.coursePrice ?? 0)
+                            : "Miễn phí"}
                         </Text>
                         <Text type="secondary" style={{ fontSize: 13 }}>
-                          Trình độ: {course.level || 'Basic'}
+                          Trình độ: {course.level || "Basic"}
                         </Text>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                           {course._count?.enrollments || 0} học viên
+                          {course._count?.enrollments || 0} học viên
                         </Text>
-                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                           <Button size="small" style={{ flex: 1 }}>
                             Xem
                           </Button>
-                          <Button type="primary" size="small" style={{ flex: 1 }}>
+                          <Button
+                            type="primary"
+                            size="small"
+                            style={{ flex: 1 }}
+                          >
                             Mua ngay
                           </Button>
                         </div>
@@ -266,34 +288,39 @@ const SearchPage: React.FC = () => {
       )}
 
       {/* Empty State */}
-      {!loading && totalResults === 0 && (searchQuery || selectedTags.length > 0) && (
-        <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-          <Empty
-            description={
-              <div>
-                <Title level={3} type="secondary">
-                  Không tìm thấy kết quả
-                </Title>
-                <Text type="secondary">
-                  Thử tìm kiếm với từ khóa khác hoặc chọn tags khác
-                </Text>
-              </div>
-            }
-          />
-        </div>
-      )}
+      {!loading &&
+        totalResults === 0 &&
+        (searchQuery || selectedTags.length > 0) && (
+          <div style={{ textAlign: "center", padding: "80px 20px" }}>
+            <Empty
+              description={
+                <div>
+                  <Title level={3} type="secondary">
+                    Không tìm thấy kết quả
+                  </Title>
+                  <Text type="secondary">
+                    Thử tìm kiếm với từ khóa khác hoặc chọn tags khác
+                  </Text>
+                </div>
+              }
+            />
+          </div>
+        )}
 
       {/* Initial State */}
-      {!loading && totalResults === 0 && !searchQuery && selectedTags.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-          <Title level={3} type="secondary">
-            👋 Nhập từ khóa để tìm kiếm
-          </Title>
-          <Text type="secondary">
-            Tìm kiếm khóa học, bài viết, công nghệ, hoặc chọn tags phía trên
-          </Text>
-        </div>
-      )}
+      {!loading &&
+        totalResults === 0 &&
+        !searchQuery &&
+        selectedTags.length === 0 && (
+          <div style={{ textAlign: "center", padding: "80px 20px" }}>
+            <Title level={3} type="secondary">
+              👋 Nhập từ khóa để tìm kiếm
+            </Title>
+            <Text type="secondary">
+              Tìm kiếm khóa học, bài viết, công nghệ, hoặc chọn tags phía trên
+            </Text>
+          </div>
+        )}
     </div>
   );
 };

@@ -27,7 +27,7 @@ const PaymentPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<"MOMO" | "VNPAY" | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -128,7 +128,7 @@ const PaymentPage: React.FC = () => {
       console.log("📡 Response status:", res.status);
       console.log(
         "📡 Response headers:",
-        Object.fromEntries(res.headers.entries())
+        Object.fromEntries(res.headers.entries()),
       );
 
       const data = await res.json();
@@ -161,7 +161,7 @@ const PaymentPage: React.FC = () => {
           localStorage.setItem("pendingPaymentId", data.data.paymentId);
           console.log(
             "💾 Saved pendingPaymentId to localStorage:",
-            data.data.paymentId
+            data.data.paymentId,
           );
         }
 
@@ -177,22 +177,23 @@ const PaymentPage: React.FC = () => {
         console.error("❌ Invalid response:", errorMsg);
         throw new Error(errorMsg);
       }
-    } catch (error: any) {
-      console.error("❌ Payment error:", error);
+    } catch (error: unknown) {
+      const err = error as Error & { message?: string };
+      console.error("❌ Payment error:", err);
 
       // Hiển thị error message chi tiết hơn
       let errorMessage = "Có lỗi xảy ra khi tạo thanh toán";
 
-      if (error.message) {
-        errorMessage = error.message;
+      if (err.message) {
+        errorMessage = err.message;
       }
 
       // Xử lý một số lỗi phổ biến
-      if (error.message?.includes("Unauthorized")) {
+      if (err.message?.includes("Unauthorized")) {
         errorMessage = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại";
         message.error(errorMessage);
         setTimeout(() => navigate("/login"), 2000);
-      } else if (error.message?.includes("đã đăng ký")) {
+      } else if (err.message?.includes("đã đăng ký")) {
         message.warning({
           content:
             "Bạn đã đăng ký khóa học này rồi. Chuyển đến trang khóa học của bạn...",

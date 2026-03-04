@@ -67,15 +67,31 @@ const UserAdmin: React.FC = () => {
   };
 
   // Thêm mới / Cập nhật user
-  const handleFinish = async (values: any) => {
+  interface UserFormValues {
+    userName: string;
+    email: string;
+    password?: string;
+    gender: string;
+    level?: string;
+    specialization?: string;
+    region?: string;
+    dateOfBirth?: string;
+    avatarURL?: string;
+  }
+
+  const handleFinish = async (values: UserFormValues) => {
     console.log("🔥 Payload gửi lên:", values, "editingId:", editingId);
     try {
       // Payload cập nhật
       const payloadUpdate = {
         userName: values.userName,
         email: values.email,
-        gender: values.gender,
-        level: values.level,
+        gender: values.gender as "MALE" | "FEMALE" | "OTHER",
+        level: values.level as
+          | "Basic"
+          | "Intermediate"
+          | "Advanced"
+          | undefined,
         specialization: values.specialization || "",
         region: values.region || "",
         dateOfBirth: values.dateOfBirth || "",
@@ -86,9 +102,12 @@ const UserAdmin: React.FC = () => {
       const payloadRegister = {
         userName: values.userName,
         email: values.email,
-        password: values.password,
-        gender: values.gender,
-        level: values.level || "Basic",
+        password: values.password || "",
+        gender: values.gender as "MALE" | "FEMALE" | "OTHER",
+        level: (values.level || "Basic") as
+          | "Basic"
+          | "Intermediate"
+          | "Advanced",
         specialization: values.specialization || "",
         region: values.region || "",
         dateOfBirth: values.dateOfBirth || "",
@@ -110,10 +129,13 @@ const UserAdmin: React.FC = () => {
 
       // Gọi lại hàm fetchUsers để cập nhật bảng
       fetchUsers();
-    } catch (err: any) {
-      console.error(err);
-      if (err.response?.data?.message) {
-        message.error(`${err.response.data.message}`);
+    } catch (err: unknown) {
+      const error = err as Error & {
+        response?: { data?: { message?: string } };
+      };
+      console.error(error);
+      if (error.response?.data?.message) {
+        message.error(`${error.response.data.message}`);
       } else {
         message.error("Lỗi khi lưu người dùng!");
       }
@@ -129,18 +151,19 @@ const UserAdmin: React.FC = () => {
         email: user.email,
         gender: user.gender,
         level: user.level,
-        specialization: (user as any).specialization || "",
-        region: (user as any).region || "",
-        dateOfBirth: (user as any).dateOfBirth
-          ? (user as any).dateOfBirth.split("T")[0]
+        specialization:
+          (user as User & { specialization?: string }).specialization || "",
+        region: (user as User & { region?: string }).region || "",
+        dateOfBirth: (user as User & { dateOfBirth?: string }).dateOfBirth
+          ? (user as User & { dateOfBirth?: string }).dateOfBirth!.split("T")[0]
           : "",
-        avatarURL: (user as any).avatarURL || "",
+        avatarURL: (user as User & { avatarURL?: string }).avatarURL || "",
       });
-      setImageUrl((user as any).avatarURL || "");
+      setImageUrl((user as User & { avatarURL?: string }).avatarURL || "");
       // Lưu ID của người đang được chọn để sửa
       setEditingId(user.userId); // Hoặc user.id tùy database của bạn
     },
-    [form]
+    [form],
   );
 
   // Xóa user
@@ -158,7 +181,7 @@ const UserAdmin: React.FC = () => {
         console.error(err);
       }
     },
-    [fetchUsers]
+    [fetchUsers],
   );
 
   // Columns bảng
@@ -350,7 +373,7 @@ const UserAdmin: React.FC = () => {
         ),
       },
     ],
-    [handleEdit, handleDelete]
+    [handleEdit, handleDelete],
   );
 
   return (
@@ -378,9 +401,7 @@ const UserAdmin: React.FC = () => {
 
       {showForm && (
         <Card
-          title={
-            editingId ? "Chỉnh sửa người dùng" : "Thêm người dùng mới"
-          }
+          title={editingId ? "Chỉnh sửa người dùng" : "Thêm người dùng mới"}
           variant="borderless"
           style={{
             borderRadius: "1rem",

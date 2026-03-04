@@ -88,6 +88,30 @@ interface EnrolledCourse {
   } | null;
 }
 
+interface Certificate {
+  certificateId: string;
+  userId: string;
+  courseId: string;
+  certificateCode?: string;
+  certificateTitle: string;
+  pdfUrl?: string;
+  viewUrl?: string;
+  certificateURL?: string;
+  qrCodeUrl?: string;
+  totalScore: number;
+  averageScore: number;
+  maxScore: number;
+  issuedAt: string;
+  user?: {
+    userName: string;
+    email: string;
+  };
+  course?: {
+    courseName: string;
+    level: string;
+  };
+}
+
 const UserProfile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
@@ -100,7 +124,7 @@ const UserProfile: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [certificates, setCertificates] = useState<any[]>([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [certificatesLoading, setCertificatesLoading] = useState(false);
 
   const [editForm] = Form.useForm();
@@ -178,7 +202,7 @@ const UserProfile: React.FC = () => {
   // ============ FETCH CERTIFICATES ============
   const fetchCertificates = async () => {
     if (!userId) return;
-    
+
     setCertificatesLoading(true);
     try {
       const data = await certificateService.getUserCertificates();
@@ -190,7 +214,7 @@ const UserProfile: React.FC = () => {
           pdfUrl: data[0]?.pdfUrl,
           viewUrl: data[0]?.viewUrl,
           certificateURL: data[0]?.certificateURL,
-          qrCodeUrl: data[0]?.qrCodeUrl
+          qrCodeUrl: data[0]?.qrCodeUrl,
         });
       }
       setCertificates(data);
@@ -210,9 +234,16 @@ const UserProfile: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-
   // ============ UPDATE USER ============
-  const handleUpdateUser = async (values: any) => {
+  interface UpdateUserValues {
+    userName?: string;
+    email?: string;
+    gender?: string;
+    level?: string;
+    avatarURL?: string;
+  }
+
+  const handleUpdateUser = async (values: UpdateUserValues) => {
     try {
       const res = await fetch(`${API_URL}/users/${userId}`, {
         method: "PUT",
@@ -229,14 +260,20 @@ const UserProfile: React.FC = () => {
       message.success("Cập nhật thông tin thành công!");
       setIsEditModalVisible(false);
       editForm.resetFields();
-    } catch (err: any) {
-      console.error("Lỗi cập nhật:", err);
-      message.error(err.message || "Cập nhật thất bại!");
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Lỗi cập nhật:", error);
+      message.error(error.message || "Cập nhật thất bại!");
     }
   };
 
   // ============ CHANGE PASSWORD ============
-  const handleChangePassword = async (values: any) => {
+  interface ChangePasswordValues {
+    oldPassword: string;
+    newPassword: string;
+  }
+
+  const handleChangePassword = async (values: ChangePasswordValues) => {
     try {
       const res = await fetch(`${API_URL}/users/${userId}/change-password`, {
         method: "PATCH",
@@ -255,9 +292,10 @@ const UserProfile: React.FC = () => {
       message.success("Đổi mật khẩu thành công!");
       setIsChangePasswordVisible(false);
       passwordForm.resetFields();
-    } catch (err: any) {
-      console.error("Lỗi đổi mật khẩu:", err);
-      message.error(err.message || "Đổi mật khẩu thất bại!");
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Lỗi đổi mật khẩu:", error);
+      message.error(error.message || "Đổi mật khẩu thất bại!");
     }
   };
 
@@ -756,7 +794,9 @@ const UserProfile: React.FC = () => {
               {certificatesLoading ? (
                 <div style={{ textAlign: "center", padding: "60px 20px" }}>
                   <Spin size="large" />
-                  <p style={{ marginTop: 16, color: "#888" }}>Đang tải chứng chỉ...</p>
+                  <p style={{ marginTop: 16, color: "#888" }}>
+                    Đang tải chứng chỉ...
+                  </p>
                 </div>
               ) : certificates.length > 0 ? (
                 <List
@@ -770,21 +810,24 @@ const UserProfile: React.FC = () => {
                     xxl: 3,
                   }}
                   dataSource={certificates}
-                  renderItem={(cert: any) => (
+                  renderItem={(cert: Certificate) => (
                     <List.Item>
                       <Card
                         hoverable
                         className={styles.certificateCard}
                         cover={
-                          <div style={{ 
-                            height: 200, 
-                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "white",
-                            fontSize: 48
-                          }}>
+                          <div
+                            style={{
+                              height: 200,
+                              background:
+                                "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "white",
+                              fontSize: 48,
+                            }}
+                          >
                             🎓
                           </div>
                         }
@@ -794,16 +837,29 @@ const UserProfile: React.FC = () => {
                             type="link"
                             icon={<EyeOutlined />}
                             onClick={() => {
-                              console.log("🔍 Button clicked! Certificate:", cert);
-                              
+                              console.log(
+                                "🔍 Button clicked! Certificate:",
+                                cert,
+                              );
+
                               // Priority: pdfUrl > viewUrl > certificateURL
                               // Fix: Backend trả về empty string ('') thay vì null
-                              const pdfUrl = cert.pdfUrl && cert.pdfUrl.trim() !== '' ? cert.pdfUrl : null;
-                              const viewUrl = cert.viewUrl && cert.viewUrl.trim() !== '' ? cert.viewUrl : null;
-                              const certificateURL = cert.certificateURL && cert.certificateURL.trim() !== '' ? cert.certificateURL : null;
-                              
+                              const pdfUrl =
+                                cert.pdfUrl && cert.pdfUrl.trim() !== ""
+                                  ? cert.pdfUrl
+                                  : null;
+                              const viewUrl =
+                                cert.viewUrl && cert.viewUrl.trim() !== ""
+                                  ? cert.viewUrl
+                                  : null;
+                              const certificateURL =
+                                cert.certificateURL &&
+                                cert.certificateURL.trim() !== ""
+                                  ? cert.certificateURL
+                                  : null;
+
                               const url = pdfUrl || viewUrl || certificateURL;
-                              
+
                               console.log("📊 URL priority check:", {
                                 pdfUrl: cert.pdfUrl,
                                 viewUrl: cert.viewUrl,
@@ -811,39 +867,55 @@ const UserProfile: React.FC = () => {
                                 cleanedPdfUrl: pdfUrl,
                                 cleanedViewUrl: viewUrl,
                                 cleanedCertificateURL: certificateURL,
-                                selectedUrl: url
+                                selectedUrl: url,
                               });
-                              
+
                               if (!url) {
                                 console.error("❌ No valid URL found!");
-                                message.warning("Chứng chỉ chưa có URL. Vui lòng liên hệ admin.");
+                                message.warning(
+                                  "Chứng chỉ chưa có URL. Vui lòng liên hệ admin.",
+                                );
                                 return;
                               }
 
                               let certUrl: string;
                               if (pdfUrl) {
                                 certUrl = pdfUrl;
-                                console.log("✅ Using pdfUrl (Cloudinary):", certUrl);
+                                console.log(
+                                  "✅ Using pdfUrl (Cloudinary):",
+                                  certUrl,
+                                );
                               } else if (viewUrl) {
                                 certUrl = `${import.meta.env.VITE_BACKEND_URL}${viewUrl}`;
                                 console.log("✅ Using viewUrl:", certUrl);
                               } else if (certificateURL?.startsWith("http")) {
                                 certUrl = certificateURL;
-                                console.log("✅ Using certificateURL (http):", certUrl);
-                              } else if (certificateURL?.startsWith("/certificates/")) {
+                                console.log(
+                                  "✅ Using certificateURL (http):",
+                                  certUrl,
+                                );
+                              } else if (
+                                certificateURL?.startsWith("/certificates/")
+                              ) {
                                 certUrl = `${import.meta.env.VITE_BACKEND_URL}${certificateURL}`;
-                                console.log("✅ Using certificateURL (/certificates/):", certUrl);
+                                console.log(
+                                  "✅ Using certificateURL (/certificates/):",
+                                  certUrl,
+                                );
                               } else if (certificateURL) {
                                 certUrl = `${import.meta.env.VITE_BACKEND_URL}/certificates/view/${certificateURL}`;
-                                console.log("✅ Using certificateURL (filename):", certUrl);
+                                console.log(
+                                  "✅ Using certificateURL (filename):",
+                                  certUrl,
+                                );
                               } else {
                                 console.error("❌ Invalid certificate URL!");
                                 message.error("URL chứng chỉ không hợp lệ");
                                 return;
                               }
-                              
+
                               console.log("🚀 Opening URL:", certUrl);
-                              window.open(certUrl, '_blank');
+                              window.open(certUrl, "_blank");
                             }}
                           >
                             Xem
@@ -855,14 +927,26 @@ const UserProfile: React.FC = () => {
                             onClick={() => {
                               // Priority: pdfUrl > viewUrl > certificateURL
                               // Fix: Backend trả về empty string ('') thay vì null
-                              const pdfUrl = cert.pdfUrl && cert.pdfUrl.trim() !== '' ? cert.pdfUrl : null;
-                              const viewUrl = cert.viewUrl && cert.viewUrl.trim() !== '' ? cert.viewUrl : null;
-                              const certificateURL = cert.certificateURL && cert.certificateURL.trim() !== '' ? cert.certificateURL : null;
-                              
+                              const pdfUrl =
+                                cert.pdfUrl && cert.pdfUrl.trim() !== ""
+                                  ? cert.pdfUrl
+                                  : null;
+                              const viewUrl =
+                                cert.viewUrl && cert.viewUrl.trim() !== ""
+                                  ? cert.viewUrl
+                                  : null;
+                              const certificateURL =
+                                cert.certificateURL &&
+                                cert.certificateURL.trim() !== ""
+                                  ? cert.certificateURL
+                                  : null;
+
                               const url = pdfUrl || viewUrl || certificateURL;
-                              
+
                               if (!url) {
-                                message.warning("Chứng chỉ chưa có URL. Vui lòng liên hệ admin.");
+                                message.warning(
+                                  "Chứng chỉ chưa có URL. Vui lòng liên hệ admin.",
+                                );
                                 return;
                               }
 
@@ -873,7 +957,9 @@ const UserProfile: React.FC = () => {
                                 certUrl = `${import.meta.env.VITE_BACKEND_URL}${viewUrl}`;
                               } else if (certificateURL?.startsWith("http")) {
                                 certUrl = certificateURL;
-                              } else if (certificateURL?.startsWith("/certificates/")) {
+                              } else if (
+                                certificateURL?.startsWith("/certificates/")
+                              ) {
                                 certUrl = `${import.meta.env.VITE_BACKEND_URL}${certificateURL}`;
                               } else if (certificateURL) {
                                 certUrl = `${import.meta.env.VITE_BACKEND_URL}/certificates/view/${certificateURL}`;
@@ -881,8 +967,8 @@ const UserProfile: React.FC = () => {
                                 message.error("URL chứng chỉ không hợp lệ");
                                 return;
                               }
-                              
-                              window.open(certUrl, '_blank');
+
+                              window.open(certUrl, "_blank");
                             }}
                           >
                             Tải xuống
@@ -894,45 +980,69 @@ const UserProfile: React.FC = () => {
                           description={
                             <div>
                               <p style={{ margin: "8px 0", fontSize: 14 }}>
-                                <strong>Khóa học:</strong> {cert.course?.courseName || "N/A"}
+                                <strong>Khóa học:</strong>{" "}
+                                {cert.course?.courseName || "N/A"}
                               </p>
                               <p style={{ margin: "8px 0", fontSize: 14 }}>
                                 <strong>Điểm số:</strong>{" "}
-                                <Tag color={cert.totalScore >= 90 ? "green" : cert.totalScore >= 70 ? "blue" : "orange"}>
+                                <Tag
+                                  color={
+                                    cert.totalScore >= 90
+                                      ? "green"
+                                      : cert.totalScore >= 70
+                                        ? "blue"
+                                        : "orange"
+                                  }
+                                >
                                   {cert.totalScore}%
                                 </Tag>
                               </p>
-                              <p style={{ margin: "8px 0", fontSize: 12, color: "#888" }}>
-                                <ClockCircleOutlined style={{ marginRight: 4 }} />
-                                Cấp ngày: {new Date(cert.issuedAt).toLocaleDateString("vi-VN")}
+                              <p
+                                style={{
+                                  margin: "8px 0",
+                                  fontSize: 12,
+                                  color: "#888",
+                                }}
+                              >
+                                <ClockCircleOutlined
+                                  style={{ marginRight: 4 }}
+                                />
+                                Cấp ngày:{" "}
+                                {new Date(cert.issuedAt).toLocaleDateString(
+                                  "vi-VN",
+                                )}
                               </p>
-                              
+
                               {/* QR Code Display */}
                               {cert.qrCodeUrl && (
-                                <div style={{ 
-                                  textAlign: 'center', 
-                                  marginTop: 12, 
-                                  paddingTop: 12, 
-                                  borderTop: '1px solid #f0f0f0' 
-                                }}>
-                                  <img 
-                                    src={cert.qrCodeUrl} 
-                                    alt="QR Code" 
-                                    style={{ 
-                                      width: 80, 
-                                      height: 80, 
-                                      border: '2px solid #d4af37', 
+                                <div
+                                  style={{
+                                    textAlign: "center",
+                                    marginTop: 12,
+                                    paddingTop: 12,
+                                    borderTop: "1px solid #f0f0f0",
+                                  }}
+                                >
+                                  <img
+                                    src={cert.qrCodeUrl}
+                                    alt="QR Code"
+                                    style={{
+                                      width: 80,
+                                      height: 80,
+                                      border: "2px solid #d4af37",
                                       borderRadius: 8,
                                       padding: 4,
-                                      background: 'white'
+                                      background: "white",
                                     }}
                                   />
-                                  <p style={{ 
-                                    fontSize: 11, 
-                                    color: '#999', 
-                                    marginTop: 6,
-                                    marginBottom: 0
-                                  }}>
+                                  <p
+                                    style={{
+                                      fontSize: 11,
+                                      color: "#999",
+                                      marginTop: 6,
+                                      marginBottom: 0,
+                                    }}
+                                  >
                                     Quét để xác thực
                                   </p>
                                 </div>

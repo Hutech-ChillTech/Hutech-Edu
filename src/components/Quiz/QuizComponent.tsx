@@ -49,7 +49,7 @@ const QuizComponent: React.FC<QuizComponentProps> = ({
         setQuizId(quiz.chapterQuizId); // ✅ Lưu quizId
 
         const questionsData = await quizService.getQuestionsByQuiz(
-          quiz.chapterQuizId
+          quiz.chapterQuizId,
         );
 
         if (!questionsData || questionsData.length === 0) {
@@ -59,21 +59,33 @@ const QuizComponent: React.FC<QuizComponentProps> = ({
         }
 
         const transformedQuestions: QuizQuestion[] = await Promise.all(
-          questionsData.map(async (q: any) => {
-            const options = await quizService.getOptionsByQuestion(
-              q.quizQuestionId
-            );
-            const correctIndex = options.findIndex((opt: any) => opt.isCorrect);
+          questionsData.map(
+            async (q: {
+              quizQuestionId: string;
+              questionText: string;
+              points?: number;
+            }) => {
+              const options = await quizService.getOptionsByQuestion(
+                q.quizQuestionId,
+              );
+              const correctIndex = options.findIndex(
+                (opt: { isCorrect: boolean }) => opt.isCorrect,
+              );
 
-            return {
-              questionId: q.quizQuestionId,
-              questionText: q.questionText,
-              options: options.map((opt: any) => opt.optionText),
-              optionIds: options.map((opt: any) => opt.quizOptionId), // ✅ Lưu option IDs
-              correctAnswer: correctIndex,
-              points: q.points || 1,
-            };
-          })
+              return {
+                questionId: q.quizQuestionId,
+                questionText: q.questionText,
+                options: options.map(
+                  (opt: { optionText: string }) => opt.optionText,
+                ),
+                optionIds: options.map(
+                  (opt: { quizOptionId: string }) => opt.quizOptionId,
+                ), // ✅ Lưu option IDs
+                correctAnswer: correctIndex,
+                points: q.points || 1,
+              };
+            },
+          ),
         );
 
         setQuestions(transformedQuestions);
@@ -119,30 +131,28 @@ const QuizComponent: React.FC<QuizComponentProps> = ({
 
     // ✅ GỌI API ĐỂ LƯU SUBMISSION
     try {
-      console.log('📝 Submitting quiz to backend...');
-      
+      console.log("📝 Submitting quiz to backend...");
+
       // Transform selectedAnswers to match backend format
       // Backend expects: { questionId: optionId }
       const answersPayload: { [questionId: string]: string } = {};
-      
+
       for (let index = 0; index < questions.length; index++) {
         const question = questions[index];
         const selectedIndex = selectedAnswers[index];
-        
+
         if (selectedIndex !== undefined && selectedIndex >= 0) {
           // ✅ Dùng optionId thực từ backend
-          answersPayload[question.questionId] = question.optionIds[selectedIndex];
+          answersPayload[question.questionId] =
+            question.optionIds[selectedIndex];
         }
       }
 
-      const result = await quizService.submitQuiz(
-        quizId,
-        answersPayload
-      );
+      const result = await quizService.submitQuiz(quizId, answersPayload);
 
-      console.log('✅ Quiz submission saved:', result);
+      console.log("✅ Quiz submission saved:", result);
     } catch (error) {
-      console.error('❌ Error submitting quiz:', error);
+      console.error("❌ Error submitting quiz:", error);
       // Continue even if submission fails
     }
 

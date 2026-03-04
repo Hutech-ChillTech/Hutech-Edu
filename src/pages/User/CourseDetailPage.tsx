@@ -18,9 +18,16 @@ import { Rate, message, Progress, Badge, Button } from "antd";
 import styles from "../../styles/UserCourseDetail.module.css";
 import { quizService } from "../../service/quiz.service";
 import { commentService } from "../../service/comment.service";
-import { progressService, type CourseProgress } from "../../service/progress.service";
+import {
+  progressService,
+  type CourseProgress,
+} from "../../service/progress.service";
 import { certificateService } from "../../service/certificate.service";
 import type { Comment, CourseRating } from "../../service/comment.service";
+import type { Certificate } from "../../service/certificate.service";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
 
 interface Lesson {
   lessonId: string;
@@ -68,26 +75,23 @@ const CourseDetailPage: React.FC = () => {
   const [editRating, setEditRating] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(
-    null
+    null,
   );
   const [replyContent, setReplyContent] = useState("");
   const [courseProgress, setCourseProgress] = useState<CourseProgress | null>(
-    null
+    null,
   );
-  const [certificate, setCertificate] = useState<any>(null);
+  const [certificate, setCertificate] = useState<Certificate | null>(null);
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(
-          `http://localhost:3000/api/courses/${id}/content`,
-          {
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          }
-        );
+        const res = await axios.get(`${API_URL}/api/courses/${id}/content`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         if (res.data.success) {
           const courseData = res.data.data;
           setCourse(courseData);
@@ -102,7 +106,7 @@ const CourseDetailPage: React.FC = () => {
           for (const chapter of courseData.chapters || []) {
             try {
               const quizzes = await quizService.getQuizzesByChapter(
-                chapter.chapterId
+                chapter.chapterId,
               );
               quizMap[chapter.chapterId] = quizzes && quizzes.length > 0;
             } catch {
@@ -166,15 +170,18 @@ const CourseDetailPage: React.FC = () => {
 
   const handleDownloadCertificate = () => {
     // Priority: pdfUrl > viewUrl > certificateURL
-    const url = certificate?.pdfUrl || certificate?.viewUrl || certificate?.certificateURL;
-    
+    const url =
+      certificate?.pdfUrl ||
+      certificate?.viewUrl ||
+      certificate?.certificateURL;
+
     if (!url) {
       message.info("Chứng chỉ đang được xử lý, vui lòng thử lại sau");
       return;
     }
 
     let certUrl: string;
-    
+
     if (certificate?.pdfUrl) {
       // BEST: Cloudinary URL - use directly
       certUrl = certificate.pdfUrl;
@@ -194,7 +201,7 @@ const CourseDetailPage: React.FC = () => {
       message.error("URL chứng chỉ không hợp lệ");
       return;
     }
-    
+
     window.open(certUrl, "_blank");
   };
 
@@ -240,8 +247,9 @@ const CourseDetailPage: React.FC = () => {
       ]);
       setComments(commentsData);
       setCourseRating(ratingData);
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Không thể gửi bình luận");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      message.error(error.response?.data?.message || "Không thể gửi bình luận");
     }
   };
 
@@ -275,9 +283,10 @@ const CourseDetailPage: React.FC = () => {
         setComments(commentsData);
         setCourseRating(ratingData);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       message.error(
-        err.response?.data?.message || "Không thể cập nhật bình luận"
+        error.response?.data?.message || "Không thể cập nhật bình luận",
       );
     }
   };
@@ -296,8 +305,9 @@ const CourseDetailPage: React.FC = () => {
         setComments(commentsData);
         setCourseRating(ratingData);
       }
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Không thể xóa bình luận");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      message.error(error.response?.data?.message || "Không thể xóa bình luận");
     }
   };
 
@@ -323,8 +333,9 @@ const CourseDetailPage: React.FC = () => {
         const commentsData = await commentService.getCommentsByCourse(id);
         setComments(commentsData);
       }
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Không thể gửi trả lời");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      message.error(error.response?.data?.message || "Không thể gửi trả lời");
     }
   };
 
@@ -336,7 +347,7 @@ const CourseDetailPage: React.FC = () => {
 
   const totalLessons =
     course.chapters?.reduce((acc, ch) => acc + (ch.totalLesson || 0), 0) || 0;
-  
+
   const totalQuizzes = Object.values(chapterQuizzes).filter(Boolean).length;
   const totalItems = totalLessons + totalQuizzes;
 
@@ -366,7 +377,8 @@ const CourseDetailPage: React.FC = () => {
                 <BookOutlined /> {course.chapters?.length || 0} chương
               </div>
               <div>
-                <PlayCircleOutlined /> {totalItems} bài ({totalLessons} lessons + {totalQuizzes} quizzes)
+                <PlayCircleOutlined /> {totalItems} bài ({totalLessons} lessons
+                + {totalQuizzes} quizzes)
               </div>
               {courseRating && (
                 <div>
@@ -612,7 +624,7 @@ const CourseDetailPage: React.FC = () => {
                       </div>
                       <div className={styles.commentDate}>
                         {new Date(comment.createdAt).toLocaleDateString(
-                          "vi-VN"
+                          "vi-VN",
                         )}
                       </div>
                     </div>
@@ -724,7 +736,7 @@ const CourseDetailPage: React.FC = () => {
                               </div>
                               <div className={styles.commentDate}>
                                 {new Date(reply.createdAt).toLocaleDateString(
-                                  "vi-VN"
+                                  "vi-VN",
                                 )}
                               </div>
                             </div>

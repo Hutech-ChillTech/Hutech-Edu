@@ -1,7 +1,8 @@
-import axios from 'axios';
-import type { Tag, TagType } from '../types/blog.types';
+import axios from "axios";
+import type { Tag, TagType } from "../types/blog.types";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://skillcoder.onrender.com";
 
 export const tagService = {
   /**
@@ -10,7 +11,7 @@ export const tagService = {
    */
   getAllTags: async (type?: TagType): Promise<Tag[]> => {
     const response = await axios.get(`${API_URL}/api/tags`, {
-      params: type ? { type } : undefined
+      params: type ? { type } : undefined,
     });
     return response.data.data;
   },
@@ -20,9 +21,12 @@ export const tagService = {
    * @param limit - Số lượng tags cần lấy (default: 10)
    * @param type - Optional filter by type (COURSE | BLOG | GENERAL)
    */
-  getPopularTags: async (limit: number = 10, type?: TagType): Promise<Tag[]> => {
+  getPopularTags: async (
+    limit: number = 10,
+    type?: TagType,
+  ): Promise<Tag[]> => {
     const response = await axios.get(`${API_URL}/api/tags/popular`, {
-      params: { limit, ...(type && { type }) }
+      params: { limit, ...(type && { type }) },
     });
     return response.data.data;
   },
@@ -34,7 +38,7 @@ export const tagService = {
    */
   searchTags: async (query: string, limit: number = 10): Promise<Tag[]> => {
     const response = await axios.get(`${API_URL}/api/tags/search`, {
-      params: { q: query, limit }
+      params: { q: query, limit },
     });
     return response.data.data;
   },
@@ -64,7 +68,7 @@ export const tagService = {
   createTag: async (data: {
     name: string;
     description?: string;
-    type?: 'COURSE' | 'BLOG' | 'GENERAL';
+    type?: "COURSE" | "BLOG" | "GENERAL";
   }): Promise<Tag> => {
     const response = await axios.post(`${API_URL}/api/tags`, data);
     return response.data.data;
@@ -81,7 +85,7 @@ export const tagService = {
       name: string;
       description: string;
       type: TagType;
-    }>
+    }>,
   ): Promise<Tag> => {
     const response = await axios.put(`${API_URL}/api/tags/${tagId}`, data);
     return response.data.data;
@@ -101,5 +105,5 @@ export const tagService = {
   getITTags: async (): Promise<Tag[]> => {
     const response = await axios.get(`${API_URL}/api/search/tags/it`);
     return response.data.data;
-  }
+  },
 };
