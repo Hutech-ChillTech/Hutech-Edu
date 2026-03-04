@@ -27,7 +27,7 @@ class UserController {
           roles: userData.roles,
         },
         JWT_SECRET,
-        { expiresIn: "7d" }
+        { expiresIn: "7d" },
       );
 
       return sendSuccess(res, token, "Đăng nhập thành công");
@@ -157,7 +157,7 @@ class UserController {
       const { newPassword } = req.body;
       const user = await this.userService.changePasswordUser(
         userId,
-        newPassword
+        newPassword,
       );
       sendSuccess(res, user, "Thay đổi mật khẩu thành công.");
     } catch (error) {
@@ -185,7 +185,7 @@ class UserController {
   async getUserEnrolledCourses(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const { userId } = req.params;
@@ -196,7 +196,7 @@ class UserController {
       sendSuccess(
         res,
         courses,
-        "Lấy danh sách khóa học đã đăng ký thành công."
+        "Lấy danh sách khóa học đã đăng ký thành công.",
       );
     } catch (error) {
       return next(error);
@@ -211,7 +211,7 @@ class UserController {
       }
       const isEnrolled = await this.userService.isUserEnrolledInCourse(
         userId,
-        courseId
+        courseId,
       );
       sendSuccess(res, { isEnrolled }, "Kiểm tra enrollment thành công.");
     } catch (error) {
@@ -232,9 +232,6 @@ class UserController {
       const result = await this.userService.loginWithFirebase(email, password);
       sendSuccess(res, result, "Đăng nhập Firebase thành công");
     } catch (error) {
-      const status = (error as any).statusCode || 500;
-      const message = (error as Error).message || "Lỗi máy chủ";
-      res.status(status).json({ success: false, message });
       return next(error);
     }
   }
@@ -248,9 +245,6 @@ class UserController {
       const user = await this.userService.registerWithFirebase(data);
       sendSuccess(res, user, "Đăng ký Firebase thành công");
     } catch (error) {
-      const status = (error as any).statusCode || 500;
-      const message = (error as Error).message || "Lỗi máy chủ";
-      res.status(status).json({ success: false, message });
       return next(error);
     }
   }
@@ -261,7 +255,7 @@ class UserController {
   async verifyFirebaseTokenController(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const { idToken } = req.body;
@@ -271,9 +265,6 @@ class UserController {
       const user = await this.userService.verifyFirebaseToken(idToken);
       sendSuccess(res, user, "Token hợp lệ");
     } catch (error) {
-      const status = (error as any).statusCode || 500;
-      const message = (error as Error).message || "Lỗi máy chủ";
-      res.status(status).json({ success: false, message });
       return next(error);
     }
   }
@@ -298,10 +289,8 @@ class UserController {
       // Trả về JWT token (backend token)
       sendSuccess(res, result.token, "Đăng nhập Google thành công");
     } catch (error) {
-      const status = (error as any).statusCode || 500;
-      const message =
-        (error as Error).message || "Lỗi server khi xử lý đăng nhập Google";
-      res.status(status).json({ success: false, message });
+      // Chỉ dùng next(error) để chuyển cho errorHandler middleware xử lý
+      // KHÔNG gửi response trước khi gọi next() — sẽ gây lỗi ERR_HTTP_HEADERS_SENT
       return next(error);
     }
   }
