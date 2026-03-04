@@ -28,10 +28,4 @@ src/configs/*firebase*.json
 *.sublime-workspace
 *.sublime-project
 
-# Migration
-prisma/migrations/
-
-# Readme
-README.md
-
 

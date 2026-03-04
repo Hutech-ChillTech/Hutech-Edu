@@ -324,13 +324,27 @@ model UserCoursePreview {
 
 model Certificate {
   certificateId    String @id @default(uuid()) @db.Uuid
+  certificateCode  String @unique                // Mã chứng chỉ unique (VD: CERT-HTML-2025-001)
   certificateTitle String?
   userId           String @db.Uuid
+  userName         String                        // Tên người học (cached từ User)
   courseId         String @db.Uuid
-  certificateURL   String?
-  averageScore     Float?         // Điểm trung bình của tất cả chapters (VD: 85.5%)
-  totalScore       Float?         // Phần trăm điểm đạt được
-  maxScore         Float?         // Tổng điểm tối đa có thể đạt
+  courseName       String                        // Tên khóa học (cached từ Course)
+  
+  // URLs
+  certificateURL   String?                       // Legacy field (deprecated)
+  pdfUrl           String?                       // URL của file PDF chứng chỉ
+  qrCodeUrl        String?                       // URL của QR code xác thực
+  
+  // Scores
+  averageScore     Float?                        // Điểm trung bình của tất cả chapters (VD: 85.5%)
+  totalScore       Float?                        // Phần trăm điểm đạt được
+  maxScore         Float?                        // Tổng điểm tối đa có thể đạt
+  
+  // Status
+  status           String @default("valid")      // valid / revoked
+  
+  // Timestamps
   issuedAt         DateTime @default(now())
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
@@ -341,6 +355,8 @@ model Certificate {
   @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])
+  @@index([certificateCode])
+  @@index([status])
 }
 
 model Submission {

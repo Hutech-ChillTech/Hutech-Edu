@@ -6,7 +6,9 @@ dotenv.config();
 
 /**
  * Khởi tạo Firebase Admin SDK.
- * Hỗ trợ cả Service Account File và Environment Variables
+ * Hỗ trợ 2 cách:
+ * 1. JSON string trực tiếp trong env var FIREBASE_ADMIN_SDK_JSON (dùng cho production/Render)
+ * 2. Đường dẫn file .json (dùng cho local dev)
  */
 export const initializeFirebaseAdmin = (): void => {
   try {
@@ -20,18 +22,21 @@ export const initializeFirebaseAdmin = (): void => {
 
     if (!firebaseAdmin) {
       console.warn(
-        "⚠️ FIREBASE_ADMIN_SDK_JSON chưa được cấu hình. Bỏ qua Firebase Authentication."
+        "⚠️ FIREBASE_ADMIN_SDK_JSON chưa được cấu hình. Bỏ qua Firebase Authentication.",
       );
       return;
     }
 
-    // Sử dụng đường dẫn từ root của project (process.cwd())
-    const serviceAccountPath = path.resolve(
-      process.cwd(),
-      firebaseAdmin || "./src/configs/serviceAccountKey.json"
-    );
+    let serviceAccount: any;
 
-    const serviceAccount = require(serviceAccountPath);
+    // Nếu giá trị là JSON string (production - Render env var)
+    if (firebaseAdmin.trim().startsWith("{")) {
+      serviceAccount = JSON.parse(firebaseAdmin);
+    } else {
+      // Ngược lại, coi là đường dẫn file (local dev)
+      const serviceAccountPath = path.resolve(process.cwd(), firebaseAdmin);
+      serviceAccount = require(serviceAccountPath);
+    }
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
@@ -53,7 +58,7 @@ export const initializeFirebaseAdmin = (): void => {
 export const getBucket = () => {
   if (admin.apps.length === 0) {
     throw new Error(
-      "Firebase Admin SDK chưa được khởi tạo. Vui lòng gọi initializeFirebaseAdmin() trước."
+      "Firebase Admin SDK chưa được khởi tạo. Vui lòng gọi initializeFirebaseAdmin() trước.",
     );
   }
   return admin.storage().bucket();
