@@ -26,7 +26,7 @@ const AllCourses: React.FC = () => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`${API_URL}/api/courses`, {
+        const response = await axios.get(`${API_URL}/courses`, {
           params: { page: 1, limit: 20 },
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),

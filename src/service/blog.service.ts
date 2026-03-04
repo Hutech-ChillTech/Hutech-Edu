@@ -36,7 +36,7 @@ export const blogService = {
         params?.tag ||
         ((params as Record<string, unknown>)?.tagSlug as string | undefined),
     };
-    const response = await axiosInstance.get(`${API_URL}/api/blog-posts`, {
+    const response = await axiosInstance.get(`${API_URL}/blog-posts`, {
       params: apiParams,
     });
 
@@ -60,7 +60,7 @@ export const blogService = {
    */
   getBlogPostById: async (blogPostId: string): Promise<BlogPost> => {
     const response = await axiosInstance.get(
-      `${API_URL}/api/blog-posts/${blogPostId}`,
+      `${API_URL}/blog-posts/${blogPostId}`,
     );
     console.log("getBlogPostById response:", response.data);
     return response.data.data || response.data;
@@ -72,7 +72,7 @@ export const blogService = {
    */
   getBlogPostBySlug: async (slug: string): Promise<BlogPost> => {
     const response = await axiosInstance.get(
-      `${API_URL}/api/blog-posts/slug/${slug}`,
+      `${API_URL}/blog-posts/slug/${slug}`,
     );
     console.log("getBlogPostBySlug response:", response.data);
     return response.data.data || response.data;
@@ -84,7 +84,7 @@ export const blogService = {
    */
   createBlogPost: async (data: CreateBlogPostRequest): Promise<BlogPost> => {
     const response = await axiosInstance.post(
-      `${API_URL}/api/blog-posts`,
+      `${API_URL}/blog-posts`,
       data,
     );
     return response.data.data;
@@ -100,7 +100,7 @@ export const blogService = {
     data: Partial<UpdateBlogPostRequest>,
   ): Promise<BlogPost> => {
     const response = await axiosInstance.put(
-      `${API_URL}/api/blog-posts/${blogPostId}`,
+      `${API_URL}/blog-posts/${blogPostId}`,
       data,
     );
     return response.data.data;
@@ -114,7 +114,7 @@ export const blogService = {
    * Delete blog post
    */
   deleteBlogPost: async (blogPostId: string): Promise<void> => {
-    await axiosInstance.delete(`${API_URL}/api/blog-posts/${blogPostId}`);
+    await axiosInstance.delete(`${API_URL}/blog-posts/${blogPostId}`);
   },
 
   /**
@@ -125,7 +125,7 @@ export const blogService = {
   publishBlogPost: async (blogPostId: string): Promise<BlogPost> => {
     // Assuming this endpoint still exists or we should use update
     const response = await axiosInstance.post(
-      `${API_URL}/api/blog-posts/${blogPostId}/publish`,
+      `${API_URL}/blog-posts/${blogPostId}/publish`,
     );
     return response.data.data;
   },
@@ -135,7 +135,7 @@ export const blogService = {
    * @param blogPostId - ID của blog post
    */
   toggleLikeBlogPost: async (blogPostId: string): Promise<void> => {
-    await axiosInstance.post(`${API_URL}/api/blog-posts/${blogPostId}/like`);
+    await axiosInstance.post(`${API_URL}/blog-posts/${blogPostId}/like`);
   },
 
   /**
@@ -148,7 +148,7 @@ export const blogService = {
     note?: string,
   ): Promise<void> => {
     await axiosInstance.post(
-      `${API_URL}/api/blog-posts/${blogPostId}/bookmark`,
+      `${API_URL}/blog-posts/${blogPostId}/bookmark`,
       { note },
     );
   },
@@ -157,12 +157,12 @@ export const blogService = {
   // Converting them to use the new endpoints.
 
   likeBlogPost: async (blogPostId: string): Promise<void> => {
-    await axiosInstance.post(`${API_URL}/api/blog-posts/${blogPostId}/like`);
+    await axiosInstance.post(`${API_URL}/blog-posts/${blogPostId}/like`);
   },
 
   unlikeBlogPost: async (blogPostId: string): Promise<void> => {
     // MD says POST is toggle. So calling it again toggles it off?
-    await axiosInstance.post(`${API_URL}/api/blog-posts/${blogPostId}/like`);
+    await axiosInstance.post(`${API_URL}/blog-posts/${blogPostId}/like`);
   },
 
   bookmarkBlogPost: async (
@@ -170,7 +170,7 @@ export const blogService = {
     note?: string,
   ): Promise<void> => {
     await axiosInstance.post(
-      `${API_URL}/api/blog-posts/${blogPostId}/bookmark`,
+      `${API_URL}/blog-posts/${blogPostId}/bookmark`,
       { note },
     );
   },
@@ -178,7 +178,7 @@ export const blogService = {
   removeBookmark: async (blogPostId: string): Promise<void> => {
     // MD says toggle.
     await axiosInstance.post(
-      `${API_URL}/api/blog-posts/${blogPostId}/bookmark`,
+      `${API_URL}/blog-posts/${blogPostId}/bookmark`,
     );
   },
 
@@ -190,7 +190,7 @@ export const blogService = {
     // Assuming endpoint if exists, else using getBlogPosts?
     // Using api/blogs/bookmarks in original. Changing key to blog-posts
     const response = await axiosInstance.get(
-      `${API_URL}/api/blog-posts/bookmarks`,
+      `${API_URL}/blog-posts/bookmarks`,
     );
     return response.data.data;
   },
@@ -201,7 +201,7 @@ export const blogService = {
    */
   getFeaturedPosts: async (limit: number = 5): Promise<BlogPost[]> => {
     const response = await axiosInstance.get(
-      `${API_URL}/api/blog-posts/featured`,
+      `${API_URL}/blog-posts/featured`,
       {
         params: { limit },
       },
@@ -219,7 +219,7 @@ export const blogService = {
     limit: number = 5,
   ): Promise<BlogPost[]> => {
     const response = await axiosInstance.get(
-      `${API_URL}/api/blog-posts/${blogPostId}/related`,
+      `${API_URL}/blog-posts/${blogPostId}/related`,
       { params: { limit } },
     );
     return response.data.data;
@@ -231,6 +231,6 @@ export const blogService = {
    */
   incrementViewCount: async (blogPostId: string): Promise<void> => {
     // Not in MD, but if exists
-    await axiosInstance.post(`${API_URL}/api/blog-posts/${blogPostId}/view`);
+    await axiosInstance.post(`${API_URL}/blog-posts/${blogPostId}/view`);
   },
 };

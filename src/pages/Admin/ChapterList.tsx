@@ -62,7 +62,7 @@ const ChapterList: React.FC = () => {
   const fetchCourseName = useCallback(async () => {
     if (!courseId || courseName) return;
     try {
-      const res = await fetch(`${API_URL}/api/courses/${courseId}`, {
+      const res = await fetch(`${API_URL}/courses/${courseId}`, {
         // headers: { Authorization: `Bearer ${token}` },
         //update
         method: "GET",
@@ -83,7 +83,7 @@ const ChapterList: React.FC = () => {
   const fetchChapters = useCallback(async () => {
     if (!courseId) return;
     try {
-      const res = await fetch(`${API_URL}/api/chapters`, {
+      const res = await fetch(`${API_URL}/chapters`, {
         // headers: { Authorization: `Bearer ${token}` },
         method: "GET",
         headers: getAuthHeaders(),
@@ -129,8 +129,8 @@ const ChapterList: React.FC = () => {
       };
 
       const url = editingId
-        ? `${API_URL}/api/chapters/${editingId}`
-        : `${API_URL}/api/chapters`;
+        ? `${API_URL}/chapters/${editingId}`
+        : `${API_URL}/chapters`;
       const method = editingId ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -177,7 +177,7 @@ const ChapterList: React.FC = () => {
   //Xóa chương
   const handleDelete = async (chapterId: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/chapters/${chapterId}`, {
+      const res = await fetch(`${API_URL}/chapters/${chapterId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

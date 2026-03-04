@@ -72,7 +72,7 @@ const ChatBox: React.FC = () => {
 
     try {
       // Sử dụng Groq Chat API endpoint
-      const res = await fetch(`${API_URL}/api/chat`, {
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

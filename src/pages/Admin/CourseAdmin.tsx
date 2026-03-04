@@ -74,7 +74,7 @@ const CourseAdmin: React.FC = () => {
   //  Lấy danh sách khóa học
   const fetchCourses = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/courses`, {
+      const res = await fetch(`${API_URL}/courses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -150,11 +150,11 @@ const CourseAdmin: React.FC = () => {
         createdBy: adminId,
       };
 
-      let url = `${API_URL}/api/courses/create`;
+      let url = `${API_URL}/courses/create`;
       let method = "POST";
 
       if (editingId) {
-        url = `${API_URL}/api/courses/update/${editingId}`;
+        url = `${API_URL}/courses/update/${editingId}`;
         method = "PUT";
       }
 
@@ -237,7 +237,7 @@ const CourseAdmin: React.FC = () => {
   const handleDelete = useCallback(
     async (courseId: string) => {
       try {
-        const res = await fetch(`${API_URL}/api/courses/delete/${courseId}`, {
+        const res = await fetch(`${API_URL}/courses/delete/${courseId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });

@@ -206,7 +206,7 @@ const AdminBlogPage: React.FC = () => {
 
       // Upload to your backend API
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/upload/image`,
+        `${import.meta.env.VITE_BACKEND_URL}/upload/image`,
         {
           method: "POST",
           body: formData,

@@ -16,7 +16,7 @@ export const searchService = {
    */
   searchCoursesByTag: async (tagSlug: string): Promise<SearchByTagResponse> => {
     const response = await axios.get(
-      `${API_URL}/api/search/courses/by-tag/${tagSlug}`,
+      `${API_URL}/search/courses/by-tag/${tagSlug}`,
     );
     return response.data.data;
   },
@@ -26,7 +26,7 @@ export const searchService = {
    * @param tags - Mảng các tag slugs
    */
   searchCoursesByTags: async (tags: string[]): Promise<SearchByTagResponse> => {
-    const response = await axios.post(`${API_URL}/api/search/courses/by-tags`, {
+    const response = await axios.post(`${API_URL}/search/courses/by-tags`, {
       tags,
     });
     return response.data.data;
@@ -38,7 +38,7 @@ export const searchService = {
    */
   searchAllByTag: async (tagSlug: string): Promise<SearchByTagResponse> => {
     const response = await axios.get(
-      `${API_URL}/api/search/all/by-tag/${tagSlug}`,
+      `${API_URL}/search/all/by-tag/${tagSlug}`,
     );
     return response.data.data;
   },
@@ -53,7 +53,7 @@ export const searchService = {
     limit: number = 5,
   ): Promise<CourseSearchResult[]> => {
     const response = await axios.get(
-      `${API_URL}/api/search/courses/${courseId}/recommended`,
+      `${API_URL}/search/courses/${courseId}/recommended`,
       { params: { limit } },
     );
     return response.data.data;
@@ -66,7 +66,7 @@ export const searchService = {
   advancedSearch: async (
     params: AdvancedSearchRequest,
   ): Promise<SearchByTagResponse> => {
-    const response = await axios.post(`${API_URL}/api/search/advanced`, params);
+    const response = await axios.post(`${API_URL}/search/advanced`, params);
     return response.data.data;
   },
 
@@ -75,7 +75,7 @@ export const searchService = {
    * @param tags - Mảng các tag slugs
    */
   getLearningPath: async (tags: string[]): Promise<LearningPathResponse> => {
-    const response = await axios.post(`${API_URL}/api/search/learning-path`, {
+    const response = await axios.post(`${API_URL}/search/learning-path`, {
       tags,
     });
     return response.data.data;

@@ -46,7 +46,7 @@ const PracticePage: React.FC = () => {
     const fetchCourse = async () => {
       try {
         const res = await axios.get(
-          `${API_URL}/api/courses/${courseId}/content`,
+          `${API_URL}/courses/${courseId}/content`,
           { headers: getAuthHeaders() },
         );
 

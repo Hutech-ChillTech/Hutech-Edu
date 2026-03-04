@@ -76,7 +76,7 @@ const API_URL =
  */
 async function testChatAPI() {
   try {
-    const response = await fetch(`${API_URL}/api/chat`, {
+    const response = await fetch(`${API_URL}/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -147,7 +147,7 @@ async function measureResponseTime(message: string) {
   const startTime = performance.now();
 
   try {
-    const response = await fetch(`${API_URL}/api/chat`, {
+    const response = await fetch(`${API_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, language: "vi" }),
@@ -178,7 +178,7 @@ async function stressTest(numRequests: number = 5) {
   console.log(`🔥 Starting stress test with ${numRequests} requests...`);
 
   const promises = Array.from({ length: numRequests }, (_, i) =>
-    fetch(`${API_URL}/api/chat`, {
+    fetch(`${API_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -216,7 +216,7 @@ const errorScenarios = {
     test: async () => {
       // Thử kết nối khi server down
       try {
-        await fetch(`${API_URL}/api/chat`, {
+        await fetch(`${API_URL}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: "test", language: "vi" }),
@@ -266,7 +266,7 @@ async function testConversationFlow() {
   for (let i = 0; i < conversation.length; i++) {
     console.log(`\n📤 User: ${conversation[i]}`);
 
-    const response = await fetch(`${API_URL}/api/chat`, {
+    const response = await fetch(`${API_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

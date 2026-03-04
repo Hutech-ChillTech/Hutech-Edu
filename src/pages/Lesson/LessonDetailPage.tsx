@@ -123,7 +123,7 @@ const PracticePage: React.FC = () => {
         if (!userId || !courseId) return;
 
         const res = await fetch(
-          `${API_URL}/api/learning-speed/recommendations/${userId}/${courseId}`,
+          `${API_URL}/learning-speed/recommendations/${userId}/${courseId}`,
         );
         const data = await res.json();
 

@@ -9,7 +9,7 @@ export const categoryService = {
    * Lấy tất cả categories
    */
   getAllCategories: async (): Promise<Category[]> => {
-    const response = await axios.get(`${API_URL}/api/categories`);
+    const response = await axios.get(`${API_URL}/categories`);
     return response.data.data;
   },
 
@@ -17,7 +17,7 @@ export const categoryService = {
    * Lấy categories gốc (parent = null) kèm children nested
    */
   getRootCategories: async (): Promise<Category[]> => {
-    const response = await axios.get(`${API_URL}/api/categories/root`);
+    const response = await axios.get(`${API_URL}/categories/root`);
     return response.data.data;
   },
 
@@ -26,7 +26,7 @@ export const categoryService = {
    * @param limit - Số lượng categories
    */
   getPopularCategories: async (limit: number = 10): Promise<Category[]> => {
-    const response = await axios.get(`${API_URL}/api/categories/popular`, {
+    const response = await axios.get(`${API_URL}/categories/popular`, {
       params: { limit },
     });
     return response.data.data;
@@ -37,7 +37,7 @@ export const categoryService = {
    * @param categoryId - ID của category
    */
   getCategoryById: async (categoryId: string): Promise<Category> => {
-    const response = await axios.get(`${API_URL}/api/categories/${categoryId}`);
+    const response = await axios.get(`${API_URL}/categories/${categoryId}`);
     return response.data.data;
   },
 
@@ -46,7 +46,7 @@ export const categoryService = {
    * @param slug - Slug của category
    */
   getCategoryBySlug: async (slug: string): Promise<Category> => {
-    const response = await axios.get(`${API_URL}/api/categories/slug/${slug}`);
+    const response = await axios.get(`${API_URL}/categories/slug/${slug}`);
     return response.data.data;
   },
 
@@ -56,7 +56,7 @@ export const categoryService = {
    */
   getChildCategories: async (parentId: string): Promise<Category[]> => {
     const response = await axios.get(
-      `${API_URL}/api/categories/${parentId}/children`,
+      `${API_URL}/categories/${parentId}/children`,
     );
     return response.data.data;
   },
@@ -71,7 +71,7 @@ export const categoryService = {
     parentId?: string;
     orderIndex?: number;
   }): Promise<Category> => {
-    const response = await axios.post(`${API_URL}/api/categories`, data);
+    const response = await axios.post(`${API_URL}/categories`, data);
     return response.data.data;
   },
 
@@ -90,7 +90,7 @@ export const categoryService = {
     }>,
   ): Promise<Category> => {
     const response = await axios.put(
-      `${API_URL}/api/categories/${categoryId}`,
+      `${API_URL}/categories/${categoryId}`,
       data,
     );
     return response.data.data;
@@ -101,6 +101,6 @@ export const categoryService = {
    * @param categoryId - ID của category
    */
   deleteCategory: async (categoryId: string): Promise<void> => {
-    await axios.delete(`${API_URL}/api/categories/${categoryId}`);
+    await axios.delete(`${API_URL}/categories/${categoryId}`);
   },
 };
