@@ -5,10 +5,11 @@ import { ToastProvider } from "../contexts/ToastContext";
 // Layouts
 import AdminLayout from "../layouts/AdminLayout";
 import UserLayout from "../layouts/UserLayout";
+import AuthLayout from "../layouts/AuthLayout";
 
 // Pages
-import LoginPage from "../pages/LoginPage";
-import RegisterPage from "../pages/RegisterPage";
+import LoginUI from "../pages/LoginUI";
+import RegisterUI from "../pages/RegisterUI";
 import DashboardPage from "../pages/Admin/DashboardPage";
 import AdminUser from "../pages/Admin/UserAdmin";
 import CourseAdmin from "../pages/Admin/CourseAdmin";
@@ -44,9 +45,11 @@ const AppRoutes: React.FC = () => {
     <Router>
       <ToastProvider>
         <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          {/* Auth routes (Pure UI Layout) */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginUI />} />
+            <Route path="/register" element={<RegisterUI />} />
+          </Route>
 
           {/* Admin routes */}
           <Route path="/admin" element={<AdminLayout />}>

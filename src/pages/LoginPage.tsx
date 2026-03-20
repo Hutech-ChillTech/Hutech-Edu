@@ -66,8 +66,8 @@ const LoginPage: React.FC = () => {
       };
       toast.error(
         err.message ||
-          err.response?.data?.message ||
-          "Email hoặc mật khẩu không đúng!",
+        err.response?.data?.message ||
+        "Email hoặc mật khẩu không đúng!",
       );
     } finally {
       setLoading(false);
